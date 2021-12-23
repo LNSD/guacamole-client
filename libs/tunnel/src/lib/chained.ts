@@ -1,6 +1,6 @@
-import AbstractTunnel, {Tunnel} from './Tunnel';
-import {Status, StatusCode} from '../Status';
-import {State} from './State';
+import AbstractTunnel, {Tunnel} from './tunnel';
+import {Status, StatusCode} from './Status';
+import {State} from './state';
 
 /**
  * Guacamole Tunnel which cycles between all specified tunnels until

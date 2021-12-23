@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import {Status} from '../Status';
-import {State} from './State';
+import {Status} from './Status';
+import {State} from './state';
 
 export type OnUuidCallback = (uuid: string) => void;
 export type OnErrorCallback = (status: Status) => void;

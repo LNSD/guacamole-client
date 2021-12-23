@@ -1,9 +1,9 @@
 // TODO Review the following lint suppression
 /* eslint-disable @typescript-eslint/naming-convention */
-import AbstractTunnel, {INTERNAL_DATA_OPCODE, Tunnel} from './tunnel';
-import {State} from './State';
-import Parser from '../Parser';
-import {Status, StatusCode} from '../Status';
+import AbstractTunnel, { INTERNAL_DATA_OPCODE, Tunnel } from "./tunnel";
+import { State } from "./state";
+import { Parser } from "@guacamole-client/protocol";
+import { Status, StatusCode } from "./Status";
 
 /**
  * The WebSocket protocol corresponding to the protocol used for the current
@@ -11,8 +11,8 @@ import {Status, StatusCode} from '../Status';
  * @private
  */
 const WS_PROTOCOL: Record<string, string> = {
-  'http:': 'ws:',
-  'https:': 'wss:',
+  "http:": "ws:",
+  "https:": "wss:"
 };
 
 /**
@@ -66,20 +66,20 @@ export default class WebSocketTunnel extends AbstractTunnel implements Tunnel {
     // Transform current URL to WebSocket URL
 
     // If not already a websocket URL
-    if (!tunnelURL.startsWith('ws:') && !tunnelURL.startsWith('wss:')) {
+    if (!tunnelURL.startsWith("ws:") && !tunnelURL.startsWith("wss:")) {
       const protocol = WS_PROTOCOL[window.location.protocol];
 
       // If absolute URL, convert to absolute WS URL
-      if (tunnelURL.startsWith('/')) {
-        this.tunnelURL = protocol + '//' + window.location.host + tunnelURL;
+      if (tunnelURL.startsWith("/")) {
+        this.tunnelURL = protocol + "//" + window.location.host + tunnelURL;
       } else {
         // Otherwise, construct absolute from relative URL
         // Get path from pathname
-        const slash = window.location.pathname.lastIndexOf('/');
+        const slash = window.location.pathname.lastIndexOf("/");
         const path = window.location.pathname.substring(0, slash + 1);
 
         // Construct absolute URL
-        this.tunnelURL = protocol + '//' + window.location.host + path + tunnelURL;
+        this.tunnelURL = protocol + "//" + window.location.host + path + tunnelURL;
       }
     }
   }
@@ -117,11 +117,11 @@ export default class WebSocketTunnel extends AbstractTunnel implements Tunnel {
 
     // Append remaining elements
     for (const param of params) {
-      message += ',' + encodeElement(param);
+      message += "," + encodeElement(param);
     }
 
     // Final terminator
-    message += ';';
+    message += ";";
 
     this.socket?.send(message);
   }
@@ -133,15 +133,15 @@ export default class WebSocketTunnel extends AbstractTunnel implements Tunnel {
     this.setState(State.CONNECTING);
 
     // Connect socket
-    const urlDataParam = data === undefined ? '' : `?${data}`;
-    this.socket = new WebSocket(`${this.tunnelURL}${urlDataParam}`, 'guacamole');
+    const urlDataParam = data === undefined ? "" : `?${data}`;
+    this.socket = new WebSocket(`${this.tunnelURL}${urlDataParam}`, "guacamole");
 
     this.socket.onopen = _event => {
       this.resetTimeout();
 
       // Ping tunnel endpoint regularly to test connection stability
       this.pingIntervalHandle = window.setInterval(() => {
-        this.sendMessage(INTERNAL_DATA_OPCODE, 'ping', new Date().getTime());
+        this.sendMessage(INTERNAL_DATA_OPCODE, "ping", new Date().getTime());
       }, PING_FREQUENCY);
     };
 
@@ -188,7 +188,7 @@ export default class WebSocketTunnel extends AbstractTunnel implements Tunnel {
   }
 
   public disconnect() {
-    this.closeTunnel(new Status(StatusCode.SUCCESS, 'Manually closed.'));
+    this.closeTunnel(new Status(StatusCode.SUCCESS, "Manually closed."));
   }
 
   /**
@@ -209,7 +209,7 @@ export default class WebSocketTunnel extends AbstractTunnel implements Tunnel {
 
     // Set new timeout for tracking overall connection timeout
     this.receiveTimeoutHandle = window.setTimeout(() => {
-      this.closeTunnel(new Status(StatusCode.UPSTREAM_TIMEOUT, 'Server timeout.'));
+      this.closeTunnel(new Status(StatusCode.UPSTREAM_TIMEOUT, "Server timeout."));
     }, this.receiveTimeout);
 
     // Set new timeout for tracking suspected connection instability

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import {Status, StatusCode} from '../Status';
-import {State} from './State';
-import AbstractTunnel, {Tunnel} from './Tunnel';
+import {Status, StatusCode} from './Status';
+import {State} from './state';
+import AbstractTunnel, {Tunnel} from './tunnel';
 
 /**
  * The number of milliseconds to wait between connection stability test
