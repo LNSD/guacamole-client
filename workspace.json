@@ -3,6 +3,7 @@
   "projects": {
     "example": "apps/example",
     "example-e2e": "apps/example-e2e",
+    "io": "libs/io",
     "tunnel": "libs/tunnel"
   }
 }
