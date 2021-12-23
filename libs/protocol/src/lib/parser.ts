@@ -41,7 +41,7 @@ export default class Parser {
    *
    * @private
    */
-  private buffer = '';
+  private buffer = "";
 
   /**
    * Buffer of all received, complete elements. After an entire instruction
@@ -89,12 +89,12 @@ export default class Parser {
         this.elementBuffer.push(element);
 
         // If last element, handle instruction
-        if (terminator === ';') {
+        if (terminator === ";") {
           // Get opcode
           const opcode = this.elementBuffer.shift();
 
           if (opcode === undefined) {
-            throw new Error('Opcode not found');
+            throw new Error("Opcode not found");
           }
 
           // Call instruction handler.
@@ -104,8 +104,8 @@ export default class Parser {
 
           // Clear elements
           this.elementBuffer.length = 0;
-        } else if (terminator !== ',') {
-          throw new Error('Illegal terminator.');
+        } else if (terminator !== ",") {
+          throw new Error("Illegal terminator.");
         }
 
         // Start searching for length at character after
@@ -114,7 +114,7 @@ export default class Parser {
       }
 
       // Search for end of length
-      const lengthEnd = this.buffer.indexOf('.', startIndex);
+      const lengthEnd = this.buffer.indexOf(".", startIndex);
       if (lengthEnd === -1) {
         // If no period yet, continue search when more data is received
         startIndex = this.buffer.length;
@@ -124,7 +124,7 @@ export default class Parser {
       // Parse length
       const length = parseInt(this.buffer.substring(elementEnd + 1, lengthEnd), 10);
       if (isNaN(length)) {
-        throw new Error('Non-numeric character in element length.');
+        throw new Error("Non-numeric character in element length.");
       }
 
       // Calculate start of element
