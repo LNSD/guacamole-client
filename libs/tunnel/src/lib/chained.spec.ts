@@ -1,9 +1,9 @@
 /* eslint-disable jest/no-done-callback */
 import * as faker from 'faker';
-import ChainedTunnel from './ChainedTunnel';
-import {Status, StatusCode} from '../Status';
-import {Tunnel} from './Tunnel';
-import {State} from './State';
+import ChainedTunnel from './chained';
+import {Status, StatusCode} from './Status';
+import {Tunnel} from './tunnel';
+import {State} from './state';
 
 const getMockTunnel = (uuid: string | null = null): Tunnel => ({
   uuid,
@@ -22,7 +22,7 @@ describe('ChainedTunnel', () => {
     const chainedTunnel = new ChainedTunnel();
 
     chainedTunnel.onerror = status => {
-      expect(status).toBe(StatusCode.SERVER_ERROR);
+      expect(status).toStrictEqual(new Status(StatusCode.SERVER_ERROR));
       done();
     };
 
