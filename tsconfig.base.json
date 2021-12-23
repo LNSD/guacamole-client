@@ -16,6 +16,7 @@
     "baseUrl": ".",
     "paths": {
       "@guacamole-client/io": ["libs/io/src/index.ts"],
+      "@guacamole-client/protocol": ["libs/protocol/src/index.ts"],
       "@guacamole-client/tunnel": ["libs/tunnel/src/index.ts"]
     }
   },

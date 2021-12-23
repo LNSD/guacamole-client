@@ -4,6 +4,7 @@
     "example": "apps/example",
     "example-e2e": "apps/example-e2e",
     "io": "libs/io",
+    "protocol": "libs/protocol",
     "tunnel": "libs/tunnel"
   }
 }
