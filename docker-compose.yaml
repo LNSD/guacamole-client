@@ -1,0 +1,59 @@
+version: '3.9'
+services:
+  web-proxy:
+    image: nginx:alpine
+    container_name: web-proxy
+    volumes:
+      - ./tools/fixtures/web-proxy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - '8080:80'
+    depends_on:
+      - guac-server
+      - dev-server
+
+  dev-server:
+    image: dev-server:latest
+    container_name: dev-server
+    build:
+      context: .
+      dockerfile: ./tools/fixtures/dev-server/Dockerfile
+    expose:
+      - '8080'
+    ports:
+      - '9090:8080'
+    volumes:
+      - .:/usr/src/
+
+  guac-server:
+    image: guacamole/guacamole:1.3.0
+    container_name: guac-server
+    links:
+      - guacd:guacd
+    expose:
+      - '8080'
+    ports:
+      - '9091:8080'
+    environment:
+      - GUACAMOLE_HOME=/etc/guacamole
+      - GUACD_HOSTNAME=guacd
+      - GUACD_PORT=4822
+      - GUACD_SSL=false
+    volumes:
+      - ./tools/fixtures/guac-server/user-mapping.xml:/etc/guacamole/user-mapping.xml:ro
+    depends_on:
+      - guacd
+
+  guacd:
+    image: guacamole/guacd:1.3.0
+    container_name: guacd
+
+  x11vnc:
+    image: x11vnc:latest
+    container_name: x11vnc
+    build:
+      context: ./tools/fixtures/x11vnc
+    ports:
+      - 5900:5900
+    volumes:
+      - /etc/localtime:/etc/localtime
+    command: xclock -update 1
