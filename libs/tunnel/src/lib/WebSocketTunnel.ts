@@ -1,6 +1,6 @@
 // TODO Review the following lint suppression
 /* eslint-disable @typescript-eslint/naming-convention */
-import AbstractTunnel, {INTERNAL_DATA_OPCODE, Tunnel} from './Tunnel';
+import AbstractTunnel, {INTERNAL_DATA_OPCODE, Tunnel} from './tunnel';
 import {State} from './State';
 import Parser from '../Parser';
 import {Status, StatusCode} from '../Status';
