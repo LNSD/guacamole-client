@@ -1,5 +1,7 @@
 /* eslint-disable capitalized-comments */
 
+import { ChainedTunnel, WebSocketTunnel, HTTPTunnel } from "@guacamole-client/tunnel";
+
 // @ts-ignore
 declare global {
   interface Window {
@@ -15,7 +17,7 @@ declare global {
 }
 
 // @ts-ignore
-const { Client, ChainedTunnel, WebSocketTunnel, Mouse, Keyboard, HTTPTunnel } = window.Guacamole;
+const { Client, /* ChainedTunnel, WebSocketTunnel, HTTPTunnel, */ Mouse, Keyboard } = window.Guacamole;
 
 (async () => {
   const response = await fetch("http://localhost:8080/guacamole/api/tokens", {
