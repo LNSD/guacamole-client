@@ -80,7 +80,7 @@ export default class Parser {
 
           // Call instruction handler.
           if (this.oninstruction !== null) {
-            this.oninstruction(opcode, this.elementBuffer);
+            this.oninstruction(opcode, [...this.elementBuffer]);
           }
 
           // Clear elements
