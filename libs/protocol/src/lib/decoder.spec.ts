@@ -18,7 +18,7 @@ const fakerBase64 = (length: number, padding = false): string => {
   return wholeString;
 };
 
-describe("Protocol parser", () => {
+describe("Protocol decoder", () => {
   it.each(data)("oninstruction", ({ packet, instruction: { opcode, parameters } }) => {
     // Given
     const parser = new Decoder();
