@@ -4,7 +4,7 @@ export type OnInstructionCallback = (opcode: string, parameters: any[]) => void;
  * Simple Guacamole protocol parser that invokes an oninstruction event when
  * full instructions are available from data received via receive().
  */
-export default class Parser {
+export default class Decoder {
   /**
    * Fired once for every complete Guacamole instruction received, in order.
    *

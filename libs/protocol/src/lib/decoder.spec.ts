@@ -1,6 +1,6 @@
+import Decoder from './decoder';
 import faker from 'faker';
-import { Parser } from "@guacamole-client/protocol";
-import data from "./__tests__/parser.json";
+import data from "./__tests__/decoder.json";
 
 const fakerBase64 = (length: number, padding = false): string => {
   let wholeString = "";
@@ -21,7 +21,7 @@ const fakerBase64 = (length: number, padding = false): string => {
 describe("Protocol parser", () => {
   it.each(data)("oninstruction", ({ packet, instruction: { opcode, parameters } }) => {
     // Given
-    const parser = new Parser();
+    const parser = new Decoder();
     parser.oninstruction = jest.fn();
 
     // When
@@ -33,7 +33,7 @@ describe("Protocol parser", () => {
 
   it("on multiple instructions packet", () => {
     // Given
-    const parser = new Parser();
+    const parser = new Decoder();
     parser.oninstruction = jest.fn();
 
     const firstBlob = fakerBase64(1543, true);
