@@ -2,6 +2,7 @@
 import {Status, StatusCode} from './Status';
 import {State} from './state';
 import AbstractTunnel, {Tunnel} from './tunnel';
+import { Encoder } from "@guacamole-client/protocol";
 
 /**
  * The number of milliseconds to wait between connection stability test
@@ -90,29 +91,10 @@ export default class HTTPTunnel extends AbstractTunnel implements Tunnel {
       return;
     }
 
-    /**
-     * Converts the given value to a length/string pair for use as an
-     * element in a Guacamole instruction.
-     *
-     * @private
-     * @param value - The value to convert.
-     * @return The converted value.
-     */
-    function getElement(value: any): string {
-      const str = String(value);
-      return `${str.length}.${str}`;
-    }
+    const [opcode, ...params] = elements;
 
-    // Initialized message with first element
-    let message = getElement(elements[0]);
-
-    // Append remaining elements
-    for (let i = 1; i < elements.length; i++) {
-      message += ',' + getElement(elements[i]);
-    }
-
-    // Final terminator
-    message += ';';
+    const encoder = new Encoder();
+    const message = encoder.encode(opcode, ...params);
 
     // Add message to buffer
     this.outputMessageBuffer += message;

@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import AbstractTunnel, { INTERNAL_DATA_OPCODE, Tunnel } from "./tunnel";
 import { State } from "./state";
-import { Parser } from "@guacamole-client/protocol";
+import { Decoder, Encoder } from "@guacamole-client/protocol";
 import { Status, StatusCode } from "./Status";
 
 /**
@@ -95,33 +95,10 @@ export default class WebSocketTunnel extends AbstractTunnel implements Tunnel {
       return;
     }
 
-    // TODO Review the following lint suppression
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const [opcode, ...params] = elements;
+    const encoder = new Encoder();
 
-    /**
-     * Converts the given value to a length/string pair for use as an
-     * element in a Guacamole instruction.
-     *
-     * @private
-     * @param value - The value to convert.
-     * @return The converted value.
-     */
-    function encodeElement(value: any): string {
-      const str = String(value);
-      return `${str.length}.${str}`;
-    }
-
-    // Initialized message with first element
-    let message = encodeElement(opcode);
-
-    // Append remaining elements
-    for (const param of params) {
-      message += "," + encodeElement(param);
-    }
-
-    // Final terminator
-    message += ";";
+    let message = encoder.encode(opcode, ...params);
 
     this.socket?.send(message);
   }
@@ -165,8 +142,8 @@ export default class WebSocketTunnel extends AbstractTunnel implements Tunnel {
       this.resetTimeout();
 
       const message = event.data;
-      const parser = new Parser();
-      parser.oninstruction = (opcode, parameters) => {
+      const decoder = new Decoder();
+      decoder.oninstruction = (opcode, parameters) => {
         if (this.uuid === null) {
           // Associate tunnel UUID if received
           if (opcode === INTERNAL_DATA_OPCODE) {
@@ -183,7 +160,7 @@ export default class WebSocketTunnel extends AbstractTunnel implements Tunnel {
         }
       };
 
-      parser.receive(message);
+      decoder.receive(message);
     };
   }
 
