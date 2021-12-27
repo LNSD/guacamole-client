@@ -1,11 +1,9 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-
-import {Status} from './Status';
-import {State} from './state';
+import { TunnelState } from './state';
+import { TunnelError } from './errors';
 
 export type OnUuidCallback = (uuid: string) => void;
-export type OnErrorCallback = (status: Status) => void;
-export type OnStateChangeCallback = (state: State) => void;
+export type OnErrorCallback = (error: TunnelError) => void;
+export type OnStateChangeCallback = (state: TunnelState) => void;
 export type OnInstructionCallback = (opcode: string, parameters: string[]) => void;
 
 /**
@@ -42,7 +40,7 @@ export interface Tunnel {
  * should use {@link HTTPTunnel} instead, or implement their own tunnel based
  * on this one.
  */
-export default abstract class AbstractTunnel implements Tunnel {
+export abstract class AbstractTunnel implements Tunnel {
   /**
    * The UUID uniquely identifying this tunnel. If not yet known, this will
    * be null.
@@ -85,17 +83,15 @@ export default abstract class AbstractTunnel implements Tunnel {
 
   /**
    * The current state of this tunnel.
-   *
-   * @type {State}
    */
-  protected state: State = State.CONNECTING;
+  public state: TunnelState = TunnelState.CONNECTING;
 
   /**
    * The maximum amount of time to wait for data to be received, in
    * milliseconds. If data is not received within this amount of time,
    * the tunnel is closed with an error. The default value is 15000.
    */
-  protected receiveTimeout = 15000;
+  public receiveTimeout = 15000;
 
   /**
    * The amount of time to wait for data to be received before considering
@@ -104,7 +100,7 @@ export default abstract class AbstractTunnel implements Tunnel {
    * the connection appears unresponsive and may close. The default value is
    * 1500.
    */
-  protected unstableThreshold = 1500;
+  public unstableThreshold = 1500;
 
   /**
    * Returns whether this tunnel is currently connected.
@@ -112,7 +108,7 @@ export default abstract class AbstractTunnel implements Tunnel {
    * @returns true if this tunnel is currently connected, false otherwise.
    */
   public isConnected(): boolean {
-    return this.state === State.OPEN || this.state === State.UNSTABLE;
+    return this.state === TunnelState.OPEN || this.state === TunnelState.UNSTABLE;
   }
 
   /**
@@ -142,16 +138,18 @@ export default abstract class AbstractTunnel implements Tunnel {
    * Changes the stored numeric state of this tunnel, firing the onstatechange
    * event if the new state is different and a handler has been defined.
    *
-   * @private
    * @param state - The new state of this tunnel.
    */
-  protected setState(state: State) {
+  protected setState(state: TunnelState) {
     // Notify only if state changes
-    if (state !== this.state) {
-      this.state = state;
-      if (this.onstatechange !== null) {
-        this.onstatechange(state);
-      }
+    if (state === this.state) {
+      return;
+    }
+
+    this.state = state;
+
+    if (this.onstatechange !== null) {
+      this.onstatechange(state);
     }
   }
 

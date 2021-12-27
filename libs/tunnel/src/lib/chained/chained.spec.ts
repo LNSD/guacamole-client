@@ -1,9 +1,8 @@
-/* eslint-disable jest/no-done-callback */
 import * as faker from 'faker';
-import ChainedTunnel from './chained';
-import {Status, StatusCode} from './Status';
-import {Tunnel} from './tunnel';
-import {State} from './state';
+import { ChainedTunnel } from './chained';
+import { Tunnel } from '../tunnel';
+import { TunnelState } from '../state';
+import { ServerError, UpstreamTimeoutError } from '../errors';
 
 const getMockTunnel = (uuid: string | null = null): Tunnel => ({
   uuid,
@@ -14,7 +13,7 @@ const getMockTunnel = (uuid: string | null = null): Tunnel => ({
   connect: jest.fn(),
   sendMessage: jest.fn(),
   isConnected: jest.fn(),
-  disconnect: jest.fn(),
+  disconnect: jest.fn()
 });
 
 describe('ChainedTunnel', () => {
@@ -22,7 +21,7 @@ describe('ChainedTunnel', () => {
     const chainedTunnel = new ChainedTunnel();
 
     chainedTunnel.onerror = status => {
-      expect(status).toStrictEqual(new Status(StatusCode.SERVER_ERROR));
+      expect(status).toStrictEqual(new ServerError());
       done();
     };
 
@@ -48,8 +47,8 @@ describe('ChainedTunnel', () => {
     });
 
     it('onstatechange first with open', () => {
-      const expectedOnStateChangeCallback = (state: State) => {
-        expect(state).toBe(State.OPEN);
+      const expectedOnStateChangeCallback = (state: TunnelState) => {
+        expect(state).toBe(TunnelState.OPEN);
       };
 
       const expectedUuid = faker.datatype.uuid();
@@ -68,7 +67,7 @@ describe('ChainedTunnel', () => {
       expect(mockTunnel.onstatechange).not.toBe(expectedOnStateChangeCallback);
 
       if (mockTunnel.onstatechange) {
-        mockTunnel.onstatechange(State.OPEN);
+        mockTunnel.onstatechange(TunnelState.OPEN);
       }
 
       expect(mockTunnel.onstatechange).toBe(expectedOnStateChangeCallback);
@@ -78,8 +77,8 @@ describe('ChainedTunnel', () => {
     });
 
     it('onstatechange first with CLOSED', () => {
-      const expectedOnStateChangeCallback = (state: State) => {
-        expect(state).toBe(State.CLOSED);
+      const expectedOnStateChangeCallback = (state: TunnelState) => {
+        expect(state).toBe(TunnelState.CLOSED);
       };
 
       const expectedUuid = faker.datatype.uuid();
@@ -98,7 +97,7 @@ describe('ChainedTunnel', () => {
       expect(mockTunnel.onstatechange).not.toBe(expectedOnStateChangeCallback);
 
       if (mockTunnel.onstatechange) {
-        mockTunnel.onstatechange(State.CLOSED);
+        mockTunnel.onstatechange(TunnelState.CLOSED);
       }
 
       // TODO Should this be null?
@@ -120,8 +119,8 @@ describe('ChainedTunnel', () => {
     it('onstatechange both with CLOSED', () => {
       const fakeConnectData = faker.datatype.string(10);
       const expectedOnErrorCallback = jest.fn();
-      const expectedOnStateChangeCallback = (state: State) => {
-        expect(state).toBe(State.CLOSED);
+      const expectedOnStateChangeCallback = (state: TunnelState) => {
+        expect(state).toBe(TunnelState.CLOSED);
       };
 
       const chainedTunnel = new ChainedTunnel(mockTunnelA, mockTunnelB);
@@ -131,11 +130,11 @@ describe('ChainedTunnel', () => {
       chainedTunnel.connect(fakeConnectData);
 
       if (mockTunnelA.onstatechange) {
-        mockTunnelA.onstatechange(State.CLOSED);
+        mockTunnelA.onstatechange(TunnelState.CLOSED);
       }
 
       if (mockTunnelB.onstatechange) {
-        mockTunnelB.onstatechange(State.CLOSED);
+        mockTunnelB.onstatechange(TunnelState.CLOSED);
       }
 
       expect(mockTunnelA.connect).toHaveBeenCalledTimes(1);
@@ -159,11 +158,11 @@ describe('ChainedTunnel', () => {
       chainedTunnel.connect(fakeConnectData);
 
       if (mockTunnelA.onstatechange) {
-        mockTunnelA.onstatechange(State.CLOSED);
+        mockTunnelA.onstatechange(TunnelState.CLOSED);
       }
 
       if (mockTunnelB.onstatechange) {
-        mockTunnelB.onstatechange(State.OPEN);
+        mockTunnelB.onstatechange(TunnelState.OPEN);
       }
 
       expect(mockTunnelA.connect).toHaveBeenCalledTimes(1);
@@ -192,7 +191,7 @@ describe('ChainedTunnel', () => {
 
       expect(mockTunnelA.onerror).not.toBeNull();
       if (mockTunnelA.onerror) {
-        mockTunnelA.onerror(new Status(StatusCode.UPSTREAM_TIMEOUT));
+        mockTunnelA.onerror(new UpstreamTimeoutError());
       }
 
       expect(mockTunnelA.connect).toHaveBeenCalledTimes(1);
@@ -253,7 +252,7 @@ describe('ChainedTunnel', () => {
 
       expect(mockTunnelA.onstatechange).not.toBeNull();
       if (mockTunnelA.onstatechange) {
-        mockTunnelA.onstatechange(State.OPEN);
+        mockTunnelA.onstatechange(TunnelState.OPEN);
       }
 
       expect(mockTunnelA.connect).toHaveBeenCalledTimes(1);
@@ -266,7 +265,7 @@ describe('ChainedTunnel', () => {
 
       expect(mockTunnelA.onstatechange).not.toBeNull();
       if (mockTunnelA.onstatechange) {
-        mockTunnelA.onstatechange(State.OPEN);
+        mockTunnelA.onstatechange(TunnelState.OPEN);
       }
 
       expect(mockTunnelA.connect).toHaveBeenCalledTimes(2);

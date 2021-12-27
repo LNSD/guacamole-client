@@ -1,4 +1,6 @@
-export { default as Tunnel } from "./lib/tunnel";
-export { default as WebSocketTunnel } from "./lib/ws";
-export { default as HTTPTunnel } from "./lib/http";
-export { default as ChainedTunnel } from "./lib/chained";
+export * from './lib/errors';
+export * from './lib/tunnel';
+
+export * from './lib/ws';
+export * from './lib/http';
+export * from './lib/chained';

@@ -1,3 +1,5 @@
+import { Instruction } from "./instruction";
+
 /**
  * The ack instruction acknowledges a received data blob, providing a status code and message
  * indicating whether the operation associated with the blob succeeded or failed. A status code
@@ -8,9 +10,7 @@
  *                  interface, and mainly helps with debugging.
  * @param status - The Guacamole status code denoting success or failure.
  */
-import { Instruction } from "./instruction";
-
-export const ack = (stream: number, message: string, status: string): Instruction => ['ack', stream, message, status];
+export const ack = (stream: number, message: string, status: number): Instruction => ['ack', stream, message, status];
 
 
 /**
@@ -60,7 +60,7 @@ export const blob = (stream: number, data: string): Instruction => ['blob', stre
  * @param mimetype - The mimetype of the clipboard data being sent. In most cases, this will be
  *                   "text/plain".
  */
-const clipboard = (stream: number, mimetype: string): Instruction => ['clipboard', stream, mimetype];
+export const clipboard = (stream: number, mimetype: string): Instruction => ['clipboard', stream, mimetype];
 
 
 /**
@@ -70,7 +70,7 @@ const clipboard = (stream: number, mimetype: string): Instruction => ['clipboard
  *
  * @param stream - The index of the stream the corresponding blob was received on.
  */
-const end = (stream: number): Instruction => ['end', stream];
+export const end = (stream: number): Instruction => ['end', stream];
 
 
 /**
@@ -82,7 +82,7 @@ const end = (stream: number): Instruction => ['end', stream];
  * @param mimetype - The mimetype of the file being sent.
  * @param filename - The name of the file, as it would be saved on a filesystem.
  */
-const file = (stream: number, mimetype: string, filename: string): Instruction => ['file', stream, mimetype, filename];
+export const file = (stream: number, mimetype: string, filename: string): Instruction => ['file', stream, mimetype, filename];
 
 
 /**
@@ -100,7 +100,7 @@ const file = (stream: number, mimetype: string, filename: string): Instruction =
  * @param y - The Y coordinate of the upper-left corner of the destination within the destination
  *            layer.
  */
-const img = (stream: number, mimetype: string, mask: string, layer: number, x: number, y: number): Instruction => ['img', stream, mimetype, mask, layer, x, y];
+export const img = (stream: number, mimetype: string, mask: string, layer: number, x: number, y: number): Instruction => ['img', stream, mimetype, mask, layer, x, y];
 
 
 /**
@@ -114,7 +114,7 @@ const img = (stream: number, mimetype: string, mask: string, layer: number, x: n
  * @param mimetype - The mimetype of the data being sent along the pipe.
  * @param name - The arbitrary name of the pipe, which may have special meaning to client-side code.
  */
-const pipe = (stream: number, mimetype: string, name: string): Instruction => ['pipe', stream, mimetype, name];
+export const pipe = (stream: number, mimetype: string, name: string): Instruction => ['pipe', stream, mimetype, name];
 
 
 /**
@@ -130,4 +130,4 @@ const pipe = (stream: number, mimetype: string, name: string): Instruction => ['
  *                hardware decoding.
  * @param mimetype - The mimetype of the video data being sent.
  */
-const video = (stream: number, layer: number, mimetype: string): Instruction => ['video', stream, layer, mimetype];
+export const video = (stream: number, layer: number, mimetype: string): Instruction => ['video', stream, layer, mimetype];

@@ -3,7 +3,7 @@
 /**
  * All possible tunnel states.
  */
-export enum State {
+export enum TunnelState {
 
   /**
    * A connection is in pending. It is not yet known whether connection was

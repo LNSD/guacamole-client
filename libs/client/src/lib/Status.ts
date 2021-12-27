@@ -1,4 +1,12 @@
-/* eslint-disable @typescript-eslint/no-namespace,@typescript-eslint/naming-convention,@typescript-eslint/no-unnecessary-qualifier */
+import {
+  ClientBadRequestError,
+  ClientForbiddenError,
+  ClientTooManyError,
+  ResourceNotFoundError,
+  ServerBusyError,
+  TunnelError, UpstreamNotFoundError, UpstreamUnavailableError
+} from '@guacamole-client/tunnel';
+
 
 /**
  * A Guacamole status. Each Guacamole status consists of a status code, defined
@@ -20,10 +28,10 @@ export class Status {
    */
   public message: string;
 
-  /*
+  /**
    * @constructor
-   * @param code - The Guacamole status code, as defined by StatusCode.
    *
+   * @param code - The Guacamole status code, as defined by StatusCode.
    * @param [message] - An optional human-readable message.
    */
   constructor(code: number, message = '') {
@@ -164,79 +172,26 @@ export enum StatusCode {
   CLIENT_TOO_MANY = 0x031D,
 }
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace StatusCode {
 
-  /**
-   * Returns the Guacamole protocol status code which most closely
-   * represents the given HTTP status code.
-   *
-   * @param status - The HTTP status code to translate into a Guacamole protocol
-   *                status code.
-   *
-   * @returns The Guacamole protocol status code which most closely represents
-   *          the given HTTP status code.
-   */
-  export function fromHTTPCode(status?: number): StatusCode {
-    // Translate status codes with known equivalents
-    switch (status) {
-      // HTTP 400 - Bad request
-      case 400:
-        return StatusCode.CLIENT_BAD_REQUEST;
-
-      // HTTP 403 - Forbidden
-      case 403:
-        return StatusCode.CLIENT_FORBIDDEN;
-
-      // HTTP 404 - Resource not found
-      case 404:
-        return StatusCode.RESOURCE_NOT_FOUND;
-
-      // HTTP 429 - Too many requests
-      case 429:
-        return StatusCode.CLIENT_TOO_MANY;
-
-      // HTTP 503 - Server unavailable
-      case 503:
-        return StatusCode.SERVER_BUSY;
-
-      // Default all other codes to generic internal error
-      default:
-        return StatusCode.SERVER_ERROR;
-    }
-  }
-
-  /**
-   * Returns the Guacamole protocol status code which most closely
-   * represents the given WebSocket status code.
-   *
-   * @param code - The WebSocket status code to translate into a Guacamole
-   *               protocol status code.
-   *
-   * @returns The Guacamole protocol status code which most closely represents
-   *          the given WebSocket status code.
-   */
-  export function fromWebSocketCode(code: number): StatusCode {
-    // Translate status codes with known equivalents
-    switch (code) {
-      // Successful disconnect (no error)
-      case 1000: // Normal Closure
-        return StatusCode.SUCCESS;
-
-      // Codes which indicate the server is not reachable
-      case 1006: // Abnormal Closure (also signalled by JavaScript when the connection cannot be opened in the first place)
-      case 1015: // TLS Handshake
-        return StatusCode.UPSTREAM_NOT_FOUND;
-
-      // Codes which indicate the server is reachable but busy/unavailable
-      case 1001: // Going Away
-      case 1012: // Service Restart
-      case 1013: // Try Again Later
-      case 1014: // Bad Gateway
-        return StatusCode.UPSTREAM_UNAVAILABLE;
-
-      // Default all other codes to generic internal error
-      default:
-        return StatusCode.SERVER_ERROR;
+  export function fromTunnelError(error?: TunnelError): StatusCode {
+    if (error instanceof ClientBadRequestError) {
+      return StatusCode.CLIENT_BAD_REQUEST;
+    } else if (error instanceof ClientForbiddenError) {
+      return StatusCode.CLIENT_FORBIDDEN;
+    } else if (error instanceof ResourceNotFoundError) {
+      return StatusCode.RESOURCE_NOT_FOUND;
+    } else if (error instanceof ClientTooManyError) {
+      return StatusCode.CLIENT_TOO_MANY;
+    } else if (error instanceof ServerBusyError) {
+      return StatusCode.SERVER_BUSY;
+    } else if (error instanceof UpstreamNotFoundError) {
+      return StatusCode.UPSTREAM_NOT_FOUND;
+    } else if (error instanceof UpstreamUnavailableError) {
+      return StatusCode.UPSTREAM_UNAVAILABLE;
+    } else {
+      return StatusCode.SERVER_ERROR;
     }
   }
 }

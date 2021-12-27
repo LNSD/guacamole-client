@@ -1,6 +1,6 @@
-import AbstractTunnel, {Tunnel} from './tunnel';
-import {Status, StatusCode} from './Status';
-import {State} from './state';
+import { AbstractTunnel, Tunnel } from '../tunnel';
+import { TunnelState } from '../state';
+import { ServerError, TunnelError, UpstreamTimeoutError } from '../errors';
 
 /**
  * Guacamole Tunnel which cycles between all specified tunnels until
@@ -9,7 +9,7 @@ import {State} from './state';
  * received, or no tunnels remain, the error is passed directly out
  * through the onerror handler (if defined).
  */
-export default class ChainedTunnel extends AbstractTunnel implements Tunnel {
+export class ChainedTunnel extends AbstractTunnel implements Tunnel {
   /**
    * Data passed in via connect(), to be used for
    * wrapped calls to other tunnels' connect() functions.
@@ -81,7 +81,7 @@ export default class ChainedTunnel extends AbstractTunnel implements Tunnel {
 
     // If there IS no first tunnel, error
     if (this.onerror !== null) {
-      this.onerror(new Status(StatusCode.SERVER_ERROR));
+      this.onerror(new ServerError());
     }
   }
 
@@ -115,15 +115,15 @@ export default class ChainedTunnel extends AbstractTunnel implements Tunnel {
    */
   private attachToCandidateTunnel(candidate: Tunnel) {
     // Wrap own onstatechange within current tunnel
-    candidate.onstatechange = (state: State) => {
-      if (state === State.OPEN) {
+    candidate.onstatechange = (state: TunnelState) => {
+      if (state === TunnelState.OPEN) {
         // If open, use this tunnel from this point forward.
         this.setCommittedTunnel(candidate);
 
         if (this.onstatechange !== null) {
           this.onstatechange(state);
         }
-      } else if (state === State.CLOSED) {
+      } else if (state === TunnelState.CLOSED) {
         candidate.onstatechange = null;
         candidate.oninstruction = null;
         candidate.onerror = null;
@@ -157,18 +157,18 @@ export default class ChainedTunnel extends AbstractTunnel implements Tunnel {
     };
 
     // Attach next tunnel on error
-    candidate.onerror = (status: Status) => {
+    candidate.onerror = (error: TunnelError) => {
       candidate.onstatechange = null;
       candidate.oninstruction = null;
       candidate.onerror = null;
 
       // Do not attempt to continue using next tunnel on server timeout
-      if (status.code === StatusCode.UPSTREAM_TIMEOUT) {
+      if (error instanceof UpstreamTimeoutError) {
         this.tunnels = [];
         this.candidateTunnel = null;
 
         if (this.onerror !== null) {
-          this.onerror(status);
+          this.onerror(error);
         }
 
         return;
@@ -186,7 +186,7 @@ export default class ChainedTunnel extends AbstractTunnel implements Tunnel {
       }
 
       if (this.onerror !== null) {
-        this.onerror(status);
+        this.onerror(error);
       }
     };
   }

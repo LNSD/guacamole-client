@@ -1,47 +1,68 @@
 /* eslint-disable capitalized-comments */
 
-import { ChainedTunnel, WebSocketTunnel, HTTPTunnel } from "@guacamole-client/tunnel";
+import {
+  buildWsTunnelUrl,
+  ChainedTunnel,
+  HttpClient,
+  HTTPTunnel,
+  WebSocketTunnel
+} from '@guacamole-client/tunnel';
+import { Client } from '@guacamole-client/client';
+import { Keyboard, Mouse } from '@guacamole-client/input';
+import { ConnectableWebSocket, xhr } from '@guacamole-client/io';
 
-// @ts-ignore
-declare global {
-  interface Window {
-    Guacamole: {
-      ChainedTunnel: any;
-      WebSocketTunnel: any;
-      HTTPTunnel: any;
-      Client: any;
-      Keyboard: any;
-      Mouse: any;
-    };
-  }
-}
+// // @ts-ignore
+// declare global {
+//   interface Window {
+//     Guacamole: {
+//       ChainedTunnel: any;
+//       WebSocketTunnel: any;
+//       HTTPTunnel: any;
+//       Client: any;
+//       Keyboard: any;
+//       Mouse: any;
+//     };
+//   }
+// }
 
-// @ts-ignore
-const { Client, /* ChainedTunnel, WebSocketTunnel, HTTPTunnel, */ Mouse, Keyboard } = window.Guacamole;
+// // @ts-ignore
+// const { /* Client, ChainedTunnel, WebSocketTunnel,*/ HTTPTunnel /*, Mouse, Keyboard */ } = window.Guacamole;
 
 (async () => {
-  const response = await fetch("http://localhost:8080/guacamole/api/tokens", {
-    method: "POST",
+  const response = await fetch('http://localhost:8080/guacamole/api/tokens', {
+    method: 'POST',
     headers: {
-      accept: "application/json, text/plain, */*",
-      "content-type": "application/x-www-form-urlencoded"
+      accept: 'application/json, text/plain, */*',
+      'content-type': 'application/x-www-form-urlencoded'
     },
-    body: "username=guacadmin&password=guacadmin",
-    mode: "no-cors"
+    body: 'username=guacadmin&password=guacadmin',
+    mode: 'no-cors'
   });
 
   const json = await response.json() as Partial<{ authToken: string }>;
   const token = String(json.authToken);
 
   // Get display div from document
-  const display = document.getElementById("display");
+  const display = document.getElementById('display');
   if (display === null) {
-    throw new Error("Cannot find [id='display'] element");
+    throw new Error('Cannot find [id=\'display\'] element');
   }
 
+  // Tunnel
+  const queryParams = new URLSearchParams(window.location.search);
+  const tunnelSelector = queryParams.get('tunnel') ?? 'ws';
+
+  const ws = new ConnectableWebSocket();
+  const url = buildWsTunnelUrl('ws://localhost:8080/guacamole/websocket-tunnel');
+  const wsTunnel = new WebSocketTunnel(ws, url);
+
+  const httpFactory = xhr.create({ baseURL: 'http://localhost:8080/guacamole/tunnel' });
+  const httpClient = new HttpClient(httpFactory);
+  const httpTunnel = new HTTPTunnel(httpClient);
+
   const tunnel = new ChainedTunnel(
-    new WebSocketTunnel("ws://localhost:8080/guacamole/websocket-tunnel"),
-    new HTTPTunnel("http://localhost:8080/guacamole/tunnel")
+    (tunnelSelector === 'ws' ? wsTunnel : httpTunnel),
+    (tunnelSelector !== 'ws' ? wsTunnel : httpTunnel)
   );
 
   // Instantiate client, using the HTTP tunnel for communications.
