@@ -1,9 +1,12 @@
 {
   "version": 2,
   "projects": {
+    "client": "libs/client",
     "example": "apps/example",
     "example-e2e": "apps/example-e2e",
+    "input": "libs/input",
     "io": "libs/io",
+    "media": "libs/media",
     "protocol": "libs/protocol",
     "tunnel": "libs/tunnel"
   }
