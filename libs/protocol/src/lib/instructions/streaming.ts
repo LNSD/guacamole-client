@@ -1,5 +1,3 @@
-type Instruction = any[];
-
 /**
  * The ack instruction acknowledges a received data blob, providing a status code and message
  * indicating whether the operation associated with the blob succeeded or failed. A status code
@@ -10,6 +8,8 @@ type Instruction = any[];
  *                  interface, and mainly helps with debugging.
  * @param status - The Guacamole status code denoting success or failure.
  */
+import { Instruction } from "./instruction";
+
 export const ack = (stream: number, message: string, status: string): Instruction => ['ack', stream, message, status];
 
 
