@@ -6,22 +6,22 @@ import {
   LINE_CAP,
   LINE_JOIN,
   VisibleLayer
-} from "./display";
-import IntegerPool from "./IntegerPool";
-import { Status, StatusCode } from "./Status";
-import GuacamoleObject from "./GuacamoleObject";
-import { InputStream, OutputStream } from "@guacamole-client/io";
-import { AudioPlayer, getAudioPlayerInstance, VideoPlayer } from "@guacamole-client/media";
+} from './display';
+import IntegerPool from './IntegerPool';
+import { Status, StatusCode } from './Status';
+import GuacamoleObject from './GuacamoleObject';
+import { InputStream, OutputStream } from '@guacamole-client/io';
+import { AudioPlayer, getAudioPlayerInstance, VideoPlayer } from '@guacamole-client/media';
 import {
   ClientControl,
   ClientEvents,
   Decoder,
   ObjectInstruction,
   Streaming
-} from "@guacamole-client/protocol";
-import { Tunnel } from "@guacamole-client/tunnel";
-import { State } from "./state";
-import { MouseState } from "@guacamole-client/input";
+} from '@guacamole-client/protocol';
+import { Tunnel } from '@guacamole-client/tunnel';
+import { State } from './state';
+import { MouseState } from '@guacamole-client/input';
 
 export type OnStateChangeCallback = (state: number) => void;
 export type OnNameCallback = (name: string) => void;
@@ -232,7 +232,7 @@ export default class Client {
     // TODO Review the following lint suppression
     // eslint-disable-next-line @typescript-eslint/ban-types
   private readonly layerPropertyHandlers: Record<string, Function> = {
-    "miter-limit": (layer: Layer, value: string) => {
+    'miter-limit': (layer: Layer, value: string) => {
       this.display.setMiterLimit(layer, parseFloat(value));
     }
   };
@@ -292,7 +292,7 @@ export default class Client {
         this.onargv(stream, mimetype, name);
       } else {
         // Otherwise, unsupported
-        this.sendAck(streamIndex, "Receiving argument values unsupported", StatusCode.UNSUPPORTED);
+        this.sendAck(streamIndex, 'Receiving argument values unsupported', StatusCode.UNSUPPORTED);
       }
     },
 
@@ -318,10 +318,10 @@ export default class Client {
       // If we have successfully retrieved an audio player, send success response
       if (audioPlayer) {
         this.audioPlayers.set(streamIndex, audioPlayer);
-        this.sendAck(streamIndex, "OK", StatusCode.SUCCESS);
+        this.sendAck(streamIndex, 'OK', StatusCode.SUCCESS);
       } else {
         // Otherwise, mimetype must be unsupported
-        this.sendAck(streamIndex, "BAD TYPE", StatusCode.CLIENT_BAD_TYPE);
+        this.sendAck(streamIndex, 'BAD TYPE', StatusCode.CLIENT_BAD_TYPE);
       }
     },
 
@@ -353,7 +353,7 @@ export default class Client {
         object.onbody(stream, mimetype, name);
       } else {
         // Otherwise, unsupported
-        this.sendAck(streamIndex, "Receipt of body unsupported", StatusCode.UNSUPPORTED);
+        this.sendAck(streamIndex, 'Receipt of body unsupported', StatusCode.UNSUPPORTED);
       }
     },
 
@@ -386,7 +386,7 @@ export default class Client {
         this.onclipboard(stream, mimetype);
       } else {
         // Otherwise, unsupported
-        this.sendAck(streamIndex, "Clipboard unsupported", StatusCode.UNSUPPORTED);
+        this.sendAck(streamIndex, 'Clipboard unsupported', StatusCode.UNSUPPORTED);
       }
     },
 
@@ -532,7 +532,7 @@ export default class Client {
         this.onfile(stream, mimetype, filename);
       } else {
         // Otherwise, unsupported
-        this.sendAck(streamIndex, "File transfer unsupported", StatusCode.UNSUPPORTED);
+        this.sendAck(streamIndex, 'File transfer unsupported', StatusCode.UNSUPPORTED);
       }
     },
 
@@ -658,7 +658,7 @@ export default class Client {
         this.onpipe(stream, mimetype, name);
       } else {
         // Otherwise, unsupported
-        this.sendAck(streamIndex, "Named pipes unsupported", StatusCode.UNSUPPORTED);
+        this.sendAck(streamIndex, 'Named pipes unsupported', StatusCode.UNSUPPORTED);
       }
     },
 
@@ -843,10 +843,10 @@ export default class Client {
       // If we have successfully retrieved an video player, send success response
       if (videoPlayer) {
         this.videoPlayers.set(streamIndex, videoPlayer);
-        this.sendAck(streamIndex, "OK", StatusCode.SUCCESS);
+        this.sendAck(streamIndex, 'OK', StatusCode.SUCCESS);
       } else {
         // Otherwise, mimetype must be unsupported
-        this.sendAck(streamIndex, "BAD TYPE", StatusCode.CLIENT_BAD_TYPE);
+        this.sendAck(streamIndex, 'BAD TYPE', StatusCode.CLIENT_BAD_TYPE);
       }
     }
 
@@ -864,6 +864,11 @@ export default class Client {
       const handler = this.instructionHandlers[opcode];
       if (handler) {
         handler(parameters);
+      }
+    };
+    this.tunnel.onerror = (error) => {
+      if (this.onerror !== null) {
+        this.onerror(new Status(StatusCode.fromTunnelError(error)));
       }
     };
   }
@@ -916,7 +921,7 @@ export default class Client {
 
         // Store layer/buffer image data, if it can be generated
         if (layer.width && layer.height) {
-          exportLayer.url = canvas.toDataURL("image/png");
+          exportLayer.url = canvas.toDataURL('image/png');
         }
 
         // Add layer properties if not a buffer nor the default layer
