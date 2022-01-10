@@ -21,15 +21,21 @@ export class PcmAudioFormat {
    */
   public rate: number;
 
-  /*
-   * @constructor
-   * @param template - The object whose properties should be copied into the
-   *                   corresponding properties of the new RawAudioFormat.
+  constructor(bytesPerSample: number, rate: number, channels = 1) {
+    this.bytesPerSample = bytesPerSample;
+    this.channels = channels;
+    this.rate = rate;
+  }
+
+  /**
+   * The maximum absolute value of any sample within a raw audio packet
+   * received by this audio player. This depends only on the size of each
+   * sample, and will be 128 for 8-bit audio and 32768 for 16-bit audio.
+   *
+   * @private
    */
-  constructor(template: PcmAudioFormat) {
-    this.bytesPerSample = template.bytesPerSample;
-    this.channels = template.channels;
-    this.rate = template.rate;
+  public get maxSampleValue(): number {
+    return this.bytesPerSample === 1 ? 128 : 32768;
   }
 }
 
@@ -105,9 +111,5 @@ export function parseAudioMimeType(mimetype: string): PcmAudioFormat | null {
   }
 
   // Return parsed format details
-  return new PcmAudioFormat({
-    bytesPerSample,
-    channels,
-    rate,
-  })
+  return new PcmAudioFormat(bytesPerSample, rate, channels);
 }

@@ -23,18 +23,18 @@ const MIN_SPLIT_SIZE = 0.02;
  */
 export default class PcmAudioPlayer extends AudioPlayer {
   /**
-   * The format of audio this player will decode.
-   *
-   * @private
-   */
-  private readonly format: PcmAudioFormat;
-  /**
    * An instance of a Web Audio API AudioContext object, or null if the
    * Web Audio API is not supported.
    *
    * @private
    */
   private readonly context: AudioContext;
+  /**
+   * The format of audio this player will decode.
+   *
+   * @private
+   */
+  private readonly format: PcmAudioFormat;
   /**
    * The earliest possible time that the next packet could play without
    * overlapping an already-playing packet, in seconds. Note that while this
@@ -73,27 +73,26 @@ export default class PcmAudioPlayer extends AudioPlayer {
   /*
    * @constructor
    * @param stream - The InputStream to read audio data from.
-   * @param String} mimetype - The mimetype of the audio data in the provided stream, which must
-   *     be a "audio/L8" or "audio/L16" mimetype with necessary parameters, such as:
-   *     "audio/L16;rate=44100,channels=2".
+   * @param mimetype - The mimetype of the audio data in the provided stream, which must be a
+   *    "audio/L8" or "audio/L16" mimetype with necessary parameters, such as:
+   *    "audio/L16;rate=44100,channels=2".
    */
   constructor(stream: InputStream, mimetype: string) {
     super();
-
-    const format = parseAudioMimeType(mimetype);
-    if (format === null) {
-      throw new Error('Audio format not supported');
-    }
-
-    this.format = format;
 
     const context = AudioContextFactory.getAudioContext();
     if (context === null) {
       throw new Error('Audio context not supported');
     }
-
     this.context = context;
-    this.nextPacketTime = context.currentTime;
+
+    const format = parseAudioMimeType(mimetype);
+    if (format === null) {
+      throw new Error('Audio format not supported');
+    }
+    this.format = format;
+
+    this.nextPacketTime = this.context.currentTime;
     this.reader = new ArrayBufferReader(stream);
 
     // Defer playback of received audio packets slightly
@@ -104,7 +103,7 @@ export default class PcmAudioPlayer extends AudioPlayer {
       // Shift off an arbitrary packet of audio data from the queue (this may
       // be different in size from the packet just pushed)
       const packet = this.shiftAudioPacket();
-      if (!packet) {
+      if (packet === null) {
         return;
       }
 
@@ -117,12 +116,6 @@ export default class PcmAudioPlayer extends AudioPlayer {
       // Set up buffer source
       const source = context.createBufferSource();
       source.connect(context.destination);
-
-      // TODO Review this
-      // // Use noteOn() instead of start() if necessary
-      // if (!source.start) {
-      //   source.start = source.noteOn;
-      // }
 
       // Schedule packet
       source.buffer = this.toAudioBuffer(packet);
@@ -145,17 +138,6 @@ export default class PcmAudioPlayer extends AudioPlayer {
     return this.format.bytesPerSample === 1
       ? window.Int8Array
       : window.Int16Array;
-  }
-
-  /**
-   * The maximum absolute value of any sample within a raw audio packet
-   * received by this audio player. This depends only on the size of each
-   * sample, and will be 128 for 8-bit audio and 32768 for 16-bit audio.
-   *
-   * @private
-   */
-  private get maxSampleValue(): number {
-    return this.format.bytesPerSample === 1 ? 128 : 32768;
   }
 
   /**
@@ -184,8 +166,7 @@ export default class PcmAudioPlayer extends AudioPlayer {
    * additional parameters. Something like "audio/L8;rate=44100" would be valid,
    * however (see https://tools.ietf.org/html/rfc4856).
    *
-   * @returns {String[]}
-   *     A list of all mimetypes supported by RawAudioPlayer, excluding
+   * @returns A list of all mimetypes supported by RawAudioPlayer, excluding
    *     any parameters. If the necessary JavaScript APIs for playing raw audio
    *     are absent, this list will be empty.
    */
@@ -246,7 +227,7 @@ export default class PcmAudioPlayer extends AudioPlayer {
    * Given a single packet of audio data, splits off an arbitrary length of
    * audio data from the beginning of that packet, returning the split result
    * as an array of two packets. The split location is determined through an
-   * algorithm intended to minimize the liklihood of audible clicking between
+   * algorithm intended to minimize the likelihood of audible clicking between
    * packets. If no such split location is possible, an array containing only
    * the originally-provided audio packet is returned.
    *
@@ -323,7 +304,7 @@ export default class PcmAudioPlayer extends AudioPlayer {
    *
    * @private
    * @param data - A raw packet of audio data that should be pushed onto the
-   *              audio playback queue.
+   *               audio playback queue.
    */
   private pushAudioPacket(data: ArrayBuffer) {
     this.packetQueue.push(new this.SampleArray(data));
@@ -388,14 +369,14 @@ export default class PcmAudioPlayer extends AudioPlayer {
       this.format.rate
     );
 
-    // Convert each channel
+    // Normalize each channel
     for (let channel = 0; channel < this.format.channels; channel++) {
       const audioData = audioBuffer.getChannelData(channel);
 
       // Fill audio buffer with data for channel
       let offset = channel;
       for (let i = 0; i < samples; i++) {
-        audioData[i] = data[offset] / this.maxSampleValue;
+        audioData[i] = data[offset] / this.format.maxSampleValue;
         offset += this.format.channels;
       }
     }
