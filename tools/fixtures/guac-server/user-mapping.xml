@@ -5,5 +5,7 @@
     <param name="port">5900</param>
     <param name="read-only">false</param>
     <param name="color-depth">32</param>
+    <param name="enable-audio">true</param>
+    <param name="audio-servername">x11vnc</param>
   </authorize>
 </user-mapping>

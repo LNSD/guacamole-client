@@ -56,4 +56,4 @@ services:
       - 5900:5900
     volumes:
       - /etc/localtime:/etc/localtime
-    command: xclock -update 1
+#    command: xclock -update 1
