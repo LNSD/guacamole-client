@@ -1,13 +1,13 @@
-import RawAudioPlayer from "./raw/player";
+import PcmAudioPlayer from "./pcm/player";
 import { InputStream, OutputStream } from "@guacamole-client/io";
 import AudioPlayer from "./player";
-import RawAudioRecorder from "./raw/recorder";
+import PcmAudioRecorder from "./pcm/recorder";
 import AudioRecorder from "./recorder";
 
 export { default as AudioPlayer } from "./player";
 export { default as AudioRecorder } from "./recorder";
-export { default as RawAudioPlayer } from "./raw/player";
-export { default as RawAudioRecorder } from "./raw/recorder";
+export { default as RawAudioPlayer } from "./pcm/player";
+export { default as RawAudioRecorder } from "./pcm/recorder";
 
 /**
  * Determines whether the given mimetype is supported by any built-in
@@ -20,7 +20,7 @@ export { default as RawAudioRecorder } from "./raw/recorder";
  *          AudioPlayer, false otherwise.
  */
 export function isAudioPlayerSupportedMimetype(mimetype: string): boolean {
-  return RawAudioPlayer.isSupportedType(mimetype);
+  return PcmAudioPlayer.isSupportedType(mimetype);
 }
 
 /**
@@ -31,14 +31,14 @@ export function isAudioPlayerSupportedMimetype(mimetype: string): boolean {
  * @param stream - The InputStream to read audio data from.
  * @param mimetype - The mimetype of the audio data in the provided stream.
  *
- * @return A AudioPlayer instance supporting the given mimetype and
+ * @return An AudioPlayer instance supporting the given mimetype and
  *         reading from the given stream, or null if support for the given mimetype
  *         is absent.
  */
 export function getAudioPlayerInstance(stream: InputStream, mimetype: string): AudioPlayer | null {
   // Use raw audio player if possible
-  if (RawAudioPlayer.isSupportedType(mimetype)) {
-    return new RawAudioPlayer(stream, mimetype);
+  if (PcmAudioPlayer.isSupportedType(mimetype)) {
+    return new PcmAudioPlayer(stream, mimetype);
   }
 
   // No support for given mimetype
@@ -58,7 +58,7 @@ export function getAudioPlayerInstance(stream: InputStream, mimetype: string): A
  *          excluding any parameters.
  */
 export function getAudioPlayerSupportedTypes(): string[] {
-  return RawAudioPlayer.getSupportedTypes();
+  return PcmAudioPlayer.getSupportedTypes();
 }
 
 /**
@@ -72,7 +72,7 @@ export function getAudioPlayerSupportedTypes(): string[] {
  *          AudioRecorder, false otherwise.
  */
 export function isAudioRecorderSupportedType(mimetype: string): boolean {
-  return RawAudioRecorder.isSupportedType(mimetype);
+  return PcmAudioRecorder.isSupportedType(mimetype);
 }
 
 /**
@@ -88,7 +88,7 @@ export function isAudioRecorderSupportedType(mimetype: string): boolean {
  *          AudioRecorder, excluding any parameters.
  */
 export function getAudioRecorderSupportedTypes(): string[] {
-  return RawAudioRecorder.getSupportedTypes();
+  return PcmAudioRecorder.getSupportedTypes();
 }
 
 /**
@@ -109,8 +109,8 @@ export function getAudioRecorderSupportedTypes(): string[] {
  */
 export function getAudioRecorderInstance(stream: OutputStream, mimetype: string): AudioRecorder | null {
   // Use raw audio recorder if possible
-  if (RawAudioRecorder.isSupportedType(mimetype)) {
-    return new RawAudioRecorder(stream, mimetype);
+  if (PcmAudioRecorder.isSupportedType(mimetype)) {
+    return new PcmAudioRecorder(stream, mimetype);
   }
 
   // No support for given mimetype

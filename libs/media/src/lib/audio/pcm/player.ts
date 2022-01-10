@@ -1,4 +1,4 @@
-import RawAudioFormat from '../format';
+import { parseAudioMimeType, PcmAudioFormat } from './format';
 import AudioContextFactory from '../context';
 import AudioPlayer from '../player';
 import { ArrayBufferReader, InputStream } from '@guacamole-client/io';
@@ -21,55 +21,13 @@ const MIN_SPLIT_SIZE = 0.02;
  * audio. This player relies only on the Web Audio API and does not require any
  * browser-level support for its audio formats.
  */
-export default class RawAudioPlayer extends AudioPlayer {
-  /**
-   * Determines whether the given mimetype is supported by
-   * RawAudioPlayer.
-   *
-   * @param mimetype - The mimetype to check.
-   *
-   * @returns true if the given mimetype is supported by RawAudioPlayer,
-   *          false otherwise.
-   */
-  public static isSupportedType(mimetype: string): boolean {
-    // No supported types if no Web Audio API
-    if (!AudioContextFactory.getAudioContext()) {
-      return false;
-    }
-
-    return RawAudioFormat.parse(mimetype) !== null;
-  }
-
-  /**
-   * Returns a list of all mimetypes supported by RawAudioPlayer. Only
-   * the core mimetypes themselves will be listed. Any mimetype parameters, even
-   * required ones, will not be included in the list. For example, "audio/L8" is
-   * a raw audio mimetype that may be supported, but it is invalid without
-   * additional parameters. Something like "audio/L8;rate=44100" would be valid,
-   * however (see https://tools.ietf.org/html/rfc4856).
-   *
-   * @returns {String[]}
-   *     A list of all mimetypes supported by RawAudioPlayer, excluding
-   *     any parameters. If the necessary JavaScript APIs for playing raw audio
-   *     are absent, this list will be empty.
-   */
-  public static getSupportedTypes(): string[] {
-    // No supported types if no Web Audio API
-    if (!AudioContextFactory.getAudioContext()) {
-      return [];
-    }
-
-    // We support 8-bit and 16-bit raw PCM
-    return ['audio/L8', 'audio/L16'];
-  }
-
+export default class PcmAudioPlayer extends AudioPlayer {
   /**
    * The format of audio this player will decode.
    *
    * @private
    */
-  private readonly format: RawAudioFormat;
-
+  private readonly format: PcmAudioFormat;
   /**
    * An instance of a Web Audio API AudioContext object, or null if the
    * Web Audio API is not supported.
@@ -77,7 +35,6 @@ export default class RawAudioPlayer extends AudioPlayer {
    * @private
    */
   private readonly context: AudioContext;
-
   /**
    * The earliest possible time that the next packet could play without
    * overlapping an already-playing packet, in seconds. Note that while this
@@ -87,7 +44,6 @@ export default class RawAudioPlayer extends AudioPlayer {
    * @private
    */
   private nextPacketTime: number;
-
   /**
    * ArrayBufferReader wrapped around the audio input stream
    * provided with this RawAudioPlayer was created.
@@ -95,7 +51,6 @@ export default class RawAudioPlayer extends AudioPlayer {
    * @private
    */
   private readonly reader: ArrayBufferReader;
-
   /**
    * The maximum amount of latency to allow between the buffered data stream
    * and the playback position, in seconds. Initially, this is set to
@@ -103,34 +58,7 @@ export default class RawAudioPlayer extends AudioPlayer {
    *
    * @private
    */
-  // eslint-disable-next-line @typescript-eslint/class-literal-property-style
   private readonly maxLatency = 0.3;
-
-  /**
-   * The type of typed array that will be used to represent each audio packet
-   * internally. This will be either Int8Array or Int16Array, depending on
-   * whether the raw audio format is 8-bit or 16-bit.
-   *
-   * @private
-   * @constructor
-   */
-  private get SampleArray() {
-    return this.format.bytesPerSample === 1
-      ? window.Int8Array
-      : window.Int16Array;
-  }
-
-  /**
-   * The maximum absolute value of any sample within a raw audio packet
-   * received by this audio player. This depends only on the size of each
-   * sample, and will be 128 for 8-bit audio and 32768 for 16-bit audio.
-   *
-   * @private
-   */
-  private get maxSampleValue(): number {
-    return this.format.bytesPerSample === 1 ? 128 : 32768;
-  }
-
   /**
    * The queue of all pending audio packets, as an array of sample arrays.
    * Audio packets which are pending playback will be added to this queue for
@@ -139,25 +67,20 @@ export default class RawAudioPlayer extends AudioPlayer {
    * no further modifications can be made to that packet.
    *
    * @private
-   * @type {SampleArray[]}
    */
   private packetQueue: SampleArray[] = [];
 
   /*
    * @constructor
-   * @augments AudioPlayer
-   * @param {InputStream} stream
-   *     The InputStream to read audio data from.
-   *
-   * @param {String} mimetype
-   *     The mimetype of the audio data in the provided stream, which must be a
-   *     "audio/L8" or "audio/L16" mimetype with necessary parameters, such as:
+   * @param stream - The InputStream to read audio data from.
+   * @param String} mimetype - The mimetype of the audio data in the provided stream, which must
+   *     be a "audio/L8" or "audio/L16" mimetype with necessary parameters, such as:
    *     "audio/L16;rate=44100,channels=2".
    */
   constructor(stream: InputStream, mimetype: string) {
     super();
 
-    const format = RawAudioFormat.parse(mimetype);
+    const format = parseAudioMimeType(mimetype);
     if (format === null) {
       throw new Error('Audio format not supported');
     }
@@ -208,6 +131,72 @@ export default class RawAudioPlayer extends AudioPlayer {
       // Update timeline by duration of scheduled packet
       this.nextPacketTime += packet.length / format.channels / format.rate;
     };
+  }
+
+  /**
+   * The type of typed array that will be used to represent each audio packet
+   * internally. This will be either Int8Array or Int16Array, depending on
+   * whether the raw audio format is 8-bit or 16-bit.
+   *
+   * @private
+   * @constructor
+   */
+  private get SampleArray() {
+    return this.format.bytesPerSample === 1
+      ? window.Int8Array
+      : window.Int16Array;
+  }
+
+  /**
+   * The maximum absolute value of any sample within a raw audio packet
+   * received by this audio player. This depends only on the size of each
+   * sample, and will be 128 for 8-bit audio and 32768 for 16-bit audio.
+   *
+   * @private
+   */
+  private get maxSampleValue(): number {
+    return this.format.bytesPerSample === 1 ? 128 : 32768;
+  }
+
+  /**
+   * Determines whether the given mimetype is supported by
+   * RawAudioPlayer.
+   *
+   * @param mimetype - The mimetype to check.
+   *
+   * @returns true if the given mimetype is supported by RawAudioPlayer,
+   *          false otherwise.
+   */
+  public static isSupportedType(mimetype: string): boolean {
+    // No supported types if no Web Audio API
+    if (!AudioContextFactory.getAudioContext()) {
+      return false;
+    }
+
+    return parseAudioMimeType(mimetype) !== null;
+  }
+
+  /**
+   * Returns a list of all mimetypes supported by RawAudioPlayer. Only
+   * the core mimetypes themselves will be listed. Any mimetype parameters, even
+   * required ones, will not be included in the list. For example, "audio/L8" is
+   * a raw audio mimetype that may be supported, but it is invalid without
+   * additional parameters. Something like "audio/L8;rate=44100" would be valid,
+   * however (see https://tools.ietf.org/html/rfc4856).
+   *
+   * @returns {String[]}
+   *     A list of all mimetypes supported by RawAudioPlayer, excluding
+   *     any parameters. If the necessary JavaScript APIs for playing raw audio
+   *     are absent, this list will be empty.
+   */
+  public static getSupportedTypes(): string[] {
+    // No supported types if no Web Audio API
+    if (!AudioContextFactory.getAudioContext()) {
+      return [];
+    }
+
+    // We support 8-bit and 16-bit raw PCM
+    return ['audio/L8', 'audio/L16'];
   }
 
   /** @override */
@@ -320,7 +309,7 @@ export default class RawAudioPlayer extends AudioPlayer {
       ),
       new this.SampleArray(
         data.buffer.slice(optimalSplitLength * this.format.bytesPerSample)
-      ),
+      )
     ];
   }
 
@@ -374,11 +363,11 @@ export default class RawAudioPlayer extends AudioPlayer {
    * into isolated planes of channel-specific data.
    *
    * @private
-   * @param {SampleArray} data
+   * @param data
    *     The raw audio packet that should be converted into a Web Audio API
    *     AudioBuffer.
    *
-   * @returns {AudioBuffer}
+   * @returns
    *     A new Web Audio API AudioBuffer containing the provided audio data,
    *     converted to the format used by the Web Audio API.
    */

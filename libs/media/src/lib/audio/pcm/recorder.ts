@@ -1,5 +1,5 @@
 import { Status, StatusCode } from '../../Status';
-import RawAudioFormat from '../format';
+import { parseAudioMimeType, PcmAudioFormat } from './format';
 import AudioContextFactory from '../context';
 import AudioRecorder from '../recorder';
 import { ArrayBufferWriter, OutputStream } from '@guacamole-client/io';
@@ -36,7 +36,7 @@ const LANCZOS_WINDOW_SIZE = 3;
  *
  * @returns The value of the normalized sinc function at x.
  */
-const sinc = function (x: number): number {
+const sinc = function(x: number): number {
   // The value of sinc(0) is defined as 1
   if (x === 0) {
     return 1;
@@ -59,7 +59,7 @@ const sinc = function (x: number): number {
  * @returns The value of the Lanczos kernel at the given point for the given
  *          window size.
  */
-const lanczos = function (x: number, a: number): number {
+const lanczos = function(x: number, a: number): number {
   // Lanczos is sinc(x) * sinc(x / a) for -a < x < a ...
   if (-a < x && x < a) {
     return sinc(x) * sinc(x / a);
@@ -84,7 +84,7 @@ const lanczos = function (x: number, a: number): number {
  *
  * @returns The value of the waveform at the given location.
  */
-const interpolateSample = function (
+const interpolateSample = function(
   audioData: Float32Array,
   t: number
 ): number {
@@ -111,56 +111,14 @@ const interpolateSample = function (
  * This recorder relies only on the Web Audio API and does not require any
  * browser-level support for its audio formats.
  */
-export default class RawAudioRecorder extends AudioRecorder {
-  /**
-   * Determines whether the given mimetype is supported by
-   * RawAudioRecorder.
-   *
-   * @param {String} mimetype
-   *     The mimetype to check.
-   *
-   * @returns true if the given mimetype is supported by RawAudioRecorder,
-   *          false otherwise.
-   */
-  public static isSupportedType(mimetype: string): boolean {
-    // No supported types if no Web Audio API
-    if (AudioContextFactory.getAudioContext() === null) {
-      return false;
-    }
-
-    return RawAudioFormat.parse(mimetype) !== null;
-  }
-
-  /**
-   * Returns a list of all mimetypes supported by RawAudioRecorder. Only
-   * the core mimetypes themselves will be listed. Any mimetype parameters, even
-   * required ones, will not be included in the list. For example, "audio/L8" is
-   * a raw audio mimetype that may be supported, but it is invalid without
-   * additional parameters. Something like "audio/L8;rate=44100" would be valid,
-   * however (see https://tools.ietf.org/html/rfc4856).
-   *
-   * @returns A list of all mimetypes supported by RawAudioRecorder, excluding
-   *     any parameters. If the necessary JavaScript APIs for recording raw
-   *     audio are absent, this list will be empty.
-   */
-  public static getSupportedTypes(): string[] {
-    // No supported types if no Web Audio API
-    if (!AudioContextFactory.getAudioContext()) {
-      return [];
-    }
-
-    // We support 8-bit and 16-bit raw PCM
-    return ['audio/L8', 'audio/L16'];
-  }
-
+export default class PcmAudioRecorder extends AudioRecorder {
   /**
    * The format of audio this recorder will encode.
    *
    * @private
-   * @type {RawAudioFormat}
+   * @type {PcmAudioFormat}
    */
-  private readonly format: RawAudioFormat;
-
+  private readonly format: PcmAudioFormat;
   /**
    * An instance of a Web Audio API AudioContext object, or null if the
    * Web Audio API is not supported.
@@ -169,7 +127,6 @@ export default class RawAudioRecorder extends AudioRecorder {
    * @type {AudioContext}
    */
   private readonly context: AudioContext;
-
   /**
    * ArrayBufferWriter wrapped around the audio output stream
    * provided when this RawAudioRecorder was created.
@@ -177,7 +134,6 @@ export default class RawAudioRecorder extends AudioRecorder {
    * @private
    */
   private writer: ArrayBufferWriter;
-
   /**
    * The total number of audio samples read from the local audio input device
    * over the life of this audio recorder.
@@ -185,7 +141,6 @@ export default class RawAudioRecorder extends AudioRecorder {
    * @private
    */
   private readSamples = 0;
-
   /**
    * The total number of audio samples written to the underlying Guacamole
    * connection over the life of this audio recorder.
@@ -193,20 +148,17 @@ export default class RawAudioRecorder extends AudioRecorder {
    * @private
    */
   private writtenSamples = 0;
-
   /**
    * The audio stream provided by the browser, if allowed. If no stream has
    * yet been received, this will be null.
    */
   private mediaStream: MediaStream | null = null;
-
   /**
    * The source node providing access to the local audio input device.
    *
    * @private
    */
   private source: MediaStreamAudioSourceNode | null = null;
-
   /**
    * The script processing node which receives audio input from the media
    * stream source node as individual audio buffers.
@@ -227,7 +179,7 @@ export default class RawAudioRecorder extends AudioRecorder {
    */
   constructor(stream: OutputStream, mimetype: string) {
     super();
-    const format = RawAudioFormat.parse(mimetype);
+    const format = parseAudioMimeType(mimetype);
     if (format === null) {
       throw new Error('Audio format not supported');
     }
@@ -308,6 +260,47 @@ export default class RawAudioRecorder extends AudioRecorder {
    */
   private get maxSampleValue(): number {
     return this.format.bytesPerSample === 1 ? 128 : 32768;
+  }
+
+  /**
+   * Determines whether the given mimetype is supported by
+   * RawAudioRecorder.
+   *
+   * @param {String} mimetype
+   *     The mimetype to check.
+   *
+   * @returns true if the given mimetype is supported by RawAudioRecorder,
+   *          false otherwise.
+   */
+  public static isSupportedType(mimetype: string): boolean {
+    // No supported types if no Web Audio API
+    if (AudioContextFactory.getAudioContext() === null) {
+      return false;
+    }
+
+    return parseAudioMimeType(mimetype) !== null;
+  }
+
+  /**
+   * Returns a list of all mimetypes supported by RawAudioRecorder. Only
+   * the core mimetypes themselves will be listed. Any mimetype parameters, even
+   * required ones, will not be included in the list. For example, "audio/L8" is
+   * a raw audio mimetype that may be supported, but it is invalid without
+   * additional parameters. Something like "audio/L8;rate=44100" would be valid,
+   * however (see https://tools.ietf.org/html/rfc4856).
+   *
+   * @returns A list of all mimetypes supported by RawAudioRecorder, excluding
+   *     any parameters. If the necessary JavaScript APIs for recording raw
+   *     audio are absent, this list will be empty.
+   */
+  public static getSupportedTypes(): string[] {
+    // No supported types if no Web Audio API
+    if (!AudioContextFactory.getAudioContext()) {
+      return [];
+    }
+
+    // We support 8-bit and 16-bit raw PCM
+    return ['audio/L8', 'audio/L16'];
   }
 
   /**
@@ -429,7 +422,7 @@ export default class RawAudioRecorder extends AudioRecorder {
   private beginAudioCapture() {
     // Attempt to retrieve an audio input stream from the browser
     const promise = navigator.mediaDevices.getUserMedia({
-      audio: true,
+      audio: true
     });
 
     // Handle stream creation/rejection via Promise for newer versions of
