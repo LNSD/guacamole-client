@@ -254,10 +254,7 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
       const endAngle = parseFloat(parameters[5]);
       const negative = parseInt(parameters[6], 10);
 
-      // Get layer
-      const layer = this.getLayer(layerIndex);
-
-      this.display.arc(layer, x, y, radius, startAngle, endAngle, negative !== 0);
+      this.handleArcInstruction(layerIndex, x, y, radius, startAngle, endAngle, negative);
     },
 
     argv: (parameters: string[]) => {
@@ -282,6 +279,7 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
       this.handleBlobInstruction(streamIndex, data);
     },
 
+    // TODO: Pending
     body: (parameters: string[]) => {
       // Get object
       const objectIndex = parseInt(parameters[0], 10);
@@ -387,6 +385,7 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
       this.handleDisconnectInstruction();
     },
 
+    // TODO: Pending
     dispose: (parameters: string[]) => {
       const layerIndex = parseInt(parameters[0], 10);
 
@@ -478,9 +477,9 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
     lfill: (parameters: string[]) => {
       const channelMask = parseInt(parameters[0], 10);
       const layerIndex = parseInt(parameters[1], 10);
-      const srcLayer = this.getLayer(parseInt(parameters[2], 10));
+      const srcLayerIndex = parseInt(parameters[2], 10);
 
-      this.handleLfillInstruction(layerIndex, channelMask, srcLayer);
+      this.handleLfillInstruction(layerIndex, channelMask, srcLayerIndex);
     },
 
     line: (parameters: string[]) => {
@@ -526,6 +525,7 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
       this.handleNameInstruction(parameters);
     },
 
+    // TODO: Pending
     nest: (parameters: string[]) => {
       const parser = this.getParser(parseInt(parameters[0], 10));
       parser.receive(parameters[1]);
@@ -546,11 +546,7 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
       const y = parseInt(parameters[3], 10);
       const data = parameters[4];
 
-      // Get layer
-      const layer = this.getLayer(layerIndex);
-
-      this.display.setChannelMask(layer, channelMask);
-      this.display.draw(layer, x, y, `data:image/png;base64,${data}`);
+      this.handlePngInstruction(layerIndex, channelMask, x, y, data);
     },
 
     pop: (parameters: string[]) => {
@@ -561,20 +557,18 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
 
     push: (parameters: string[]) => {
       const layerIndex = parseInt(parameters[0], 10);
-const layer = this.getLayer(layerIndex);
 
-      this.display.push(layer);
+      this.handlePushInstruction(layerIndex);
     },
 
     rect: (parameters: string[]) => {
       const layerIndex = parseInt(parameters[0], 10);
-const layer = this.getLayer(layerIndex);
       const x = parseInt(parameters[1], 10);
       const y = parseInt(parameters[2], 10);
       const w = parseInt(parameters[3], 10);
       const h = parseInt(parameters[4], 10);
 
-      this.display.rect(layer, x, y, w, h);
+      this.handleRectInstruction(layerIndex, x, y, w, h);
     },
 
     required: (parameters: string[]) => {
@@ -587,11 +581,13 @@ const layer = this.getLayer(layerIndex);
       this.handleResetInstruction(layerIndex);
     },
 
+    // TODO: Pending
     set: (parameters: string[]) => {
       const layerIndex = parseInt(parameters[0], 10);
-const layer = this.getLayer(layerIndex);
       const name = parameters[1];
       const value = parameters[2];
+
+      const layer = this.getLayer(layerIndex);
 
       // Call property handler if defined
       const handler = this.layerPropertyHandlers.get(name);
@@ -617,13 +613,13 @@ const layer = this.getLayer(layerIndex);
 
     start: (parameters: string[]) => {
       const layerIndex = parseInt(parameters[0], 10);
-const layer = this.getLayer(layerIndex);
       const x = parseInt(parameters[1], 10);
       const y = parseInt(parameters[2], 10);
 
-      this.display.moveTo(layer, x, y);
+      this.handleStartInstruction(layerIndex, x, y);
     },
 
+    // TODO: Pending
     sync: (parameters: string[]) => {
       const timestamp = parseInt(parameters[0], 10);
 
@@ -696,10 +692,12 @@ const layer = this.getLayer(layerIndex);
   };
 
 
-  /*
-                                                                         * @constructor
-                                                                         * @param tunnel - The tunnel to use to send and receive Guacamole instructions.
-                                                                         */
+
+  /**
+   * @constructor
+   *
+   * @param tunnel - The tunnel to use to send and receive Guacamole instructions.
+   */
   constructor(private readonly tunnel: Tunnel) {
     this.outputStreams = new OutputStreamsManager(this);
     this.inputStreams = new InputStreamsManager(this);
@@ -1251,6 +1249,11 @@ const layer = this.getLayer(layerIndex);
   //</editor-fold>
   //<editor-fold defaultstate="collapsed" desc="DisplayHandler">
 
+  private handleArcInstruction(layerIndex: number, x: number, y: number, radius: number, startAngle: number, endAngle: number, negative: number) {
+    const layer = this.getLayer(layerIndex);
+    this.display.arc(layer, x, y, radius, startAngle, endAngle, negative !== 0);
+  }
+
   private handleCfillInstruction(layerIndex: number, channelMask: number, r: number, g: number, b: number, a: number) {
     const layer = this.getLayer(layerIndex);
     this.display.setChannelMask(layer, channelMask);
@@ -1311,8 +1314,9 @@ const layer = this.getLayer(layerIndex);
     this.display.draw(layer, x, y, `data:image/jpeg;base64,${data}`);
   }
 
-  private handleLfillInstruction(layerIndex: number, channelMask: number, srcLayer: VisibleLayer) {
+  private handleLfillInstruction(layerIndex: number, channelMask: number, srcLayerIndex: number) {
     const layer = this.getLayer(layerIndex);
+    const srcLayer = this.getLayer(srcLayerIndex);
     this.display.setChannelMask(layer, channelMask);
     this.display.fillLayer(layer, srcLayer);
   }
@@ -1347,9 +1351,25 @@ const layer = this.getLayer(layerIndex);
     this.display.move(layer, parent, x, y, z);
   }
 
+  private handlePngInstruction(layerIndex: number, channelMask: number, x: number, y: number, data: string) {
+    const layer = this.getLayer(layerIndex);
+    this.display.setChannelMask(layer, channelMask);
+    this.display.draw(layer, x, y, `data:image/png;base64,${data}`);
+  }
+
   private handlePopInstruction(layerIndex: number) {
     const layer = this.getLayer(layerIndex);
     this.display.pop(layer);
+  }
+
+  private handlePushInstruction(layerIndex: number) {
+    const layer = this.getLayer(layerIndex);
+    this.display.push(layer);
+  }
+
+  private handleRectInstruction(layerIndex: number, x: number, y: number, w: number, h: number) {
+    const layer = this.getLayer(layerIndex);
+    this.display.rect(layer, x, y, w, h);
   }
 
   private handleResetInstruction(layerIndex: number) {
@@ -1370,6 +1390,11 @@ const layer = this.getLayer(layerIndex);
   private handleSizeInstruction(layerIndex: number, width: number, height: number) {
     const layer = this.getLayer(layerIndex);
     this.display.resize(layer, width, height);
+  }
+
+  private handleStartInstruction(layerIndex: number, x: number, y: number) {
+    const layer = this.getLayer(layerIndex);
+    this.display.moveTo(layer, x, y);
   }
 
   private handleTransferInstruction(srcLayerIndex: number, dstLayerIndex: number, functionIndex: number, srcX: number, srcY: number, srcWidth: number, srcHeight: number, dstX: number, dstY: number) {
