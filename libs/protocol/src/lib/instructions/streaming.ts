@@ -1,4 +1,4 @@
-import { createInstruction, InstructionElements } from './instruction';
+import { createInstruction } from './instruction';
 
 // Streaming instructions
 const ACK_OPCODE = 'ack';
@@ -26,7 +26,7 @@ const VIDEO_OPCODE = 'video';
 export type AckHandler = (stream: number, message: string, status: number) => void;
 
 export const ack = createInstruction<AckHandler>(ACK_OPCODE,
-  (stream: number, message: string, status: number): InstructionElements => [stream, message, status],
+  (stream: number, message: string, status: number) => [stream, message, status],
   (handler: AckHandler) => (params) => {
     const streamIndex = parseInt(params[0], 10);
     const message = params[1];
@@ -52,7 +52,7 @@ export const ack = createInstruction<AckHandler>(ACK_OPCODE,
 export type ArgvHandler = (stream: number, mimetype: string, name: string) => void;
 
 export const argv = createInstruction<ArgvHandler>(ARGV_OPCODE,
-  (stream: number, mimetype: string, name: string): InstructionElements => [stream, mimetype, name],
+  (stream: number, mimetype: string, name: string) => [stream, mimetype, name],
   (handler: ArgvHandler) => (params) => {
     const streamIndex = parseInt(params[0], 10);
     const mimetype = params[1];
@@ -75,7 +75,7 @@ export const argv = createInstruction<ArgvHandler>(ARGV_OPCODE,
 export type AudioHandler = (stream: number, mimetype: string) => void;
 
 export const audio = createInstruction<AudioHandler>(AUDIO_OPCODE,
-  (stream: number, mimetype: string): InstructionElements => [stream, mimetype],
+  (stream: number, mimetype: string) => [stream, mimetype],
   (handler: AudioHandler) => (params) => {
     const streamIndex = parseInt(params[0], 10);
     const mimetype = params[1];
@@ -95,7 +95,7 @@ export const audio = createInstruction<AudioHandler>(AUDIO_OPCODE,
 export type BlobHandler = (stream: number, data: string) => void;
 
 export const blob = createInstruction<BlobHandler>(BLOB_OPCODE,
-  (stream: number, data: string): InstructionElements => [stream, data],
+  (stream: number, data: string) => [stream, data],
   (handler: BlobHandler) => (params) => {
     const streamIndex = parseInt(params[0], 10);
     const data = params[1];
@@ -116,7 +116,7 @@ export const blob = createInstruction<BlobHandler>(BLOB_OPCODE,
 export type ClipboardHandler = (stream: number, mimetype: string) => void;
 
 export const clipboard = createInstruction<ClipboardHandler>(CLIPBOARD_OPCODE,
-  (stream: number, mimetype: string): InstructionElements => [stream, mimetype],
+  (stream: number, mimetype: string) => [stream, mimetype],
   (handler: ClipboardHandler) => (params) => {
     const streamIndex = parseInt(params[0], 10);
     const mimetype = params[1];
@@ -136,7 +136,7 @@ export const clipboard = createInstruction<ClipboardHandler>(CLIPBOARD_OPCODE,
 export type EndHandler = (stream: number) => void;
 
 export const end = createInstruction<EndHandler>( END_OPCODE,
-  (stream: number): InstructionElements => [stream],
+  (stream: number) => [stream],
   (handler: EndHandler) => (params) => {
     const streamIndex = parseInt(params[0], 10);
 
@@ -158,7 +158,13 @@ export type FileHandler = (stream: number, mimetype: string, filename: string) =
 
 export const file = createInstruction<FileHandler>(FILE_OPCODE,
   (stream: number, mimetype: string, filename: string) => [stream, mimetype, filename],
-  (handler: FileHandler) => (params) => {},
+  (handler: FileHandler) => (params) => {
+    const streamIndex = parseInt(params[0], 10);
+    const mimetype = params[1];
+    const filename = params[2];
+
+    handler(streamIndex, mimetype, filename);
+  },
 );
 
 
@@ -169,19 +175,28 @@ export const file = createInstruction<FileHandler>(FILE_OPCODE,
  * of time.
  *
  * @param stream - The index of the stream to allocate.
- * @param mimetype - The mimetype of the image being sent.
- * @param mask - The channel mask to apply when drawing the image data.
  * @param layer - The destination layer.
+ * @param mask - The channel mask to apply when drawing the image data.
  * @param x - The X coordinate of the upper-left corner of the destination within the destination
  *            layer.
  * @param y - The Y coordinate of the upper-left corner of the destination within the destination
  *            layer.
+ * @param mimetype - The mimetype of the image being sent.
  */
-export type ImgHandler = (stream: number, mimetype: string, mask: string, layer: number, x: number, y: number) => void;
+export type ImgHandler = (stream: number, layer: number, channelMask: number, x: number, y: number, mimetype: string) => void;
 
 export const img = createInstruction<ImgHandler>(IMG_OPCODE,
-  (stream: number, mimetype: string, mask: string, layer: number, x: number, y: number) => [stream, mimetype, mask, layer, x, y],
-  (handler: ImgHandler) => (params) => {},
+  (stream: number, layer: number, channelMask: number, x: number, y: number, mimetype: string) => [stream, layer, channelMask, x, y, mimetype],
+  (handler: ImgHandler) => (params) => {
+    const streamIndex = parseInt(params[0], 10);
+    const channelMask = parseInt(params[1], 10);
+    const layerIndex = parseInt(params[2], 10);
+    const mimetype = params[3];
+    const x = parseInt(params[4], 10);
+    const y = parseInt(params[5], 10);
+
+    handler(streamIndex, layerIndex, channelMask, x, y, mimetype);
+  },
 );
 
 /**
@@ -199,7 +214,12 @@ export type NestHandler = (index: number, data: string) => void;
 
 export const nest = createInstruction<NestHandler>(NEST_OPCODE,
   (index: number, data: string) => [index, data],
-  (handler: NestHandler) => (params) => {},
+  (handler: NestHandler) => (params) => {
+    const parserIndex = parseInt(params[0], 10);
+    const packet = params[1];
+
+    handler(parserIndex, packet);
+  },
 );
 
 /**
@@ -217,7 +237,12 @@ export type PipeHandler = (stream: number, mimetype: string, name: string) => vo
 
 export const pipe = createInstruction<PipeHandler>(PIPE_OPCODE,
   (stream: number, mimetype: string, name: string) => [stream, mimetype, name],
-  (handler: PipeHandler) => (params) => {},
+  (handler: PipeHandler) => (params) => {      const streamIndex = parseInt(params[0], 10);
+    const mimetype = params[1];
+    const name = params[2];
+
+    handler(streamIndex, mimetype, name);
+  },
 );
 
 
@@ -238,5 +263,10 @@ export type VideoHandler = (stream: number, layer: number, mimetype: string) => 
 
 export const video = createInstruction<VideoHandler>(VIDEO_OPCODE,
   (stream: number, layer: number, mimetype: string) => [stream, layer, mimetype],
-  (handler: VideoHandler) => (params) => {},
+  (handler: VideoHandler) => (params) => {      const streamIndex = parseInt(params[0], 10);
+    const layerIndex = parseInt(params[1], 10);
+    const mimetype = params[2];
+
+    handler(streamIndex, layerIndex, mimetype);
+  },
 );
