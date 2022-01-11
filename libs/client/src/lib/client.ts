@@ -250,7 +250,12 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
 
       // Signal ack if handler defined
       if (stream.onack) {
-        stream.onack(new Status(code, reason));
+        let error = undefined;
+        if (code >= 0x0100) {
+          error = new StreamError(reason, code);
+        }
+
+        stream.onack(error);
       }
 
       // If code is an error, invalidate stream if not already
@@ -1075,11 +1080,9 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
   /**
    * Acknowledge receipt of a blob on the stream with the given index.
    *
-   * @param index - The index of the stream associated with the
-   *                received blob.
-   * @param message - A human-readable message describing the error
-   *                  or status.
-   * @param code - The error code, if any, or 0 for success.
+   * @param index - The index of the stream associated with the received blob.
+   * @param error - A human-readable message describing the error or status.
+   *                The error code, if any, or 0 for success.
    */
   public sendAck(index: number, error?: StreamError) {
     // Do not send requests if not connected

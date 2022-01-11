@@ -1,10 +1,10 @@
 // TODO Review the following lint suppression
 /* eslint-disable no-bitwise */
+import { StreamError } from '..';
 import { ArrayBufferWriter } from './ArrayBufferWriter';
 import { OutputStream } from './OutputStream';
-import { Status } from './Status';
 
-export type OnAckCallback = (status: Status) => void;
+export type OnAckCallback = (error?: StreamError) => void;
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const BUFFER_SIZE = 8192;
@@ -16,8 +16,8 @@ const BUFFER_SIZE = 8192;
 export class StringWriter {
   /**
    * Fired for received data, if acknowledged by the server.
-   * @event
-   * @param {Status} status The status of the operation.
+   *
+   * @param error - The status of the operation.
    */
   public onack: OnAckCallback | null = null;
   /**

@@ -2,7 +2,7 @@ import { Status, StatusCode } from '../../Status';
 import { parseAudioMimeType, PcmAudioFormat } from './format';
 import AudioContextFactory from '../context';
 import AudioRecorder from '../recorder';
-import { ArrayBufferWriter, OutputStream } from '@guacamole-client/io';
+import { ArrayBufferWriter, OutputStream, StreamError } from '@guacamole-client/io';
 
 /**
  * The size of audio buffer to request from the Web Audio API when
@@ -214,9 +214,9 @@ export default class PcmAudioRecorder extends AudioRecorder {
     this.writer = new ArrayBufferWriter(stream);
 
     // Once audio stream is successfully open, request and begin reading audio
-    this.writer.onack = (status: Status) => {
+    this.writer.onack = (error?: StreamError) => {
       // Begin capture if successful response and not yet started
-      if (status.code === StatusCode.SUCCESS && !this.mediaStream) {
+      if (error === undefined && !this.mediaStream) {
         this.beginAudioCapture();
       } else {
         // Otherwise stop capture and cease handling any further acks
@@ -225,7 +225,7 @@ export default class PcmAudioRecorder extends AudioRecorder {
         this.writer.onack = null;
 
         // Notify if stream has closed normally
-        if (status.code === StatusCode.RESOURCE_CLOSED) {
+        if (error?.code === StatusCode.RESOURCE_CLOSED) {
           if (this.onclose !== null) {
             this.onclose();
           }

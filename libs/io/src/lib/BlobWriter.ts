@@ -1,8 +1,8 @@
 import { ArrayBufferWriter } from './ArrayBufferWriter';
 import { OutputStream } from './OutputStream';
-import { Status } from './Status';
+import { StreamError } from './error';
 
-export type OnAckCallback = (status: Status) => void;
+export type OnAckCallback = (error?: StreamError) => void;
 export type OnErrorCallback = (blob: Blob, offset: number, error: DOMException | null) => void;
 export type OnProgressCallback = (blob: Blob, number: number) => void;
 export type OnCompleteCallback = (blob: Blob) => void;
@@ -21,7 +21,6 @@ export class BlobWriter {
    * provided file data.
    *
    * @private
-   * @type {ArrayBufferWriter}
    */
   arrayBufferWriter: ArrayBufferWriter;
 
@@ -29,8 +28,7 @@ export class BlobWriter {
    * Fired for received data, if acknowledged by the server.
    *
    * @event
-   * @param {Status} status
-   *     The status of the operation.
+   * @param error - The status of the operation.
    */
   onack: OnAckCallback | null = null;
 
@@ -39,15 +37,9 @@ export class BlobWriter {
    * [sendBlob()]{@link BlobWriter#sendBlob}. The transfer for the
    * the given blob will cease, but the stream will remain open.
    *
-   * @event
-   * @param {Blob} blob
-   *     The blob that was being read when the error occurred.
-   *
-   * @param {Number} offset
-   *     The offset of the failed read attempt within the blob, in bytes.
-   *
-   * @param {DOMError} error
-   *     The error that occurred.
+   * @param blob - The blob that was being read when the error occurred.
+   * @param offset - The offset of the failed read attempt within the blob, in bytes.
+   * @param error - The error that occurred.
    */
   onerror: OnErrorCallback | null = null;
 
@@ -55,10 +47,7 @@ export class BlobWriter {
    * Fired for each successfully-read chunk of data as a blob is being sent
    * via [sendBlob()]{@link BlobWriter#sendBlob}.
    *
-   * @event
-   * @param {Blob} blob
-   *     The blob that is being read.
-   *
+   * @param blob - The blob that is being read.
    * @param offset - The offset of the read that just succeeded.
    */
   onprogress: OnProgressCallback | null = null;
@@ -68,9 +57,7 @@ export class BlobWriter {
    * [sendBlob()]{@link BlobWriter#sendBlob} has finished being
    * sent.
    *
-   * @event
-   * @param {Blob} blob
-   *     The blob that was sent.
+   * @param blob - The blob that was sent.
    */
   oncomplete: OnCompleteCallback | null = null;
 
@@ -78,9 +65,9 @@ export class BlobWriter {
     this.arrayBufferWriter = new ArrayBufferWriter(stream);
 
     // Initially, simply call onack for acknowledgements
-    this.arrayBufferWriter.onack = (status: Status) => {
+    this.arrayBufferWriter.onack = (error?: StreamError) => {
       if (this.onack !== null) {
-        this.onack(status);
+        this.onack(error);
       }
     };
   }
@@ -137,13 +124,13 @@ export class BlobWriter {
 
       // Continue sending more chunks after the latest chunk is
       // acknowledged
-      this.arrayBufferWriter.onack = (status: Status) => {
+      this.arrayBufferWriter.onack = (error?: StreamError) => {
         if (this.onack !== null) {
-          this.onack(status);
+          this.onack(error);
         }
 
         // Abort transfer if an error occurs
-        if (status.isError()) {
+        if (error) {
           return;
         }
 
@@ -184,7 +171,6 @@ export class BlobWriter {
    *
    * @private
    * @param blob - The Blob to slice.
-   *
    * @param start - The starting offset of the slice, in bytes, inclusive.
    * @param end - The ending offset of the slice, in bytes, exclusive.
    * @returns A Blob containing the data within the given Blob starting at

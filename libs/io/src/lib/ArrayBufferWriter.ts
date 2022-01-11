@@ -1,7 +1,7 @@
-import { Status } from './Status';
 import { OutputStream } from './OutputStream';
+import { StreamError } from './error';
 
-export type OnAckCallback = (status: Status) => void;
+export type OnAckCallback = (error?: StreamError) => void;
 
 /**
  * The default maximum blob length for new ArrayBufferWriter
@@ -20,8 +20,8 @@ const DEFAULT_BLOB_LENGTH = 6048;
 export class ArrayBufferWriter {
   /**
    * Fired for received data, if acknowledged by the server.
-   * @event
-   * @param {Status} status The status of the operation.
+   *
+   * @param error - The status of the operation.
    */
   public onack: OnAckCallback | null = null;
 
@@ -46,9 +46,9 @@ export class ArrayBufferWriter {
   */
   constructor(private readonly stream: OutputStream) {
     // Simply call onack for acknowledgements
-    this.stream.onack = (status: any) => {
+    this.stream.onack = (error?: StreamError) => {
       if (this.onack !== null) {
-        this.onack(status);
+        this.onack(error);
       }
     };
   }
@@ -56,7 +56,7 @@ export class ArrayBufferWriter {
   /**
    * Sends the given data.
    *
-   * @param {ArrayBuffer|TypedArray} data The data to send.
+   * @param data - The data to send.
    */
   public sendData(data: string | ArrayBuffer | ArrayBufferLike) {
     let bytes: Uint8Array;
