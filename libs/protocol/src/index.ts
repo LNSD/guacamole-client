@@ -10,3 +10,5 @@ export * as ObjectInstruction from "./lib/instructions/object-instruction";
 export * as ServerControl from "./lib/instructions/server-control";
 export * as ServerHandshake from "./lib/instructions/server-handshake";
 export * as Streaming from "./lib/instructions/streaming";
+
+export type {DrawingInstructionHandlers } from './lib/instructions/drawing';
