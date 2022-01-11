@@ -1,12 +1,12 @@
 export type InstructionElements = any[];
-export type InstructionParamsParser<H> = (params: string[], handler: H) => void;
+export type InstructionParamsParser<H> = (handler: H) => (params: string[]) => void;
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export function createInstruction<H>(opcode: string, creator: Function, parser: InstructionParamsParser<H>): any {
   function elementsCreator(...args: any[]) {
     const prepared = creator(...args);
     if (!prepared) {
-      throw new Error('creator did not return an instruction elements array');
+      throw new Error('creator did not return any instruction elements array');
     }
 
     return [opcode, ...prepared];
@@ -15,6 +15,6 @@ export function createInstruction<H>(opcode: string, creator: Function, parser: 
   return Object.assign(elementsCreator, {
     opcode,
     parser,
-    toString: () => `${opcode}`
+    toString: () => `${opcode}`,
   });
 }

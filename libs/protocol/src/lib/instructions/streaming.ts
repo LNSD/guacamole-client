@@ -27,7 +27,7 @@ export type AckHandler = (stream: number, message: string, status: number) => vo
 
 export const ack = createInstruction<AckHandler>(ACK_OPCODE,
   (stream: number, message: string, status: number): InstructionElements => [stream, message, status],
-  (params: string[], handler: AckHandler): void => {
+  (handler: AckHandler) => (params) => {
     const streamIndex = parseInt(params[0], 10);
     const message = params[1];
     const code = parseInt(params[2], 10);
@@ -49,7 +49,18 @@ export const ack = createInstruction<AckHandler>(ACK_OPCODE,
  *                   this will be "text/plain".
  * @param name - The name of the connection parameter whose value is being sent.
  */
-export const argv = (stream: number, mimetype: string, name: string): InstructionElements => [ARGV_OPCODE, stream, mimetype, name];
+export type ArgvHandler = (stream: number, mimetype: string, name: string) => void;
+
+export const argv = createInstruction<ArgvHandler>(ARGV_OPCODE,
+  (stream: number, mimetype: string, name: string): InstructionElements => [stream, mimetype, name],
+  (handler: ArgvHandler) => (params) => {
+    const streamIndex = parseInt(params[0], 10);
+    const mimetype = params[1];
+    const name = params[2];
+
+    handler(streamIndex, mimetype, name);
+  }
+);
 
 
 /**
@@ -61,7 +72,17 @@ export const argv = (stream: number, mimetype: string, name: string): Instructio
  * @param stream - The index of the stream to allocate.
  * @param mimetype - The mimetype of the audio data being sent.
  */
-export const audio = (stream: number, mimetype: string): InstructionElements => [AUDIO_OPCODE, stream, mimetype];
+export type AudioHandler = (stream: number, mimetype: string) => void;
+
+export const audio = createInstruction<AudioHandler>(AUDIO_OPCODE,
+  (stream: number, mimetype: string): InstructionElements => [stream, mimetype],
+  (handler: AudioHandler) => (params) => {
+    const streamIndex = parseInt(params[0], 10);
+    const mimetype = params[1];
+
+    handler(streamIndex, mimetype);
+  }
+);
 
 /**
  * Sends a blob of data along the given stream. This blob of data is arbitrary, base64-encoded data,
@@ -71,8 +92,17 @@ export const audio = (stream: number, mimetype: string): InstructionElements => 
  * @param stream - The index of the stream along which the given data should be sent.
  * @param data - The base64-encoded data to send.
  */
-export const blob = (stream: number, data: string): InstructionElements => [BLOB_OPCODE, stream, data];
+export type BlobHandler = (stream: number, data: string) => void;
 
+export const blob = createInstruction<BlobHandler>(BLOB_OPCODE,
+  (stream: number, data: string): InstructionElements => [stream, data],
+  (handler: BlobHandler) => (params) => {
+    const streamIndex = parseInt(params[0], 10);
+    const data = params[1];
+
+    handler(streamIndex, data);
+  }
+);
 /**
  * Allocates a new stream, associating it with the given clipboard metadata. The clipboard data will
  * later be sent along the stream with blob instructions. If sent by the client, this data will be
@@ -83,7 +113,17 @@ export const blob = (stream: number, data: string): InstructionElements => [BLOB
  * @param mimetype - The mimetype of the clipboard data being sent. In most cases, this will be
  *                   "text/plain".
  */
-export const clipboard = (stream: number, mimetype: string): InstructionElements => [CLIPBOARD_OPCODE, stream, mimetype];
+export type ClipboardHandler = (stream: number, mimetype: string) => void;
+
+export const clipboard = createInstruction<ClipboardHandler>(CLIPBOARD_OPCODE,
+  (stream: number, mimetype: string): InstructionElements => [stream, mimetype],
+  (handler: ClipboardHandler) => (params) => {
+    const streamIndex = parseInt(params[0], 10);
+    const mimetype = params[1];
+
+    handler(streamIndex, mimetype);
+  },
+);
 
 
 /**
@@ -93,7 +133,16 @@ export const clipboard = (stream: number, mimetype: string): InstructionElements
  *
  * @param stream - The index of the stream the corresponding blob was received on.
  */
-export const end = (stream: number): InstructionElements => [END_OPCODE, stream];
+export type EndHandler = (stream: number) => void;
+
+export const end = createInstruction<EndHandler>( END_OPCODE,
+  (stream: number): InstructionElements => [stream],
+  (handler: EndHandler) => (params) => {
+    const streamIndex = parseInt(params[0], 10);
+
+    handler(streamIndex);
+  },
+);
 
 
 /**
@@ -105,6 +154,8 @@ export const end = (stream: number): InstructionElements => [END_OPCODE, stream]
  * @param mimetype - The mimetype of the file being sent.
  * @param filename - The name of the file, as it would be saved on a filesystem.
  */
+export type FileHandler = (stream: number, mimetype: string, filename: string) => void;
+
 export const file = (stream: number, mimetype: string, filename: string): InstructionElements => [FILE_OPCODE, stream, mimetype, filename];
 
 
@@ -123,6 +174,8 @@ export const file = (stream: number, mimetype: string, filename: string): Instru
  * @param y - The Y coordinate of the upper-left corner of the destination within the destination
  *            layer.
  */
+export type ImgHandler = (stream: number, mimetype: string, mask: string, layer: number, x: number, y: number) => void;
+
 export const img = (stream: number, mimetype: string, mask: string, layer: number, x: number, y: number): InstructionElements => [IMG_OPCODE, stream, mimetype, mask, layer, x, y];
 
 /**
@@ -136,6 +189,8 @@ export const img = (stream: number, mimetype: string, mask: string, layer: numbe
  *                arbitrary, and denotes only how nested data should be reassembled.
  * @param data - The protocol data, containing part of one or more instructions.
  */
+export type NestHandler = (index: number, data: string) => void;
+
 export const nest = (index: number, data: string): InstructionElements => [NEST_OPCODE, index, data];
 
 /**
@@ -149,6 +204,8 @@ export const nest = (index: number, data: string): InstructionElements => [NEST_
  * @param mimetype - The mimetype of the data being sent along the pipe.
  * @param name - The arbitrary name of the pipe, which may have special meaning to client-side code.
  */
+export type PipeHandler = (stream: number, mimetype: string, name: string) => void;
+
 export const pipe = (stream: number, mimetype: string, name: string): InstructionElements => [PIPE_OPCODE, stream, mimetype, name];
 
 
@@ -165,4 +222,6 @@ export const pipe = (stream: number, mimetype: string, name: string): Instructio
  *                hardware decoding.
  * @param mimetype - The mimetype of the video data being sent.
  */
+export type VideoHandler = (stream: number, layer: number, mimetype: string) => void;
+
 export const video = (stream: number, layer: number, mimetype: string): InstructionElements => [VIDEO_OPCODE, stream, layer, mimetype];

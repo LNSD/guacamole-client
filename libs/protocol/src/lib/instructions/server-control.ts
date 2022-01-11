@@ -1,9 +1,11 @@
-import { InstructionElements } from "./instructionElements";
+import { InstructionElements } from "./instruction";
 
 /**
  * Notifies the client that the connection is about to be closed by the server. This message can be
  * sent by the server during any phase, and takes no parameters.
  */
+export type DisconnectHandler = () => void;
+
 export const disconnect = (): InstructionElements => ['disconnect'];
 
 /**
@@ -14,6 +16,8 @@ export const disconnect = (): InstructionElements => ['disconnect'];
  * @param status - The Guacamole status code describing the error. For a list of status codes, see
  *                 the table in the section called “Status codes”.
  */
+export type ErrorHandler = (text: string, status: number) => void;
+
 export const error = (text: string, status: number): InstructionElements => ['error', text, status];
 
 /**
@@ -24,6 +28,8 @@ export const error = (text: string, status: number): InstructionElements => ['er
  *
  * @param message - An arbitrary, human-readable message.
  */
+export type LogHandler = (message: string) => void;
+
 export const log = (message: string): InstructionElements => ['log', message];
 
 /**
@@ -32,6 +38,8 @@ export const log = (message: string): InstructionElements => ['log', message];
  * @param x - The current X coordinate of the mouse pointer.
  * @param y - The current Y coordinate of the mouse pointer.
  */
+export type MouseHandler = (x: number, y: number) => void;
+
 export const mouse = (x: number, y: number): InstructionElements => ['mouse', x, y];
 
 
@@ -40,6 +48,8 @@ export const mouse = (x: number, y: number): InstructionElements => ['mouse', x,
  * ignored by Guacamole clients. Its main use is as a keep-alive signal, and may be sent by guacd
  * or client plugins when there is no activity to ensure the socket is not closed due to timeout.
  */
+export type NopHandler = () => void;
+
 export const nop = () => ['nop'];
 
 /**
@@ -52,6 +62,8 @@ export const nop = () => ['nop'];
  *             unique from all existing and future connections, and may not match the name of any
  *             installed protocol support (such as "vnc" or "rdp").
  */
+export type ReadyHandler = (id: string) => void;
+
 export const ready = (id: string): InstructionElements => ['ready', id];
 
 
@@ -64,4 +76,6 @@ export const ready = (id: string): InstructionElements => ['ready', id];
  *
  * @param timestamp - A valid server-relative timestamp.
  */
+export type SyncHandler = (timestamp: number) => void;
+
 export const sync = (timestamp: number): InstructionElements => ['sync', timestamp];

@@ -1013,12 +1013,8 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
    * @private
    */
   private registerInstructionRoutes() {
-    this.instructionRouter.addInstructionHandler(Streaming.ack.opcode, (params: string[]) => {
-      Streaming.ack.parser(params, (streamIndex, message, code) => {
-        this.handleAckInstruction(streamIndex, message, code);
-      })
+    this.registerStreamingInstructionRoutes(this.instructionRouter);
 
-    });
     this.instructionRouter.addInstructionHandler('arc', (params: string[]) => {
       const layerIndex = parseInt(params[0], 10);
       const x = parseInt(params[1], 10);
@@ -1029,25 +1025,6 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
       const negative = parseInt(params[6], 10);
 
       this.handleArcInstruction(layerIndex, x, y, radius, startAngle, endAngle, negative);
-    });
-    this.instructionRouter.addInstructionHandler('argv', (params: string[]) => {
-      const streamIndex = parseInt(params[0], 10);
-      const mimetype = params[1];
-      const name = params[2];
-
-      this.handleArgvInstruction(streamIndex, mimetype, name);
-    });
-    this.instructionRouter.addInstructionHandler('audio', (params: string[]) => {
-      const streamIndex = parseInt(params[0], 10);
-      const mimetype = params[1];
-
-      this.handleAudioInstruction(streamIndex, mimetype);
-    });
-    this.instructionRouter.addInstructionHandler('blob', (params: string[]) => {
-      const streamIndex = parseInt(params[0], 10);
-      const data = params[1];
-
-      this.handleBlobInstruction(streamIndex, data);
     });
     this.instructionRouter.addInstructionHandler('body', (params: string[]) => {
       const objectIndex = parseInt(params[0], 10);
@@ -1071,12 +1048,6 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
       const layerIndex = parseInt(params[0], 10);
 
       this.handleClipInstruction(layerIndex);
-    });
-    this.instructionRouter.addInstructionHandler('clipboard', (params: string[]) => {
-      const streamIndex = parseInt(params[0], 10);
-      const mimetype = params[1];
-
-      this.handleClipboardInstruction(streamIndex, mimetype);
     });
     this.instructionRouter.addInstructionHandler('close', (params: string[]) => {
       const layerIndex = parseInt(params[0], 10);
@@ -1155,11 +1126,6 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
       const code = parseInt(params[1], 10);
 
       this.handleErrorInstruction(code, reason);
-    });
-    this.instructionRouter.addInstructionHandler('end', (params: string[]) => {
-      const streamIndex = parseInt(params[0], 10);
-
-      this.handleEndInstruction(streamIndex);
     });
     this.instructionRouter.addInstructionHandler('file', (params: string[]) => {
       const streamIndex = parseInt(params[0], 10);
@@ -1362,5 +1328,26 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
 
       this.handleVideoInstruction(streamIndex, layerIndex, mimetype);
     });
+  }
+
+  private registerStreamingInstructionRoutes(router: InstructionRouter) {
+    router.addInstructionHandler(Streaming.ack.opcode, Streaming.ack.parser(
+      (streamIndex: number, message: string, code: number) => this.handleAckInstruction(streamIndex, message, code)
+    ));
+    router.addInstructionHandler(Streaming.argv.opcode, Streaming.argv.parser(
+      (streamIndex: number, mimetype: string, name: string) => this.handleArgvInstruction(streamIndex, mimetype, name)
+    ));
+    router.addInstructionHandler(Streaming.audio.opcode, Streaming.audio.parser(
+      (streamIndex: number, mimetype: string) => this.handleAudioInstruction(streamIndex, mimetype)
+    ));
+    router.addInstructionHandler(Streaming.blob.opcode, Streaming.blob.parser(
+      (streamIndex: number, data: string) => this.handleBlobInstruction(streamIndex, data)
+    ));
+    router.addInstructionHandler(Streaming.clipboard.opcode, Streaming.clipboard.parser(
+      (streamIndex: number, mimetype: string) => this.handleClipboardInstruction(streamIndex, mimetype)
+    ));
+    router.addInstructionHandler(Streaming.end.opcode, Streaming.end.parser(
+      (streamIndex: number) => this.handleEndInstruction(streamIndex)
+    ));
   }
 }

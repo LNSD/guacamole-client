@@ -1,4 +1,4 @@
-import { InstructionElements } from "./instructionElements";
+import { InstructionElements } from "./instruction";
 
 /**
  * Allocates a new stream, associating it with the name of a stream previously requested by a get
@@ -10,6 +10,8 @@ import { InstructionElements } from "./instructionElements";
  * @param mimetype - The mimetype of the data being sent.
  * @param name - The name of the stream associated with the object.
  */
+export type BodyHandler = (object: number, stream: number, mimetype: string, name: string) => void;
+
 export const body = (object: number, stream: number, mimetype: string, name: string): InstructionElements => ['body', object, stream, mimetype, name]
 
 /**
@@ -20,6 +22,8 @@ export const body = (object: number, stream: number, mimetype: string, name: str
  * @param object - The index of the object to allocate.
  * @param name - The name of the filesystem.
  */
+export type FilesystemHandler = (object: number, name: string) => void;
+
 export const filesystem = (object: number, name: string): InstructionElements => ['filesystem', object, name];
 
 /**
@@ -46,6 +50,8 @@ export const filesystem = (object: number, name: string): InstructionElements =>
  * @param object - The index of the object to request a stream from.
  * @param name - The name of the stream being requested from the given object.
  */
+export type GetHandler = (object: number, name: string) => void;
+
 export const get = (object: number, name: string): InstructionElements => ['get', object, name];
 
 /**
@@ -57,6 +63,8 @@ export const get = (object: number, name: string): InstructionElements => ['get'
  * @param mimetype - The mimetype of the data being sent.
  * @param name - The name of the stream within the given object to which data is being sent.
  */
+export type PutHandler = (object: number, stream: number, mimetype: string, name: string) => void;
+
 export const put = (object: number, stream: number, mimetype: string, name: string): InstructionElements => ['put', object, stream, mimetype, name]
 
 /**
@@ -66,4 +74,6 @@ export const put = (object: number, stream: number, mimetype: string, name: stri
  *
  * @param object - The index of the object to undefine.
  */
+export type UndefineHandler = (object: number) => void;
+
 export const undefine = (object: number): InstructionElements => ['undefine', object];

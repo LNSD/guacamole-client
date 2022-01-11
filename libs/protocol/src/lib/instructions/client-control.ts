@@ -1,9 +1,11 @@
-import { InstructionElements } from "./instructionElements";
+import { InstructionElements } from "./instruction";
 
 /**
  * Notifies the server that the connection is about to be closed by the client. This message can be
  * sent by the client during any phase, and takes no parameters.
  */
+export type DisconnectHandler = () => void;
+
 export const disconnect = (): InstructionElements => ['disconnect'];
 
 /**

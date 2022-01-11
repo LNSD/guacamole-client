@@ -1,4 +1,4 @@
-import { InstructionElements } from "./instructionElements";
+import { InstructionElements } from "./instruction";
 
 /**
  * Specifies which audio mimetypes are supported by the client. Each parameter must be a single
@@ -7,6 +7,8 @@ import { InstructionElements } from "./instructionElements";
  *
  * @param mimetype - Audio mimetypes are supported by the client.
  */
+export type AudioHandler = (...mimetype: string[]) => void;
+
 export const audio = (...mimetype: string[]): InstructionElements => ["audio", ...mimetype];
 
 
@@ -18,6 +20,8 @@ export const audio = (...mimetype: string[]): InstructionElements => ["audio", .
  * instruction. If the received args instruction has, for example, three parameters, the responding
  * connect instruction must also have three parameters.
  */
+export type ConnectHandler = (...params: string[]) => void;
+
 export const connect = (...params: string[]): InstructionElements => ["connect", ...params];
 
 
@@ -32,6 +36,8 @@ export const connect = (...params: string[]): InstructionElements => ["connect",
  *
  * @param mimetype - Image mimetypes are supported by the client
  */
+export type ImageHandler = (...mimetype: string[]) => void;
+
 export const image = (...mimetype: string[]): InstructionElements => ["image", ...mimetype];
 
 
@@ -47,6 +53,8 @@ export const image = (...mimetype: string[]): InstructionElements => ["image", .
  * @param id - The name of the protocol to use, such as "vnc" or "rdp", or the ID of the active
  *             connection to be joined, as returned via the ready instruction.
  */
+export type SelectHandler = (id: string) => void;
+
 export const select = (id: string): InstructionElements => ["select", id];
 
 
@@ -57,6 +65,8 @@ export const select = (id: string): InstructionElements => ["select", id];
  * @param height - The optimal screen height.
  * @param dpi - The optimal screen resolution, in approximate DPI.
  */
+export type SizeHandler = (width: number, height: number, dpi: number) => void;
+
 export const size = (width: number, height: number, dpi: number): InstructionElements => ['size', width, height, dpi];
 
 
@@ -67,6 +77,8 @@ export const size = (width: number, height: number, dpi: number): InstructionEle
  *
  * @param timezone - Timezone of the client system, in IANA zone key format.
  */
+export type TimezoneHandler = (timezone: string) => void;
+
 export const timezone = (timezone: string): InstructionElements => ['timezone', timezone];
 
 
@@ -77,4 +89,6 @@ export const timezone = (timezone: string): InstructionElements => ['timezone', 
  *
  * @param mimetypes - Video mimetypes supported by the client
  */
+export type VideoHandler = (...mimetypes: string[]) => void;
+
 export const video = (...mimetypes: string[]): InstructionElements => ['video', ...mimetypes];

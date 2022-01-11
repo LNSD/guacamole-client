@@ -1,4 +1,4 @@
-import { InstructionElements } from "./instructionElements";
+import { InstructionElements } from "./instruction";
 
 /**
  * Reports the expected format of the argument list for the protocol requested by the client. This
@@ -17,4 +17,6 @@ import { InstructionElements } from "./instructionElements";
  * @param params - The names of all connection parameters accepted by the server for the protocol
  *                 selected by the client.
  */
+export type ArgsHandler = (version: string, ...params: string[]) => void;
+
 export const args = (version: string, ...params: string[]): InstructionElements => ['args', version, ...params];
