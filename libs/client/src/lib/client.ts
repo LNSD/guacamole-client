@@ -27,6 +27,7 @@ import {
   ClientEventTarget,
   ClientEventTargetMap,
 } from './client-events';
+import { InstructionRouter } from './instruction-router';
 
 const PING_INTERVAL = 5000;
 
@@ -99,412 +100,7 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
     }
   };
 
-  /**
-   * Handlers for all instruction opcodes receivable by a Guacamole protocol
-   * client.
-   *
-   * @private
-   */
-    // TODO Review the following lint suppression
-    // eslint-disable-next-line @typescript-eslint/ban-types
-  private readonly instructionHandlers: Record<string, Function> = {
-
-    ack: (parameters: string[]) => {
-      const streamIndex = parseInt(parameters[0], 10);
-      const reason = parameters[1];
-      const code = parseInt(parameters[2], 10);
-
-      this.handleAckInstruction(streamIndex, code, reason);
-    },
-
-    arc: (parameters: string[]) => {
-      const layerIndex = parseInt(parameters[0], 10);
-      const x = parseInt(parameters[1], 10);
-      const y = parseInt(parameters[2], 10);
-      const radius = parseInt(parameters[3], 10);
-      const startAngle = parseFloat(parameters[4]);
-      const endAngle = parseFloat(parameters[5]);
-      const negative = parseInt(parameters[6], 10);
-
-      this.handleArcInstruction(layerIndex, x, y, radius, startAngle, endAngle, negative);
-    },
-
-    argv: (parameters: string[]) => {
-      const streamIndex = parseInt(parameters[0], 10);
-      const mimetype = parameters[1];
-      const name = parameters[2];
-
-      this.handleArgvInstruction(streamIndex, mimetype, name);
-    },
-
-    audio: (parameters: string[]) => {
-      const streamIndex = parseInt(parameters[0], 10);
-      const mimetype = parameters[1];
-
-      this.handleAudioInstruction(streamIndex, mimetype);
-    },
-
-    blob: (parameters: string[]) => {
-      const streamIndex = parseInt(parameters[0], 10);
-      const data = parameters[1];
-
-      this.handleBlobInstruction(streamIndex, data);
-    },
-
-    body: (parameters: string[]) => {
-      const objectIndex = parseInt(parameters[0], 10);
-      const streamIndex = parseInt(parameters[1], 10);
-      const mimetype = parameters[2];
-      const name = parameters[3];
-
-      this.handleBodyInstruction(objectIndex, streamIndex, mimetype, name);
-    },
-
-    cfill: (parameters: string[]) => {
-      const channelMask = parseInt(parameters[0], 10);
-      const layerIndex = parseInt(parameters[1], 10);
-      const r = parseInt(parameters[2], 10);
-      const g = parseInt(parameters[3], 10);
-      const b = parseInt(parameters[4], 10);
-      const a = parseInt(parameters[5], 10);
-
-      this.handleCfillInstruction(layerIndex, channelMask, r, g, b, a);
-    },
-
-    clip: (parameters: string[]) => {
-      const layerIndex = parseInt(parameters[0], 10);
-
-      this.handleClipInstruction(layerIndex);
-    },
-
-    clipboard: (parameters: string[]) => {
-      const streamIndex = parseInt(parameters[0], 10);
-      const mimetype = parameters[1];
-
-      this.handleClipboardInstruction(streamIndex, mimetype);
-    },
-
-    close: (parameters: string[]) => {
-      const layerIndex = parseInt(parameters[0], 10);
-
-      this.handleCloseInstruction(layerIndex);
-    },
-
-    copy: (parameters: string[]) => {
-      const srcLayerIndex = parseInt(parameters[0], 10);
-      const srcX = parseInt(parameters[1], 10);
-      const srcY = parseInt(parameters[2], 10);
-      const srcWidth = parseInt(parameters[3], 10);
-      const srcHeight = parseInt(parameters[4], 10);
-      const channelMask = parseInt(parameters[5], 10);
-      const dstLayerIndex = parseInt(parameters[6], 10);
-      const dstX = parseInt(parameters[7], 10);
-      const dstY = parseInt(parameters[8], 10);
-
-      this.handleCopyInstruction(srcLayerIndex, dstLayerIndex, channelMask, srcX, srcY, srcWidth, srcHeight, dstX, dstY);
-    },
-
-    cstroke: (parameters: string[]) => {
-      const channelMask = parseInt(parameters[0], 10);
-      const layerIndex = parseInt(parameters[1], 10);
-      const cap = LINE_CAP[parseInt(parameters[2], 10)];
-      const join = LINE_JOIN[parseInt(parameters[3], 10)];
-      const thickness = parseInt(parameters[4], 10);
-      const r = parseInt(parameters[5], 10);
-      const g = parseInt(parameters[6], 10);
-      const b = parseInt(parameters[7], 10);
-      const a = parseInt(parameters[8], 10);
-
-      this.handleCstrokeInstruction(layerIndex, channelMask, cap, join, thickness, r, g, b, a);
-    },
-
-    cursor: (parameters: string[]) => {
-      const cursorHotspotX = parseInt(parameters[0], 10);
-      const cursorHotspotY = parseInt(parameters[1], 10);
-      const srcLayerIndex = parseInt(parameters[2], 10);
-      const srcX = parseInt(parameters[3], 10);
-      const srcY = parseInt(parameters[4], 10);
-      const srcWidth = parseInt(parameters[5], 10);
-      const srcHeight = parseInt(parameters[6], 10);
-
-      this.handleCursorInstruction(srcLayerIndex, cursorHotspotX, cursorHotspotY, srcX, srcY, srcWidth, srcHeight);
-    },
-
-    curve: (parameters: string[]) => {
-      const layerIndex = parseInt(parameters[0], 10);
-      const cp1x = parseInt(parameters[1], 10);
-      const cp1y = parseInt(parameters[2], 10);
-      const cp2x = parseInt(parameters[3], 10);
-      const cp2y = parseInt(parameters[4], 10);
-      const x = parseInt(parameters[5], 10);
-      const y = parseInt(parameters[6], 10);
-
-      this.handleCurveInstruction(layerIndex, cp1x, cp1y, cp2x, cp2y, x, y);
-    },
-
-    disconnect: () => {
-      this.handleDisconnectInstruction();
-    },
-
-    dispose: (parameters: string[]) => {
-      const layerIndex = parseInt(parameters[0], 10);
-
-      this.handleDisposeInstruction(layerIndex);
-    },
-
-    distort: (parameters: string[]) => {
-      const layerIndex = parseInt(parameters[0], 10);
-      const a = parseFloat(parameters[1]);
-      const b = parseFloat(parameters[2]);
-      const c = parseFloat(parameters[3]);
-      const d = parseFloat(parameters[4]);
-      const e = parseFloat(parameters[5]);
-      const f = parseFloat(parameters[6]);
-
-      this.handleDistortInstruction(layerIndex, a, b, c, d, e, f);
-    },
-
-    error: (parameters: string[]) => {
-      const reason = parameters[0];
-      const code = parseInt(parameters[1], 10);
-
-      this.handleErrorInstruction(code, reason);
-    },
-
-    end: (parameters: string[]) => {
-      const streamIndex = parseInt(parameters[0], 10);
-
-      this.handleEndInstruction(streamIndex);
-    },
-
-    file: (parameters: string[]) => {
-      const streamIndex = parseInt(parameters[0], 10);
-      const mimetype = parameters[1];
-      const filename = parameters[2];
-
-      this.handleFileInstruction(streamIndex, mimetype, filename);
-    },
-
-    filesystem: (parameters: string[]) => {
-      const objectIndex = parseInt(parameters[0], 10);
-      const name = parameters[1];
-
-      this.handleFilesystemInstruction(objectIndex, name);
-    },
-
-    identity: (parameters: string[]) => {
-      const layerIndex = parseInt(parameters[0], 10);
-
-      this.handleIdentityInstruction(layerIndex);
-    },
-
-    img: (parameters: string[]) => {
-      const streamIndex = parseInt(parameters[0], 10);
-      const channelMask = parseInt(parameters[1], 10);
-      const layerIndex = parseInt(parameters[2], 10);
-      const mimetype = parameters[3];
-      const x = parseInt(parameters[4], 10);
-      const y = parseInt(parameters[5], 10);
-
-      this.handleImgInstruction(streamIndex, layerIndex, channelMask, x, y, mimetype);
-    },
-
-    jpeg: (parameters: string[]) => {
-      const channelMask = parseInt(parameters[0], 10);
-      const layerIndex = parseInt(parameters[1], 10);
-      const x = parseInt(parameters[2], 10);
-      const y = parseInt(parameters[3], 10);
-      const data = parameters[4];
-
-      this.handleJpegInstruction(layerIndex, channelMask, x, y, data);
-    },
-
-    lfill: (parameters: string[]) => {
-      const channelMask = parseInt(parameters[0], 10);
-      const layerIndex = parseInt(parameters[1], 10);
-      const srcLayerIndex = parseInt(parameters[2], 10);
-
-      this.handleLfillInstruction(layerIndex, channelMask, srcLayerIndex);
-    },
-
-    line: (parameters: string[]) => {
-      const layerIndex = parseInt(parameters[0], 10);
-      const x = parseInt(parameters[1], 10);
-      const y = parseInt(parameters[2], 10);
-
-      this.handleLineInstruction(layerIndex, x, y);
-    },
-
-    lstroke: (parameters: string[]) => {
-      const channelMask = parseInt(parameters[0], 10);
-      const layerIndex = parseInt(parameters[1], 10);
-      const capIndex = parseInt(parameters[2], 10);
-      const joinIndex = parseInt(parameters[3], 10);
-      const thickness = parseInt(parameters[4], 10);
-      const srcLayerIndex = parseInt(parameters[5], 10);
-
-      const cap = LINE_CAP[capIndex];
-      const join = LINE_JOIN[joinIndex];
-
-      this.handleLstrokeInstruction(layerIndex, srcLayerIndex, channelMask, cap, join, thickness);
-    },
-
-    mouse: (parameters: string[]) => {
-      const x = parseInt(parameters[0], 10);
-      const y = parseInt(parameters[1], 10);
-
-      this.handleMouseInstruction(x, y);
-    },
-
-    move: (parameters: string[]) => {
-      const layerIndex = parseInt(parameters[0], 10);
-      const parentIndex = parseInt(parameters[1], 10);
-      const x = parseInt(parameters[2], 10);
-      const y = parseInt(parameters[3], 10);
-      const z = parseInt(parameters[4], 10);
-
-      this.handleMoveInstruction(layerIndex, parentIndex, x, y, z);
-    },
-
-    name: (parameters: string[]) => {
-      const name = parameters[0];
-
-      this.handleNameInstruction(name);
-    },
-
-    nest: (parameters: string[]) => {
-      const parserIndex = parseInt(parameters[0], 10);
-
-      this.handleNestInstruction(parserIndex, parameters);
-    },
-
-    pipe: (parameters: string[]) => {
-      const streamIndex = parseInt(parameters[0], 10);
-      const mimetype = parameters[1];
-      const name = parameters[2];
-
-      this.handlePipeInstruction(streamIndex, mimetype, name);
-    },
-
-    png: (parameters: string[]) => {
-      const channelMask = parseInt(parameters[0], 10);
-      const layerIndex = parseInt(parameters[1], 10);
-      const x = parseInt(parameters[2], 10);
-      const y = parseInt(parameters[3], 10);
-      const data = parameters[4];
-
-      this.handlePngInstruction(layerIndex, channelMask, x, y, data);
-    },
-
-    pop: (parameters: string[]) => {
-      const layerIndex = parseInt(parameters[0], 10);
-
-      this.handlePopInstruction(layerIndex);
-    },
-
-    push: (parameters: string[]) => {
-      const layerIndex = parseInt(parameters[0], 10);
-
-      this.handlePushInstruction(layerIndex);
-    },
-
-    rect: (parameters: string[]) => {
-      const layerIndex = parseInt(parameters[0], 10);
-      const x = parseInt(parameters[1], 10);
-      const y = parseInt(parameters[2], 10);
-      const w = parseInt(parameters[3], 10);
-      const h = parseInt(parameters[4], 10);
-
-      this.handleRectInstruction(layerIndex, x, y, w, h);
-    },
-
-    required: (parameters: string[]) => {
-      this.handleRequiredInstruction(parameters);
-    },
-
-    reset: (parameters: string[]) => {
-      const layerIndex = parseInt(parameters[0], 10);
-
-      this.handleResetInstruction(layerIndex);
-    },
-
-    set: (parameters: string[]) => {
-      const layerIndex = parseInt(parameters[0], 10);
-      const name = parameters[1];
-      const value = parameters[2];
-
-      this.handleSetInstruction(layerIndex, name, value);
-    },
-
-    shade: (parameters: string[]) => {
-      const layerIndex = parseInt(parameters[0], 10);
-      const a = parseInt(parameters[1], 10);
-
-      this.handleShadeInstruction(layerIndex, a);
-    },
-
-    size: (parameters: string[]) => {
-      const layerIndex = parseInt(parameters[0], 10);
-      const width = parseInt(parameters[1], 10);
-      const height = parseInt(parameters[2], 10);
-
-      this.handleSizeInstruction(layerIndex, width, height);
-    },
-
-    start: (parameters: string[]) => {
-      const layerIndex = parseInt(parameters[0], 10);
-      const x = parseInt(parameters[1], 10);
-      const y = parseInt(parameters[2], 10);
-
-      this.handleStartInstruction(layerIndex, x, y);
-    },
-
-    sync: (parameters: string[]) => {
-      const timestamp = parseInt(parameters[0], 10);
-
-      this.handleSyncInstruction(timestamp);
-    },
-
-    transfer: (parameters: string[]) => {
-      const srcLayerIndex = parseInt(parameters[0], 10);
-      const srcX = parseInt(parameters[1], 10);
-      const srcY = parseInt(parameters[2], 10);
-      const srcWidth = parseInt(parameters[3], 10);
-      const srcHeight = parseInt(parameters[4], 10);
-      const functionIndex = parseInt(parameters[5], 10);
-      const dstLayerIndex = parseInt(parameters[6], 10);
-      const dstX = parseInt(parameters[7], 10);
-      const dstY = parseInt(parameters[8], 10);
-
-      this.handleTransferInstruction(srcLayerIndex, dstLayerIndex, functionIndex, srcX, srcY, srcWidth, srcHeight, dstX, dstY);
-    },
-
-    transform: (parameters: string[]) => {
-      const layerIndex = parseInt(parameters[0], 10);
-      const a = parseFloat(parameters[1]);
-      const b = parseFloat(parameters[2]);
-      const c = parseFloat(parameters[3]);
-      const d = parseFloat(parameters[4]);
-      const e = parseFloat(parameters[5]);
-      const f = parseFloat(parameters[6]);
-
-      this.handleTransformInstruction(layerIndex, a, b, c, d, e, f);
-    },
-
-    undefine: (parameters: string[]) => {
-      const objectIndex = parseInt(parameters[0], 10);
-
-      this.handleUndefineInstruction(objectIndex);
-    },
-
-    video: (parameters: string[]) => {
-      const streamIndex = parseInt(parameters[0], 10);
-      const layerIndex = parseInt(parameters[1], 10);
-      const mimetype = parameters[2];
-
-      this.handleVideoInstruction(streamIndex, layerIndex, mimetype);
-    }
-  };
+  private readonly instructionRouter: InstructionRouter;
 
   /**
    * @constructor
@@ -512,16 +108,16 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
    * @param tunnel - The tunnel to use to send and receive Guacamole instructions.
    */
   constructor(private readonly tunnel: Tunnel) {
+    this.instructionRouter = new InstructionRouter();
+    this.registerInstructionRoutes();
+
     this.outputStreams = new OutputStreamsManager(this);
     this.inputStreams = new InputStreamsManager(this);
 
     this.display = new Display();
 
-    this.tunnel.oninstruction = (opcode, parameters) => {
-      const handler = this.instructionHandlers[opcode];
-      if (handler) {
-        handler(parameters);
-      }
+    this.tunnel.oninstruction = (opcode, params) => {
+      this.instructionRouter.dispatchInstruction(opcode, params);
     };
     this.tunnel.onerror = (error) => {
       const listener = this.events.getEventListener('onerror');
@@ -917,9 +513,9 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
     }
   }
 
-  private handleNestInstruction(parserIndex: number, parameters: string[]) {
+  private handleNestInstruction(parserIndex: number, packet: string) {
     const parser = this.getParser(parserIndex);
-    parser.receive(parameters[1]);
+    parser.receive(packet);
   }
 
   private handleRequiredInstruction(parameters: string[]) {
@@ -1063,8 +659,8 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
     listener(stream, mimetype, filename);
   }
 
-  //</editor-fold>
   //<editor-fold defaultstate="collapsed" desc="OutputStreamHandler">
+  //</editor-fold>
 
   private handleBlobInstruction(streamIndex: number, data: string) {
     // Get stream
@@ -1409,5 +1005,363 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
     }
 
     return decoder;
+  }
+
+  /**
+   * Register all instruction handlers for the opcodes receivable by a Guacamole protocol client.
+   *
+   * @private
+   */
+  private registerInstructionRoutes() {
+    this.instructionRouter.addInstructionHandler('ack', (params: string[]) => {
+      const streamIndex = parseInt(params[0], 10);
+      const reason = params[1];
+      const code = parseInt(params[2], 10);
+
+      this.handleAckInstruction(streamIndex, code, reason);
+    });
+    this.instructionRouter.addInstructionHandler('arc', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+      const x = parseInt(params[1], 10);
+      const y = parseInt(params[2], 10);
+      const radius = parseInt(params[3], 10);
+      const startAngle = parseFloat(params[4]);
+      const endAngle = parseFloat(params[5]);
+      const negative = parseInt(params[6], 10);
+
+      this.handleArcInstruction(layerIndex, x, y, radius, startAngle, endAngle, negative);
+    });
+    this.instructionRouter.addInstructionHandler('argv', (params: string[]) => {
+      const streamIndex = parseInt(params[0], 10);
+      const mimetype = params[1];
+      const name = params[2];
+
+      this.handleArgvInstruction(streamIndex, mimetype, name);
+    });
+    this.instructionRouter.addInstructionHandler('audio', (params: string[]) => {
+      const streamIndex = parseInt(params[0], 10);
+      const mimetype = params[1];
+
+      this.handleAudioInstruction(streamIndex, mimetype);
+    });
+    this.instructionRouter.addInstructionHandler('blob', (params: string[]) => {
+      const streamIndex = parseInt(params[0], 10);
+      const data = params[1];
+
+      this.handleBlobInstruction(streamIndex, data);
+    });
+    this.instructionRouter.addInstructionHandler('body', (params: string[]) => {
+      const objectIndex = parseInt(params[0], 10);
+      const streamIndex = parseInt(params[1], 10);
+      const mimetype = params[2];
+      const name = params[3];
+
+      this.handleBodyInstruction(objectIndex, streamIndex, mimetype, name);
+    });
+    this.instructionRouter.addInstructionHandler('cfill', (params: string[]) => {
+      const channelMask = parseInt(params[0], 10);
+      const layerIndex = parseInt(params[1], 10);
+      const r = parseInt(params[2], 10);
+      const g = parseInt(params[3], 10);
+      const b = parseInt(params[4], 10);
+      const a = parseInt(params[5], 10);
+
+      this.handleCfillInstruction(layerIndex, channelMask, r, g, b, a);
+    });
+    this.instructionRouter.addInstructionHandler('clip', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+
+      this.handleClipInstruction(layerIndex);
+    });
+    this.instructionRouter.addInstructionHandler('clipboard', (params: string[]) => {
+      const streamIndex = parseInt(params[0], 10);
+      const mimetype = params[1];
+
+      this.handleClipboardInstruction(streamIndex, mimetype);
+    });
+    this.instructionRouter.addInstructionHandler('close', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+
+      this.handleCloseInstruction(layerIndex);
+    });
+    this.instructionRouter.addInstructionHandler('copy', (params: string[]) => {
+      const srcLayerIndex = parseInt(params[0], 10);
+      const srcX = parseInt(params[1], 10);
+      const srcY = parseInt(params[2], 10);
+      const srcWidth = parseInt(params[3], 10);
+      const srcHeight = parseInt(params[4], 10);
+      const channelMask = parseInt(params[5], 10);
+      const dstLayerIndex = parseInt(params[6], 10);
+      const dstX = parseInt(params[7], 10);
+      const dstY = parseInt(params[8], 10);
+
+      this.handleCopyInstruction(srcLayerIndex, dstLayerIndex, channelMask, srcX, srcY, srcWidth, srcHeight, dstX, dstY);
+    });
+    this.instructionRouter.addInstructionHandler('cstroke', (params: string[]) => {
+      const channelMask = parseInt(params[0], 10);
+      const layerIndex = parseInt(params[1], 10);
+      const cap = LINE_CAP[parseInt(params[2], 10)];
+      const join = LINE_JOIN[parseInt(params[3], 10)];
+      const thickness = parseInt(params[4], 10);
+      const r = parseInt(params[5], 10);
+      const g = parseInt(params[6], 10);
+      const b = parseInt(params[7], 10);
+      const a = parseInt(params[8], 10);
+
+      this.handleCstrokeInstruction(layerIndex, channelMask, cap, join, thickness, r, g, b, a);
+    });
+    this.instructionRouter.addInstructionHandler('cursor', (params: string[]) => {
+      const cursorHotspotX = parseInt(params[0], 10);
+      const cursorHotspotY = parseInt(params[1], 10);
+      const srcLayerIndex = parseInt(params[2], 10);
+      const srcX = parseInt(params[3], 10);
+      const srcY = parseInt(params[4], 10);
+      const srcWidth = parseInt(params[5], 10);
+      const srcHeight = parseInt(params[6], 10);
+
+      this.handleCursorInstruction(srcLayerIndex, cursorHotspotX, cursorHotspotY, srcX, srcY, srcWidth, srcHeight);
+    });
+    this.instructionRouter.addInstructionHandler('curve', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+      const cp1x = parseInt(params[1], 10);
+      const cp1y = parseInt(params[2], 10);
+      const cp2x = parseInt(params[3], 10);
+      const cp2y = parseInt(params[4], 10);
+      const x = parseInt(params[5], 10);
+      const y = parseInt(params[6], 10);
+
+      this.handleCurveInstruction(layerIndex, cp1x, cp1y, cp2x, cp2y, x, y);
+    });
+    this.instructionRouter.addInstructionHandler('disconnect', () => {
+      this.handleDisconnectInstruction();
+    });
+    this.instructionRouter.addInstructionHandler('dispose', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+
+      this.handleDisposeInstruction(layerIndex);
+    });
+    this.instructionRouter.addInstructionHandler('distort', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+      const a = parseFloat(params[1]);
+      const b = parseFloat(params[2]);
+      const c = parseFloat(params[3]);
+      const d = parseFloat(params[4]);
+      const e = parseFloat(params[5]);
+      const f = parseFloat(params[6]);
+
+      this.handleDistortInstruction(layerIndex, a, b, c, d, e, f);
+    });
+    this.instructionRouter.addInstructionHandler('error', (params: string[]) => {
+      const reason = params[0];
+      const code = parseInt(params[1], 10);
+
+      this.handleErrorInstruction(code, reason);
+    });
+    this.instructionRouter.addInstructionHandler('end', (params: string[]) => {
+      const streamIndex = parseInt(params[0], 10);
+
+      this.handleEndInstruction(streamIndex);
+    });
+    this.instructionRouter.addInstructionHandler('file', (params: string[]) => {
+      const streamIndex = parseInt(params[0], 10);
+      const mimetype = params[1];
+      const filename = params[2];
+
+      this.handleFileInstruction(streamIndex, mimetype, filename);
+    });
+    this.instructionRouter.addInstructionHandler('filesystem', (params: string[]) => {
+      const objectIndex = parseInt(params[0], 10);
+      const name = params[1];
+
+      this.handleFilesystemInstruction(objectIndex, name);
+    });
+    this.instructionRouter.addInstructionHandler('identity', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+
+      this.handleIdentityInstruction(layerIndex);
+    });
+    this.instructionRouter.addInstructionHandler('img', (params: string[]) => {
+      const streamIndex = parseInt(params[0], 10);
+      const channelMask = parseInt(params[1], 10);
+      const layerIndex = parseInt(params[2], 10);
+      const mimetype = params[3];
+      const x = parseInt(params[4], 10);
+      const y = parseInt(params[5], 10);
+
+      this.handleImgInstruction(streamIndex, layerIndex, channelMask, x, y, mimetype);
+    });
+    this.instructionRouter.addInstructionHandler('jpeg', (params: string[]) => {
+      const channelMask = parseInt(params[0], 10);
+      const layerIndex = parseInt(params[1], 10);
+      const x = parseInt(params[2], 10);
+      const y = parseInt(params[3], 10);
+      const data = params[4];
+
+      this.handleJpegInstruction(layerIndex, channelMask, x, y, data);
+    });
+    this.instructionRouter.addInstructionHandler('lfill', (params: string[]) => {
+      const channelMask = parseInt(params[0], 10);
+      const layerIndex = parseInt(params[1], 10);
+      const srcLayerIndex = parseInt(params[2], 10);
+
+      this.handleLfillInstruction(layerIndex, channelMask, srcLayerIndex);
+    });
+    this.instructionRouter.addInstructionHandler('line', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+      const x = parseInt(params[1], 10);
+      const y = parseInt(params[2], 10);
+
+      this.handleLineInstruction(layerIndex, x, y);
+    });
+    this.instructionRouter.addInstructionHandler('lstroke', (params: string[]) => {
+      const channelMask = parseInt(params[0], 10);
+      const layerIndex = parseInt(params[1], 10);
+      const capIndex = parseInt(params[2], 10);
+      const joinIndex = parseInt(params[3], 10);
+      const thickness = parseInt(params[4], 10);
+      const srcLayerIndex = parseInt(params[5], 10);
+
+      const cap = LINE_CAP[capIndex];
+      const join = LINE_JOIN[joinIndex];
+
+      this.handleLstrokeInstruction(layerIndex, srcLayerIndex, channelMask, cap, join, thickness);
+    });
+    this.instructionRouter.addInstructionHandler('mouse', (params: string[]) => {
+      const x = parseInt(params[0], 10);
+      const y = parseInt(params[1], 10);
+
+      this.handleMouseInstruction(x, y);
+    });
+    this.instructionRouter.addInstructionHandler('move', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+      const parentIndex = parseInt(params[1], 10);
+      const x = parseInt(params[2], 10);
+      const y = parseInt(params[3], 10);
+      const z = parseInt(params[4], 10);
+
+      this.handleMoveInstruction(layerIndex, parentIndex, x, y, z);
+    });
+    this.instructionRouter.addInstructionHandler('name', (params: string[]) => {
+      const name = params[0];
+
+      this.handleNameInstruction(name);
+    });
+    this.instructionRouter.addInstructionHandler('nest', (params: string[]) => {
+      const parserIndex = parseInt(params[0], 10);
+      const packet = params[1];
+
+      this.handleNestInstruction(parserIndex, packet);
+    });
+    this.instructionRouter.addInstructionHandler('pipe', (params: string[]) => {
+      const streamIndex = parseInt(params[0], 10);
+      const mimetype = params[1];
+      const name = params[2];
+
+      this.handlePipeInstruction(streamIndex, mimetype, name);
+    });
+    this.instructionRouter.addInstructionHandler('png', (params: string[]) => {
+      const channelMask = parseInt(params[0], 10);
+      const layerIndex = parseInt(params[1], 10);
+      const x = parseInt(params[2], 10);
+      const y = parseInt(params[3], 10);
+      const data = params[4];
+
+      this.handlePngInstruction(layerIndex, channelMask, x, y, data);
+    });
+    this.instructionRouter.addInstructionHandler('pop', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+
+      this.handlePopInstruction(layerIndex);
+    });
+    this.instructionRouter.addInstructionHandler('push', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+
+      this.handlePushInstruction(layerIndex);
+    });
+    this.instructionRouter.addInstructionHandler('rect', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+      const x = parseInt(params[1], 10);
+      const y = parseInt(params[2], 10);
+      const w = parseInt(params[3], 10);
+      const h = parseInt(params[4], 10);
+
+      this.handleRectInstruction(layerIndex, x, y, w, h);
+    });
+    this.instructionRouter.addInstructionHandler('required', (params: string[]) => {
+      this.handleRequiredInstruction(params);
+    });
+    this.instructionRouter.addInstructionHandler('reset', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+
+      this.handleResetInstruction(layerIndex);
+    });
+    this.instructionRouter.addInstructionHandler('set', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+      const name = params[1];
+      const value = params[2];
+
+      this.handleSetInstruction(layerIndex, name, value);
+    });
+    this.instructionRouter.addInstructionHandler('shade', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+      const a = parseInt(params[1], 10);
+
+      this.handleShadeInstruction(layerIndex, a);
+    });
+    this.instructionRouter.addInstructionHandler('size', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+      const width = parseInt(params[1], 10);
+      const height = parseInt(params[2], 10);
+
+      this.handleSizeInstruction(layerIndex, width, height);
+    });
+    this.instructionRouter.addInstructionHandler('start', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+      const x = parseInt(params[1], 10);
+      const y = parseInt(params[2], 10);
+
+      this.handleStartInstruction(layerIndex, x, y);
+    });
+    this.instructionRouter.addInstructionHandler('sync', (params: string[]) => {
+      const timestamp = parseInt(params[0], 10);
+
+      this.handleSyncInstruction(timestamp);
+    });
+    this.instructionRouter.addInstructionHandler('transfer', (params: string[]) => {
+      const srcLayerIndex = parseInt(params[0], 10);
+      const srcX = parseInt(params[1], 10);
+      const srcY = parseInt(params[2], 10);
+      const srcWidth = parseInt(params[3], 10);
+      const srcHeight = parseInt(params[4], 10);
+      const functionIndex = parseInt(params[5], 10);
+      const dstLayerIndex = parseInt(params[6], 10);
+      const dstX = parseInt(params[7], 10);
+      const dstY = parseInt(params[8], 10);
+
+      this.handleTransferInstruction(srcLayerIndex, dstLayerIndex, functionIndex, srcX, srcY, srcWidth, srcHeight, dstX, dstY);
+    });
+    this.instructionRouter.addInstructionHandler('transform', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+      const a = parseFloat(params[1]);
+      const b = parseFloat(params[2]);
+      const c = parseFloat(params[3]);
+      const d = parseFloat(params[4]);
+      const e = parseFloat(params[5]);
+      const f = parseFloat(params[6]);
+
+      this.handleTransformInstruction(layerIndex, a, b, c, d, e, f);
+    });
+    this.instructionRouter.addInstructionHandler('undefine', (params: string[]) => {
+      const objectIndex = parseInt(params[0], 10);
+
+      this.handleUndefineInstruction(objectIndex);
+    });
+    this.instructionRouter.addInstructionHandler('video', (params: string[]) => {
+      const streamIndex = parseInt(params[0], 10);
+      const layerIndex = parseInt(params[1], 10);
+      const mimetype = params[2];
+
+      this.handleVideoInstruction(streamIndex, layerIndex, mimetype);
+    });
   }
 }
