@@ -6,10 +6,9 @@ import {
   LINE_JOIN,
   VisibleLayer
 } from './display';
-import { IntegerPool } from './IntegerPool';
 import { Status, StatusCode } from './Status';
 import GuacamoleObject from './GuacamoleObject';
-import { InputStream, OutputStream } from '@guacamole-client/io';
+import { InputStream, OutputStream, StreamError } from '@guacamole-client/io';
 import { AudioPlayer, getAudioPlayerInstance, VideoPlayer } from '@guacamole-client/media';
 import {
   ClientControl,
@@ -21,6 +20,8 @@ import {
 import { Tunnel } from '@guacamole-client/tunnel';
 import { State } from './state';
 import { MouseState } from '@guacamole-client/input';
+import { InputStreamHandlers, InputStreamsManager } from './streams-manager/input';
+import { OutputStreamHandlers, OutputStreamsManager } from './streams-manager/output';
 
 export type OnStateChangeCallback = (state: number) => void;
 export type OnNameCallback = (name: string) => void;
@@ -42,7 +43,9 @@ const PING_INTERVAL = 5000;
  * automatically handles incoming and outgoing Guacamole instructions via the
  * provided tunnel, updating its display using one or more canvas elements.
  */
-export default class Client {
+export default class Client implements InputStreamHandlers, OutputStreamHandlers {
+  //<editor-fold defaultstate="collapsed" desc="Events" >
+
   /**
    * Fired whenever the state of this Client changes.
    *
@@ -164,17 +167,21 @@ export default class Client {
    */
   public onsync: OnSyncCallback | null = null;
 
+  //</editor-fold>
+
   private currentState: State = State.IDLE;
   private currentTimestamp = 0;
   private pingIntervalHandler?: number;
+
+  private readonly inputStreams: InputStreamsManager;
+  private readonly outputStreams: OutputStreamsManager;
+
   /**
    * The underlying Guacamole display.
    *
    * @private
    */
   private readonly display: Display;
-  // Pool of available stream indices
-  private readonly streamIndices = new IntegerPool();
 
   /**
    * All available layers and buffers
@@ -199,8 +206,6 @@ export default class Client {
   private readonly videoPlayers: Map<number, VideoPlayer> = new Map();
   private readonly decoders: Map<number, Decoder> = new Map();
 
-  private readonly inputStreams: Map<number, InputStream> = new Map();
-  private readonly outputStreams: Map<number, OutputStream> = new Map();
   /**
    * All current objects. The index of each object is dictated by the
    * Guacamole server.
@@ -238,7 +243,7 @@ export default class Client {
       const code = parseInt(parameters[2], 10);
 
       // Get stream
-      const stream = this.outputStreams.get(streamIndex);
+      const stream = this.outputStreams.getStream(streamIndex);
       if (!stream) {
         return;
       }
@@ -251,8 +256,7 @@ export default class Client {
       // If code is an error, invalidate stream if not already
       // invalidated by onack handler
       if (code >= 0x0100) {
-        this.streamIndices.free(streamIndex);
-        this.outputStreams.delete(streamIndex);
+        this.outputStreams.freeStream(streamIndex);
       }
     },
 
@@ -275,14 +279,11 @@ export default class Client {
 
       // Create stream
       if (this.onargv) {
-        const stream = new InputStream(streamIndex);
-        stream.sendack = (index, message, code) => this.sendAck(index, message, code);
-
-        this.inputStreams.set(streamIndex, stream);
+        const stream = this.inputStreams.createStream(streamIndex);
         this.onargv(stream, mimetype, name);
       } else {
         // Otherwise, unsupported
-        this.sendAck(streamIndex, 'Receiving argument values unsupported', StatusCode.UNSUPPORTED);
+        this.sendAck(streamIndex, new StreamError('Receiving argument values unsupported', StatusCode.UNSUPPORTED));
       }
     },
 
@@ -291,10 +292,7 @@ export default class Client {
       const mimetype = parameters[1];
 
       // Create stream
-      const stream = new InputStream(streamIndex);
-      stream.sendack = (index, message, code) => this.sendAck(index, message, code);
-
-      this.inputStreams.set(streamIndex, stream);
+      const stream = this.inputStreams.createStream(streamIndex);
 
       // Get player instance via callback
       let audioPlayer: AudioPlayer | null = null;
@@ -310,10 +308,10 @@ export default class Client {
       // If we have successfully retrieved an audio player, send success response
       if (audioPlayer) {
         this.audioPlayers.set(streamIndex, audioPlayer);
-        this.sendAck(streamIndex, 'OK', StatusCode.SUCCESS);
+        this.sendAck(streamIndex);
       } else {
         // Otherwise, mimetype must be unsupported
-        this.sendAck(streamIndex, 'BAD TYPE', StatusCode.CLIENT_BAD_TYPE);
+        this.sendAck(streamIndex, new StreamError('BAD TYPE', StatusCode.CLIENT_BAD_TYPE));
       }
     },
 
@@ -321,7 +319,7 @@ export default class Client {
       // Get stream
       const streamIndex = parseInt(parameters[0], 10);
       const data = parameters[1];
-      const stream = this.inputStreams.get(streamIndex);
+      const stream = this.inputStreams.getStream(streamIndex);
 
       // Write data
       if (stream?.onblob) {
@@ -340,14 +338,11 @@ export default class Client {
 
       // Create stream if handler defined
       if (object?.onbody) {
-        const stream = new InputStream(streamIndex);
-        stream.sendack = (index, message, code) => this.sendAck(index, message, code);
-
-        this.inputStreams.set(streamIndex, stream);
+        const stream = this.inputStreams.createStream(streamIndex);
         object.onbody(stream, mimetype, name);
       } else {
         // Otherwise, unsupported
-        this.sendAck(streamIndex, 'Receipt of body unsupported', StatusCode.UNSUPPORTED);
+        this.sendAck(streamIndex, new StreamError('Receipt of body unsupported', StatusCode.UNSUPPORTED));
       }
     },
 
@@ -375,14 +370,11 @@ export default class Client {
 
       // Create stream
       if (this.onclipboard) {
-        const stream = new InputStream(streamIndex);
-        stream.sendack = (index, message, code) => this.sendAck(index, message, code);
-
-        this.inputStreams.set(streamIndex, stream);
+        const stream = this.inputStreams.createStream(streamIndex);
         this.onclipboard(stream, mimetype);
       } else {
         // Otherwise, unsupported
-        this.sendAck(streamIndex, 'Clipboard unsupported', StatusCode.UNSUPPORTED);
+        this.sendAck(streamIndex, new StreamError('Clipboard unsupported', StatusCode.UNSUPPORTED));
       }
     },
 
@@ -504,7 +496,7 @@ export default class Client {
       const streamIndex = parseInt(parameters[0], 10);
 
       // Get stream
-      const stream = this.inputStreams.get(streamIndex);
+      const stream = this.inputStreams.getStream(streamIndex);
       if (stream) {
         // Signal end of stream if handler defined
         if (stream.onend) {
@@ -512,7 +504,7 @@ export default class Client {
         }
 
         // Invalidate stream
-        this.inputStreams.delete(streamIndex);
+        this.inputStreams.freeStream(streamIndex);
       }
     },
 
@@ -523,14 +515,11 @@ export default class Client {
 
       // Create stream
       if (this.onfile) {
-        const stream = new InputStream(streamIndex);
-        stream.sendack = (index, message, code) => this.sendAck(index, message, code);
-
-        this.inputStreams.set(streamIndex, stream);
+        const stream = this.inputStreams.createStream(streamIndex);
         this.onfile(stream, mimetype, filename);
       } else {
         // Otherwise, unsupported
-        this.sendAck(streamIndex, 'File transfer unsupported', StatusCode.UNSUPPORTED);
+        this.sendAck(streamIndex, new StreamError('File transfer unsupported', StatusCode.UNSUPPORTED));
       }
     },
 
@@ -563,10 +552,7 @@ export default class Client {
       const y = parseInt(parameters[5], 10);
 
       // Create stream
-      const stream = new InputStream(streamIndex);
-      stream.sendack = (index, message, code) => this.sendAck(index, message, code);
-
-      this.inputStreams.set(streamIndex, stream);
+      const stream = this.inputStreams.createStream(streamIndex);
 
       // Draw received contents once decoded
       this.display.setChannelMask(layer, channelMask);
@@ -653,14 +639,11 @@ export default class Client {
 
       // Create stream
       if (this.onpipe) {
-        const stream = new InputStream(streamIndex);
-        stream.sendack = (index, message, code) => this.sendAck(index, message, code);
-
-        this.inputStreams.set(streamIndex, stream);
+        const stream = this.inputStreams.createStream(streamIndex);
         this.onpipe(stream, mimetype, name);
       } else {
         // Otherwise, unsupported
-        this.sendAck(streamIndex, 'Named pipes unsupported', StatusCode.UNSUPPORTED);
+        this.sendAck(streamIndex, new StreamError('Named pipes unsupported', StatusCode.UNSUPPORTED));
       }
     },
 
@@ -828,10 +811,7 @@ export default class Client {
       const mimetype = parameters[2];
 
       // Create stream
-      const stream = new InputStream(streamIndex);
-      stream.sendack = (index, message, code) => this.sendAck(index, message, code);
-
-      this.inputStreams.set(streamIndex, stream);
+      const stream = this.inputStreams.createStream(streamIndex);
 
       // Get player instance via callback
       let videoPlayer: VideoPlayer | null = null;
@@ -847,10 +827,10 @@ export default class Client {
       // If we have successfully retrieved an video player, send success response
       if (videoPlayer) {
         this.videoPlayers.set(streamIndex, videoPlayer);
-        this.sendAck(streamIndex, 'OK', StatusCode.SUCCESS);
+        this.sendAck(streamIndex);
       } else {
         // Otherwise, mimetype must be unsupported
-        this.sendAck(streamIndex, 'BAD TYPE', StatusCode.CLIENT_BAD_TYPE);
+        this.sendAck(streamIndex, new StreamError('BAD TYPE', StatusCode.CLIENT_BAD_TYPE));
       }
     }
 
@@ -861,6 +841,9 @@ export default class Client {
    * @param tunnel - The tunnel to use to send and receive Guacamole instructions.
    */
   constructor(private readonly tunnel: Tunnel) {
+    this.outputStreams = new OutputStreamsManager(this);
+    this.inputStreams = new InputStreamsManager(this);
+
     this.display = new Display();
 
     this.tunnel.oninstruction = (opcode, parameters) => {
@@ -967,31 +950,6 @@ export default class Client {
   }
 
   /**
-   * Allocates an available stream index and creates a new
-   * OutputStream using that index, associating the resulting
-   * stream with this Client. Note that this stream will not yet
-   * exist as far as the other end of the Guacamole connection is concerned.
-   * Streams exist within the Guacamole protocol only when referenced by an
-   * instruction which creates the stream, such as a "clipboard", "file", or
-   * "pipe" instruction.
-   *
-   * @returns A new OutputStream with a newly-allocated index and
-   *          associated with this Client.
-   */
-  public createOutputStream(): OutputStream {
-    // Allocate index
-    const index = this.streamIndices.next();
-
-    // Return new stream
-    const stream = new OutputStream(index);
-    stream.sendblob = (idx, data) => this.sendBlob(idx, data);
-    stream.sendend = (idx) => this.endOutputStream(idx);
-
-    this.outputStreams.set(index, stream);
-    return stream;
-  }
-
-  /**
    * Opens a new audio stream for writing, where audio data having the give
    * mimetype will be sent along the returned stream. The instruction
    * necessary to create this stream will automatically be sent.
@@ -1003,7 +961,7 @@ export default class Client {
    */
   public createAudioStream(mimetype: string): OutputStream {
     // Allocate and associate stream with audio metadata
-    const stream = this.createOutputStream();
+    const stream = this.outputStreams.createStream();
     this.tunnel.sendMessage(...Streaming.audio(stream.index, mimetype));
     return stream;
   }
@@ -1020,7 +978,7 @@ export default class Client {
    */
   public createFileStream(mimetype: string, filename: string): OutputStream {
     // Allocate and associate stream with file metadata
-    const stream = this.createOutputStream();
+    const stream = this.outputStreams.createStream();
     this.tunnel.sendMessage(...Streaming.file(stream.index, mimetype, filename));
     return stream;
   }
@@ -1036,7 +994,7 @@ export default class Client {
    */
   public createPipeStream(mimetype: string, name: string): OutputStream {
     // Allocate and associate stream with pipe metadata
-    const stream = this.createOutputStream();
+    const stream = this.outputStreams.createStream();
     this.tunnel.sendMessage(...Streaming.pipe(stream.index, mimetype, name));
     return stream;
   }
@@ -1051,7 +1009,7 @@ export default class Client {
    */
   public createClipboardStream(mimetype: string): OutputStream {
     // Allocate and associate stream with clipboard metadata
-    const stream = this.createOutputStream();
+    const stream = this.outputStreams.createStream();
     this.tunnel.sendMessage(...Streaming.clipboard(stream.index, mimetype));
     return stream;
   }
@@ -1070,7 +1028,7 @@ export default class Client {
    */
   public createArgumentValueStream(mimetype: string, name: string): OutputStream {
     // Allocate and associate stream with argument value metadata
-    const stream = this.createOutputStream();
+    const stream = this.outputStreams.createStream();
     this.tunnel.sendMessage(...Streaming.argv(stream.index, mimetype, name));
     return stream;
   }
@@ -1092,7 +1050,7 @@ export default class Client {
    */
   public createObjectOutputStream(index: number, mimetype: string, name: string): OutputStream {
     // Allocate and associate stream with object metadata
-    const stream = this.createOutputStream();
+    const stream = this.outputStreams.createStream();
     this.tunnel.sendMessage(...ObjectInstruction.put(index, stream.index, mimetype, name));
     return stream;
   }
@@ -1123,11 +1081,14 @@ export default class Client {
    *                  or status.
    * @param code - The error code, if any, or 0 for success.
    */
-  public sendAck(index: number, message: string, code: number) {
+  public sendAck(index: number, error?: StreamError) {
     // Do not send requests if not connected
     if (!this.isConnected()) {
       return;
     }
+
+    const message = error?.message ?? 'OK';
+    const code = error?.code ?? StatusCode.SUCCESS;
 
     this.tunnel.sendMessage(...Streaming.ack(index, message, code));
   }
@@ -1155,7 +1116,7 @@ export default class Client {
    *
    * @param index - The index of the stream to end.
    */
-  public endOutputStream(index: number) {
+  public sendEnd(index: number) {
     // Do not send requests if not connected
     if (!this.isConnected()) {
       return;
@@ -1165,10 +1126,7 @@ export default class Client {
     this.tunnel.sendMessage(...Streaming.end(index));
 
     // Free associated index and stream if they exist
-    if (this.outputStreams.has(index)) {
-      this.outputStreams.delete(index);
-      this.streamIndices.free(index);
-    }
+    this.outputStreams.freeStream(index);
   }
 
   /**

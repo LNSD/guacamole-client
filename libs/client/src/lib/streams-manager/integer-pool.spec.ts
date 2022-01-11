@@ -1,4 +1,4 @@
-import { IntegerPool } from './IntegerPool';
+import { IntegerPool } from './integer-pool';
 
 describe('IntegerPool', () => {
   it('should provide a sequence of integers', () => {

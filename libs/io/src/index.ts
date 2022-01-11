@@ -22,3 +22,6 @@ export type {
   OnLoadingCallback
 } from './lib/net/http';
 export { xhr } from './lib/net/http';
+
+// Errors
+export * from './lib/error';
