@@ -1,4 +1,4 @@
-import { IntegerPool } from './integer-pool';
+import { IntegerPool } from '../utils/integer-pool';
 import { OutputStream } from '@guacamole-client/io';
 
 export interface OutputStreamHandlers {
