@@ -1,4 +1,4 @@
-import { Instruction } from "./instruction";
+import { InstructionElements } from "./instructionElements";
 
 /**
  * Allocates a new stream, associating it with the name of a stream previously requested by a get
@@ -10,7 +10,7 @@ import { Instruction } from "./instruction";
  * @param mimetype - The mimetype of the data being sent.
  * @param name - The name of the stream associated with the object.
  */
-export const body = (object: number, stream: number, mimetype: string, name: string): Instruction => ['body', object, stream, mimetype, name]
+export const body = (object: number, stream: number, mimetype: string, name: string): InstructionElements => ['body', object, stream, mimetype, name]
 
 /**
  * Allocates a new object, associating it with the given arbitrary filesystem metadata. The contents
@@ -20,7 +20,7 @@ export const body = (object: number, stream: number, mimetype: string, name: str
  * @param object - The index of the object to allocate.
  * @param name - The name of the filesystem.
  */
-export const filesystem = (object: number, name: string): Instruction => ['filesystem', object, name];
+export const filesystem = (object: number, name: string): InstructionElements => ['filesystem', object, name];
 
 /**
  * Requests that a new stream be created, providing read access to the object stream having the
@@ -46,7 +46,7 @@ export const filesystem = (object: number, name: string): Instruction => ['files
  * @param object - The index of the object to request a stream from.
  * @param name - The name of the stream being requested from the given object.
  */
-export const get = (object: number, name: string): Instruction => ['get', object, name];
+export const get = (object: number, name: string): InstructionElements => ['get', object, name];
 
 /**
  * Allocates a new stream, associating it with the given arbitrary object and stream name. The
@@ -57,7 +57,7 @@ export const get = (object: number, name: string): Instruction => ['get', object
  * @param mimetype - The mimetype of the data being sent.
  * @param name - The name of the stream within the given object to which data is being sent.
  */
-export const put = (object: number, stream: number, mimetype: string, name: string): Instruction => ['put', object, stream, mimetype, name]
+export const put = (object: number, stream: number, mimetype: string, name: string): InstructionElements => ['put', object, stream, mimetype, name]
 
 /**
  * Undefines an existing object, allowing its index to be reused by another future object. The
@@ -66,4 +66,4 @@ export const put = (object: number, stream: number, mimetype: string, name: stri
  *
  * @param object - The index of the object to undefine.
  */
-export const undefine = (object: number): Instruction => ['undefine', object];
+export const undefine = (object: number): InstructionElements => ['undefine', object];

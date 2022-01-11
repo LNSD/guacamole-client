@@ -1,10 +1,10 @@
-import { Instruction } from "./instruction";
+import { InstructionElements } from "./instructionElements";
 
 /**
  * Notifies the server that the connection is about to be closed by the client. This message can be
  * sent by the client during any phase, and takes no parameters.
  */
-export const disconnect = (): Instruction => ['disconnect'];
+export const disconnect = (): InstructionElements => ['disconnect'];
 
 /**
  * The client "nop" instruction does absolutely nothing, has no parameters, and is universally
@@ -25,4 +25,4 @@ export const nop = () => ['nop'];
  *
  * @param timestamp - A valid server-relative timestamp.
  */
-export const sync = (timestamp: number): Instruction => ['sync', timestamp];
+export const sync = (timestamp: number): InstructionElements => ['sync', timestamp];

@@ -1,4 +1,4 @@
-import { Instruction } from "./instruction";
+import { InstructionElements } from "./instructionElements";
 
 /**
  * Sends the specified key press or release event.
@@ -6,7 +6,7 @@ import { Instruction } from "./instruction";
  * @param keysym - The X11 keysym of the key being pressed or released.
  * @param pressed - 0 if the key is not pressed, 1 if the key is pressed.
  */
-export const key = (keysym: number, pressed: boolean): Instruction => ['key', keysym, pressed ? 1 : 0];
+export const key = (keysym: number, pressed: boolean): InstructionElements => ['key', keysym, pressed ? 1 : 0];
 
 /**
  * Sends the specified mouse movement or button press or release event (or combination thereof).
@@ -15,7 +15,7 @@ export const key = (keysym: number, pressed: boolean): Instruction => ['key', ke
  * @param y - The current Y coordinate of the mouse pointer.
  * @param mask - The button mask, representing the pressed or released status of each mouse button.
  */
-export const mouse = (x: number, y: number, mask: number): Instruction => ['mouse', x, y, mask];
+export const mouse = (x: number, y: number, mask: number): InstructionElements => ['mouse', x, y, mask];
 
 /**
  * Specifies that the client's optimal screen size has changed from what was specified during the
@@ -24,4 +24,4 @@ export const mouse = (x: number, y: number, mask: number): Instruction => ['mous
  * @param width - The new, optimal screen width.
  * @param height - The new, optimal screen height.
  */
-export const size = (width: number, height: number): Instruction => ['size', width, height];
+export const size = (width: number, height: number): InstructionElements => ['size', width, height];

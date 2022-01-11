@@ -1,10 +1,10 @@
-import { Instruction } from "./instruction";
+import { InstructionElements } from "./instructionElements";
 
 /**
  * Notifies the client that the connection is about to be closed by the server. This message can be
  * sent by the server during any phase, and takes no parameters.
  */
-export const disconnect = (): Instruction => ['disconnect'];
+export const disconnect = (): InstructionElements => ['disconnect'];
 
 /**
  * Notifies the client that the connection is about to be closed due to the specified error. This
@@ -14,7 +14,7 @@ export const disconnect = (): Instruction => ['disconnect'];
  * @param status - The Guacamole status code describing the error. For a list of status codes, see
  *                 the table in the section called “Status codes”.
  */
-export const error = (text: string, status: number): Instruction => ['error', text, status];
+export const error = (text: string, status: number): InstructionElements => ['error', text, status];
 
 /**
  * The log instruction sends an arbitrary string for debugging purposes. This instruction will be
@@ -24,7 +24,7 @@ export const error = (text: string, status: number): Instruction => ['error', te
  *
  * @param message - An arbitrary, human-readable message.
  */
-export const log = (message: string): Instruction => ['log', message];
+export const log = (message: string): InstructionElements => ['log', message];
 
 /**
  * Reports that a user on the current connection has moved the mouse to the given coordinates.
@@ -32,7 +32,7 @@ export const log = (message: string): Instruction => ['log', message];
  * @param x - The current X coordinate of the mouse pointer.
  * @param y - The current Y coordinate of the mouse pointer.
  */
-export const mouse = (x: number, y: number): Instruction => ['mouse', x, y];
+export const mouse = (x: number, y: number): InstructionElements => ['mouse', x, y];
 
 
 /**
@@ -52,7 +52,7 @@ export const nop = () => ['nop'];
  *             unique from all existing and future connections, and may not match the name of any
  *             installed protocol support (such as "vnc" or "rdp").
  */
-export const ready = (id: string): Instruction => ['ready', id];
+export const ready = (id: string): InstructionElements => ['ready', id];
 
 
 /**
@@ -64,4 +64,4 @@ export const ready = (id: string): Instruction => ['ready', id];
  *
  * @param timestamp - A valid server-relative timestamp.
  */
-export const sync = (timestamp: number): Instruction => ['sync', timestamp];
+export const sync = (timestamp: number): InstructionElements => ['sync', timestamp];

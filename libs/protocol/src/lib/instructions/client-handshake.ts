@@ -1,4 +1,4 @@
-import { Instruction } from "./instruction";
+import { InstructionElements } from "./instructionElements";
 
 /**
  * Specifies which audio mimetypes are supported by the client. Each parameter must be a single
@@ -7,7 +7,7 @@ import { Instruction } from "./instruction";
  *
  * @param mimetype - Audio mimetypes are supported by the client.
  */
-export const audio = (...mimetype: string[]): Instruction => ["audio", ...mimetype];
+export const audio = (...mimetype: string[]): InstructionElements => ["audio", ...mimetype];
 
 
 /**
@@ -18,7 +18,7 @@ export const audio = (...mimetype: string[]): Instruction => ["audio", ...mimety
  * instruction. If the received args instruction has, for example, three parameters, the responding
  * connect instruction must also have three parameters.
  */
-export const connect = (...params: string[]): Instruction => ["connect", ...params];
+export const connect = (...params: string[]): InstructionElements => ["connect", ...params];
 
 
 /**
@@ -32,7 +32,7 @@ export const connect = (...params: string[]): Instruction => ["connect", ...para
  *
  * @param mimetype - Image mimetypes are supported by the client
  */
-export const image = (...mimetype: string[]): Instruction => ["image", ...mimetype];
+export const image = (...mimetype: string[]): InstructionElements => ["image", ...mimetype];
 
 
 /**
@@ -47,7 +47,7 @@ export const image = (...mimetype: string[]): Instruction => ["image", ...mimety
  * @param id - The name of the protocol to use, such as "vnc" or "rdp", or the ID of the active
  *             connection to be joined, as returned via the ready instruction.
  */
-export const select = (id: string): Instruction => ["select", id];
+export const select = (id: string): InstructionElements => ["select", id];
 
 
 /**
@@ -57,7 +57,7 @@ export const select = (id: string): Instruction => ["select", id];
  * @param height - The optimal screen height.
  * @param dpi - The optimal screen resolution, in approximate DPI.
  */
-export const size = (width: number, height: number, dpi: number): Instruction => ['size', width, height, dpi];
+export const size = (width: number, height: number, dpi: number): InstructionElements => ['size', width, height, dpi];
 
 
 /**
@@ -67,7 +67,7 @@ export const size = (width: number, height: number, dpi: number): Instruction =>
  *
  * @param timezone - Timezone of the client system, in IANA zone key format.
  */
-export const timezone = (timezone: string): Instruction => ['timezone', timezone];
+export const timezone = (timezone: string): InstructionElements => ['timezone', timezone];
 
 
 /**
@@ -77,4 +77,4 @@ export const timezone = (timezone: string): Instruction => ['timezone', timezone
  *
  * @param mimetypes - Video mimetypes supported by the client
  */
-export const video = (...mimetypes: string[]): Instruction => ['video', ...mimetypes];
+export const video = (...mimetypes: string[]): InstructionElements => ['video', ...mimetypes];

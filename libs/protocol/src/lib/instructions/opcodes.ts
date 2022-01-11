@@ -25,19 +25,6 @@
 // export const TRANSFER = 'transfer';
 // export const TRANSFORM = 'transform';
 //
-// // Streaming instructions
-// export const ACK = 'ack';
-// export const ARGV = 'argv';
-// export const AUDIO = 'audio';
-// export const BLOB = 'blob';
-// export const CLIPBOARD = 'clipboard';
-// export const END = 'end';
-// export const FILE = 'file';
-// export const IMG = 'img';
-// export const NEST = 'nest';
-// export const PIPE = 'pipe';
-// export const VIDEO = 'video';
-//
 // // Object instructions
 // export const body = 'body';
 // export const filesystem = 'filesystem';

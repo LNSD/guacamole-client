@@ -1,7 +1,7 @@
 export { default as Decoder } from "./lib/codec/decoder";
 export { default as Encoder } from "./lib/codec/encoder";
 
-export type {Instruction} from "./lib/instructions/instruction";
+export type {InstructionElements} from "./lib/instructions/instructionElements";
 export * as ClientControl from "./lib/instructions/client-control";
 export * as ClientEvents from "./lib/instructions/client-events";
 export * as ClientHandshake from "./lib/instructions/client-handshake";

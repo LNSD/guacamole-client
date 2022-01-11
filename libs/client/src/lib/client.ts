@@ -701,7 +701,7 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
   //</editor-fold>
   //<editor-fold defaultstate="collapsed" desc="ObjectHandler">
 
-  private handleAckInstruction(streamIndex: number, code: number, reason: string) {
+  private handleAckInstruction(streamIndex: number, message: string, code: number) {
     // Get stream
     const stream = this.outputStreams.getStream(streamIndex);
     if (!stream) {
@@ -712,7 +712,7 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
     if (stream.onack) {
       let error = undefined;
       if (code >= 0x0100) {
-        error = new StreamError(reason, code);
+        error = new StreamError(message, code);
       }
 
       stream.onack(error);
@@ -1013,12 +1013,11 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
    * @private
    */
   private registerInstructionRoutes() {
-    this.instructionRouter.addInstructionHandler('ack', (params: string[]) => {
-      const streamIndex = parseInt(params[0], 10);
-      const reason = params[1];
-      const code = parseInt(params[2], 10);
+    this.instructionRouter.addInstructionHandler(Streaming.ack.opcode, (params: string[]) => {
+      Streaming.ack.parser(params, (streamIndex, message, code) => {
+        this.handleAckInstruction(streamIndex, message, code);
+      })
 
-      this.handleAckInstruction(streamIndex, code, reason);
     });
     this.instructionRouter.addInstructionHandler('arc', (params: string[]) => {
       const layerIndex = parseInt(params[0], 10);
