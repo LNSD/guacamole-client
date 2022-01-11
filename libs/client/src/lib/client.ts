@@ -7,8 +7,8 @@ import {
   VisibleLayer
 } from './display';
 import { Status, StatusCode } from './Status';
-import GuacamoleObject from './GuacamoleObject';
-import { InputStream, OutputStream, StreamError } from '@guacamole-client/io';
+import { GuacamoleObject } from './GuacamoleObject';
+import { OutputStream, StreamError } from '@guacamole-client/io';
 import { AudioPlayer, getAudioPlayerInstance, VideoPlayer } from '@guacamole-client/media';
 import {
   ClientControl,
@@ -22,19 +22,11 @@ import { State } from './state';
 import { MouseState } from '@guacamole-client/input';
 import { InputStreamHandlers, InputStreamsManager } from './streams-manager/input';
 import { OutputStreamHandlers, OutputStreamsManager } from './streams-manager/output';
-
-export type OnStateChangeCallback = (state: number) => void;
-export type OnNameCallback = (name: string) => void;
-export type OnErrorCallback = (error: Status) => void;
-export type OnAudioCallback = (stream: InputStream, mimetype: string) => AudioPlayer;
-export type OnVideoCallback = (stream: InputStream, layer: VisibleLayer, mimetype: string) => VideoPlayer;
-export type OnArgvCallback = (stream: InputStream, mimetype: string, name: string) => void;
-export type OnClipboardCallback = (stream: InputStream, mimetype: string) => void;
-export type OnFileCallback = (stream: InputStream, mimetype: string, filename: string) => void;
-export type OnFilesystemCallback = (object: GuacamoleObject, name: string) => void;
-export type OnPipeCallback = (stream: InputStream, mimetype: string, name: string) => void;
-export type OnRequiredCallback = (parameters: string[]) => void;
-export type OnSyncCallback = (timeout: number) => void;
+import {
+  ClientEventMap,
+  ClientEventTarget,
+  ClientEventTargetMap,
+} from './client-events';
 
 const PING_INTERVAL = 5000;
 
@@ -43,135 +35,14 @@ const PING_INTERVAL = 5000;
  * automatically handles incoming and outgoing Guacamole instructions via the
  * provided tunnel, updating its display using one or more canvas elements.
  */
-export default class Client implements InputStreamHandlers, OutputStreamHandlers {
-  //<editor-fold defaultstate="collapsed" desc="Client events" >
-
-  /**
-   * Fired whenever the state of this Client changes.
-   *
-   * @param state - The new state of the client.
-   */
-  public onstatechange: OnStateChangeCallback | null = null;
-
-  /**
-   * Fired when the remote client sends a name update.
-   *
-   * @param name - The new name of this client.
-   */
-  public onname: OnNameCallback | null = null;
-
-  /**
-   * Fired when an error is reported by the remote client, and the connection
-   * is being closed.
-   *
-   * @param status - A status object which describes the error.
-   */
-  public onerror: OnErrorCallback | null = null;
-
-  /**
-   * Fired when a audio stream is created. The stream provided to this event
-   * handler will contain its own event handlers for received data.
-   *
-   * @param stream - The stream that will receive audio data from the server.
-   * @param mimetype - The mimetype of the audio data which will be received.
-   *
-   * @return An object which implements the AudioPlayer interface and
-   *     has been initialized to play the data in the provided stream, or null
-   *     if the built-in audio players of the Guacamole client should be
-   *     used.
-   */
-  public onaudio: OnAudioCallback | null = null;
-
-  /**
-   * Fired when a video stream is created. The stream provided to this event
-   * handler will contain its own event handlers for received data.
-   *
-   * @param stream - The stream that will receive video data from the server.
-   * @param layer - The destination layer on which the received video data should be
-   *     played. It is the responsibility of the VideoPlayer
-   *     implementation to play the received data within this layer.
-   * @param mimetype - The mimetype of the video data which will be received.
-   *
-   * @return An object which implements the VideoPlayer interface and
-   *     has been initialized to play the data in the provided stream, or null
-   *     if the built-in video players of the Guacamole client should be
-   *     used.
-   */
-  public onvideo: OnVideoCallback | null = null;
-
-  /**
-   * Fired when the current value of a connection parameter is being exposed
-   * by the server.
-   *
-   * @param stream - The stream that will receive connection parameter data from the server.
-   * @param mimetype - The mimetype of the data which will be received.
-   * @param name - The name of the connection parameter whose value is being exposed.
-   */
-  public onargv: OnArgvCallback | null = null;
-
-  /**
-   * Fired when the clipboard of the remote client is changing.
-   *
-   * @param stream - The stream that will receive clipboard data from the server.
-   * @param mimetype - The mimetype of the data which will be received.
-   */
-  public onclipboard: OnClipboardCallback | null = null;
-
-  /**
-   * Fired when a file stream is created. The stream provided to this event
-   * handler will contain its own event handlers for received data.
-   *
-   * @param stream - The stream that will receive data from the server.
-   * @param mimetype - The mimetype of the file received.
-   * @param filename - The name of the file received.
-   */
-  public onfile: OnFileCallback | null = null;
-
-  /**
-   * Fired when a filesystem object is created. The object provided to this
-   * event handler will contain its own event handlers and functions for
-   * requesting and handling data.
-   *
-   * @param object - The created filesystem object.
-   * @param name - The name of the filesystem.
-   */
-  public onfilesystem: OnFilesystemCallback | null = null;
-
-  /**
-   * Fired when a pipe stream is created. The stream provided to this event
-   * handler will contain its own event handlers for received data;
-   *
-   * @param stream - The stream that will receive data from the server.
-   * @param mimetype - The mimetype of the data which will be received.
-   * @param name - The name of the pipe.
-   */
-  public onpipe: OnPipeCallback | null = null;
-
-  /**
-   * Fired when a "required" instruction is received. A required instruction
-   * indicates that additional parameters are required for the connection to
-   * continue, such as user credentials.
-   *
-   * @param parameters - The names of the connection parameters that are required to be
-   *                     provided for the connection to continue.
-   */
-  public onrequired: OnRequiredCallback | null = null;
-
-  /**
-   * Fired whenever a sync instruction is received from the server, indicating
-   * that the server is finished processing any input from the client and
-   * has sent any results.
-   *
-   * @param timestamp - The timestamp associated with the sync
-   *                    instruction.
-   */
-  public onsync: OnSyncCallback | null = null;
-
-  //</editor-fold>
+export class Client implements InputStreamHandlers, OutputStreamHandlers, ClientEventTarget {
 
   private currentState: State = State.IDLE;
+
   private currentTimestamp = 0;
   private pingIntervalHandler?: number;
+
+  private readonly events: ClientEventTargetMap = new ClientEventTargetMap();
 
   private readonly inputStreams: InputStreamsManager;
   private readonly outputStreams: OutputStreamsManager;
@@ -204,6 +75,7 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
    * @private
    */
   private readonly videoPlayers: Map<number, VideoPlayer> = new Map();
+
   private readonly decoders: Map<number, Decoder> = new Map();
 
   /**
@@ -495,7 +367,9 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
     },
 
     name: (parameters: string[]) => {
-      this.handleNameInstruction(parameters);
+      const name = parameters[0];
+
+      this.handleNameInstruction(name);
     },
 
     nest: (parameters: string[]) => {
@@ -650,10 +524,19 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
       }
     };
     this.tunnel.onerror = (error) => {
-      if (this.onerror !== null) {
-        this.onerror(new Status(StatusCode.fromTunnelError(error)));
+      const listener = this.events.getEventListener('onerror');
+      if (listener) {
+        listener(new Status(StatusCode.fromTunnelError(error)));
       }
     };
+  }
+
+  addEventListener<K extends keyof ClientEventMap>(type: K, listener: ClientEventMap[K]): void {
+    this.events.addEventListener(type, listener);
+  }
+
+  removeEventListener<K extends keyof ClientEventMap>(type: K): void {
+    this.events.removeEventListener(type);
   }
 
   public isConnected(): boolean {
@@ -915,214 +798,6 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
     this.tunnel.sendMessage(...ObjectInstruction.get(index, name));
   }
 
-  private handleBodyInstruction(objectIndex: number, streamIndex: number, mimetype: string, name: string) {
-    const object = this.objects.get(objectIndex);
-
-    // Create stream only if handler is defined
-    if (!object?.onbody) {
-      this.sendAck(streamIndex, new StreamError('Receipt of body unsupported', StatusCode.UNSUPPORTED));
-      return;
-    }
-
-    const stream = this.inputStreams.createStream(streamIndex);
-    object.onbody(stream, mimetype, name);
-  }
-
-  private handleDisconnectInstruction() {
-    // Explicitly tear down connection
-    this.disconnect();
-  }
-
-  private handleErrorInstruction(code: number, reason: string) {
-    // Call handler if set
-    if (this.onerror !== null) {
-      this.onerror(new Status(code, reason));
-    }
-
-    this.disconnect();
-  }
-
-  private handleNameInstruction(parameters: string[]) {
-    if (this.onname !== null) {
-      this.onname(parameters[0]);
-    }
-  }
-
-  private handleNestInstruction(parserIndex: number, parameters: string[]) {
-    const parser = this.getParser(parserIndex);
-    parser.receive(parameters[1]);
-  }
-
-  private handleRequiredInstruction(parameters: string[]) {
-    if (this.onrequired !== null) {
-      this.onrequired(parameters);
-    }
-  }
-
-  private handleSyncInstruction(timestamp: number) {
-    // Flush display, send sync when done
-    this.display.flush(() => {
-      // Synchronize all audio players
-      for (const [_, audioPlayer] of this.audioPlayers) {
-        if (audioPlayer) {
-          audioPlayer.sync();
-        }
-      }
-
-      // Send sync response to server
-      if (timestamp !== this.currentTimestamp) {
-        this.tunnel.sendMessage(...ClientControl.sync(timestamp));
-        this.currentTimestamp = timestamp;
-      }
-    });
-
-    // If received first update, no longer waiting.
-    if (this.currentState === State.WAITING) {
-      this.setState(State.CONNECTED);
-    }
-
-    // Call sync handler if defined
-    if (this.onsync !== null) {
-      this.onsync(timestamp);
-    }
-  }
-
-  //<editor-fold defaultstate="collapsed" desc="InputStreamHandler">
-
-  private handleArgvInstruction(streamIndex: number, mimetype: string, name: string) {
-    if (this.onargv === null) {
-      this.sendAck(streamIndex, new StreamError('Receiving argument values unsupported', StatusCode.UNSUPPORTED));
-      return;
-    }
-
-    // Create stream
-    const stream = this.inputStreams.createStream(streamIndex);
-    this.onargv(stream, mimetype, name);
-  }
-
-  private handleImgInstruction(streamIndex: number, layerIndex: number, channelMask: number, x: number, y: number, mimetype: string) {
-    // Create stream
-    const stream = this.inputStreams.createStream(streamIndex);
-
-    // Get layer
-    const layer = this.getLayer(layerIndex);
-
-    // Draw received contents once decoded
-    this.display.setChannelMask(layer, channelMask);
-    this.display.drawStream(layer, x, y, stream, mimetype);
-  }
-
-  private handleAudioInstruction(streamIndex: number, mimetype: string) {
-    // Create stream
-    const stream = this.inputStreams.createStream(streamIndex);
-
-    // Get player instance via callback
-    let audioPlayer: AudioPlayer | null = null;
-    if (this.onaudio) {
-      audioPlayer = this.onaudio(stream, mimetype);
-    }
-
-    // If unsuccessful, try to use a default implementation
-    if (!audioPlayer) {
-      audioPlayer = getAudioPlayerInstance(stream, mimetype);
-    }
-
-    // If we have successfully retrieved an audio player, send success response
-    if (audioPlayer) {
-      this.audioPlayers.set(streamIndex, audioPlayer);
-      this.sendAck(streamIndex);
-    } else {
-      // Otherwise, mimetype must be unsupported
-      this.sendAck(streamIndex, new StreamError('BAD TYPE', StatusCode.CLIENT_BAD_TYPE));
-    }
-  }
-
-  private handleVideoInstruction(streamIndex: number, layerIndex: number, mimetype: string) {
-    // Create stream
-    const stream = this.inputStreams.createStream(streamIndex);
-
-    // Get layer
-    const layer = this.getLayer(layerIndex);
-
-    // Get player instance via callback
-    let videoPlayer: VideoPlayer | null = null;
-    if (this.onvideo) {
-      videoPlayer = this.onvideo(stream, layer, mimetype);
-    }
-
-    // If unsuccessful, try to use a default implementation
-    if (!videoPlayer) {
-      videoPlayer = VideoPlayer.getInstance(stream, layer, mimetype);
-    }
-
-    // If we have successfully retrieved an video player, send success response
-    if (videoPlayer) {
-      this.videoPlayers.set(streamIndex, videoPlayer);
-      this.sendAck(streamIndex);
-    } else {
-      // Otherwise, mimetype must be unsupported
-      this.sendAck(streamIndex, new StreamError('BAD TYPE', StatusCode.CLIENT_BAD_TYPE));
-    }
-  }
-
-  private handleClipboardInstruction(streamIndex: number, mimetype: string) {
-    if (this.onclipboard === null) {
-      this.sendAck(streamIndex, new StreamError('Clipboard unsupported', StatusCode.UNSUPPORTED));
-      return;
-    }
-
-    // Create stream
-    const stream = this.inputStreams.createStream(streamIndex);
-
-    this.onclipboard(stream, mimetype);
-  }
-
-  private handleFileInstruction(streamIndex: number, mimetype: string, filename: string) {
-    if (this.onfile === null) {
-      this.sendAck(streamIndex, new StreamError('File transfer unsupported', StatusCode.UNSUPPORTED));
-      return;
-    }
-
-    // Create stream
-    const stream = this.inputStreams.createStream(streamIndex);
-    this.onfile(stream, mimetype, filename);
-  }
-
-  private handleBlobInstruction(streamIndex: number, data: string) {
-    // Get stream
-    const stream = this.inputStreams.getStream(streamIndex);
-
-    // Write data
-    if (stream?.onblob) {
-      stream.onblob(data);
-    }
-  }
-
-  private handleEndInstruction(streamIndex: number) {
-    // Get stream
-    const stream = this.inputStreams.getStream(streamIndex);
-    if (stream) {
-      // Signal end of stream if handler defined
-      if (stream.onend) {
-        stream.onend();
-      }
-
-      // Invalidate stream
-      this.inputStreams.freeStream(streamIndex);
-    }
-  }
-
-  private handlePipeInstruction(streamIndex: number, mimetype: string, name: string) {
-    if (this.onpipe === null) {
-      this.sendAck(streamIndex, new StreamError('Named pipes unsupported', StatusCode.UNSUPPORTED));
-      return;
-    }
-
-    // Create stream
-    const stream = this.inputStreams.createStream(streamIndex);
-    this.onpipe(stream, mimetype, name);
-  }
-
   /**
    * Acknowledge receipt of a blob on the stream with the given index.
    *
@@ -1140,33 +815,6 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
     const code = error?.code ?? StatusCode.SUCCESS;
 
     this.tunnel.sendMessage(...Streaming.ack(index, message, code));
-  }
-
-  //</editor-fold>
-  //<editor-fold defaultstate="collapsed" desc="OutputStreamHandler">
-
-  private handleAckInstruction(streamIndex: number, code: number, reason: string) {
-    // Get stream
-    const stream = this.outputStreams.getStream(streamIndex);
-    if (!stream) {
-      return;
-    }
-
-    // Signal ack if handler defined
-    if (stream.onack) {
-      let error = undefined;
-      if (code >= 0x0100) {
-        error = new StreamError(reason, code);
-      }
-
-      stream.onack(error);
-    }
-
-    // If code is an error, invalidate stream if not already
-    // invalidated by onack handler
-    if (code >= 0x0100) {
-      this.outputStreams.freeStream(streamIndex);
-    }
   }
 
   /**
@@ -1205,11 +853,285 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
     this.outputStreams.freeStream(index);
   }
 
+  /**
+   * Returns the index passed to getLayer() when the given layer was created.
+   * Positive indices refer to visible layers, an index of zero refers to the
+   * default layer, and negative indices refer to buffers.
+   *
+   * @param layer - The layer whose index should be determined.
+   * @returns The index of the given layer, or null if no such layer is associated
+   *          with this client.
+   */
+  public getLayerIndex(layer: VisibleLayer | Layer | null): number | null {
+    // Avoid searching if there clearly is no such layer
+    if (!layer) {
+      return null;
+    }
+
+    // Search through each layer, returning the index of the given layer
+    // once found
+    for (const [key, layer2] of this.layers) {
+      if (layer === layer2) {
+        return key;
+      }
+    }
+
+    // Otherwise, no such index
+    return null;
+  }
+
+  private handleBodyInstruction(objectIndex: number, streamIndex: number, mimetype: string, name: string) {
+    const object = this.objects.get(objectIndex);
+
+    // Create stream only if handler is defined
+    if (!object?.onbody) {
+      this.sendAck(streamIndex, new StreamError('Receipt of body unsupported', StatusCode.UNSUPPORTED));
+      return;
+    }
+
+    const stream = this.inputStreams.createStream(streamIndex);
+    object.onbody(stream, mimetype, name);
+  }
+
+  private handleDisconnectInstruction() {
+    // Explicitly tear down connection
+    this.disconnect();
+  }
+
+  private handleErrorInstruction(code: number, reason: string) {
+    // Call listener if set
+    const listener = this.events.getEventListener('onerror');
+    if (listener) {
+      listener(new Status(code, reason));
+    }
+
+    this.disconnect();
+  }
+
+  //<editor-fold defaultstate="collapsed" desc="InputStreamHandler">
+
+  private handleNameInstruction(name: string) {
+    const listener = this.events.getEventListener('onname');
+    if (listener) {
+      listener(name);
+    }
+  }
+
+  private handleNestInstruction(parserIndex: number, parameters: string[]) {
+    const parser = this.getParser(parserIndex);
+    parser.receive(parameters[1]);
+  }
+
+  private handleRequiredInstruction(parameters: string[]) {
+    const listener = this.events.getEventListener('onrequired');
+    if (listener) {
+      listener(parameters);
+    }
+  }
+
+  private handleSyncInstruction(timestamp: number) {
+    // Flush display, send sync when done
+    this.display.flush(() => {
+      // Synchronize all audio players
+      for (const [_, audioPlayer] of this.audioPlayers) {
+        if (audioPlayer) {
+          audioPlayer.sync();
+        }
+      }
+
+      // Send sync response to server
+      if (timestamp !== this.currentTimestamp) {
+        this.tunnel.sendMessage(...ClientControl.sync(timestamp));
+        this.currentTimestamp = timestamp;
+      }
+    });
+
+    // If received first update, no longer waiting.
+    if (this.currentState === State.WAITING) {
+      this.setState(State.CONNECTED);
+    }
+
+    // Call sync handler if defined
+    const listener = this.events.getEventListener('onsync');
+    if (listener) {
+      listener(timestamp);
+    }
+  }
+
+  private handleArgvInstruction(streamIndex: number, mimetype: string, name: string) {
+    const listener = this.events.getEventListener('onargv');
+    if (!listener) {
+      this.sendAck(streamIndex, new StreamError('Receiving argument values unsupported', StatusCode.UNSUPPORTED));
+      return;
+    }
+
+    // Create stream
+    const stream = this.inputStreams.createStream(streamIndex);
+    listener(stream, mimetype, name);
+  }
+
+  private handleImgInstruction(streamIndex: number, layerIndex: number, channelMask: number, x: number, y: number, mimetype: string) {
+    // Create stream
+    const stream = this.inputStreams.createStream(streamIndex);
+
+    // Get layer
+    const layer = this.getLayer(layerIndex);
+
+    // Draw received contents once decoded
+    this.display.setChannelMask(layer, channelMask);
+    this.display.drawStream(layer, x, y, stream, mimetype);
+  }
+
+  private handleAudioInstruction(streamIndex: number, mimetype: string) {
+    // Create stream
+    const stream = this.inputStreams.createStream(streamIndex);
+
+    // Get player instance via callback
+    let audioPlayer: AudioPlayer | null = null;
+
+    const listener = this.events.getEventListener('onaudio');
+    if (listener) {
+      audioPlayer = listener(stream, mimetype);
+    }
+
+    // If unsuccessful, try to use a default implementation
+    if (!audioPlayer) {
+      audioPlayer = getAudioPlayerInstance(stream, mimetype);
+    }
+
+    if (!audioPlayer) {
+      // Mimetype must be unsupported
+      this.sendAck(streamIndex, new StreamError('BAD TYPE', StatusCode.CLIENT_BAD_TYPE));
+      return;
+    }
+
+    // If we have successfully retrieved an audio player, send success response
+    this.audioPlayers.set(streamIndex, audioPlayer);
+    this.sendAck(streamIndex);
+  }
+
+  private handleVideoInstruction(streamIndex: number, layerIndex: number, mimetype: string) {
+    // Create stream
+    const stream = this.inputStreams.createStream(streamIndex);
+
+    // Get layer
+    const layer = this.getLayer(layerIndex);
+
+    // Get player instance via callback
+    let videoPlayer: VideoPlayer | null = null;
+
+    const listener = this.events.getEventListener('onvideo');
+    if (listener) {
+      videoPlayer = listener(stream, layer, mimetype);
+    }
+
+    // If unsuccessful, try to use a default implementation
+    if (!videoPlayer) {
+      videoPlayer = VideoPlayer.getInstance(stream, layer, mimetype);
+    }
+
+    if (!videoPlayer) {
+      // Mimetype must be unsupported
+      this.sendAck(streamIndex, new StreamError('BAD TYPE', StatusCode.CLIENT_BAD_TYPE));
+      return;
+    }
+
+    // If we have successfully retrieved a video player, send success response
+    this.videoPlayers.set(streamIndex, videoPlayer);
+    this.sendAck(streamIndex);
+  }
+
+  private handleClipboardInstruction(streamIndex: number, mimetype: string) {
+    const listener = this.events.getEventListener('onclipboard');
+    if (!listener) {
+      this.sendAck(streamIndex, new StreamError('Clipboard unsupported', StatusCode.UNSUPPORTED));
+      return;
+    }
+
+    const stream = this.inputStreams.createStream(streamIndex);
+    listener(stream, mimetype);
+  }
+
+  private handleFileInstruction(streamIndex: number, mimetype: string, filename: string) {
+    const listener = this.events.getEventListener('onfile');
+    if (!listener) {
+      this.sendAck(streamIndex, new StreamError('File transfer unsupported', StatusCode.UNSUPPORTED));
+      return;
+    }
+
+    const stream = this.inputStreams.createStream(streamIndex);
+    listener(stream, mimetype, filename);
+  }
+
+  //</editor-fold>
+  //<editor-fold defaultstate="collapsed" desc="OutputStreamHandler">
+
+  private handleBlobInstruction(streamIndex: number, data: string) {
+    // Get stream
+    const stream = this.inputStreams.getStream(streamIndex);
+
+    // Write data
+    if (stream?.onblob) {
+      stream.onblob(data);
+    }
+  }
+
+  private handleEndInstruction(streamIndex: number) {
+    // Get stream
+    const stream = this.inputStreams.getStream(streamIndex);
+    if (stream) {
+      // Signal end of stream if handler defined
+      if (stream.onend) {
+        stream.onend();
+      }
+
+      // Invalidate stream
+      this.inputStreams.freeStream(streamIndex);
+    }
+  }
+
+  private handlePipeInstruction(streamIndex: number, mimetype: string, name: string) {
+    const listener = this.events.getEventListener('onpipe');
+    if (!listener) {
+      this.sendAck(streamIndex, new StreamError('Named pipes unsupported', StatusCode.UNSUPPORTED));
+      return;
+    }
+
+    // Create stream
+    const stream = this.inputStreams.createStream(streamIndex);
+    listener(stream, mimetype, name);
+  }
+
   //</editor-fold>
   //<editor-fold defaultstate="collapsed" desc="ObjectHandler">
 
+  private handleAckInstruction(streamIndex: number, code: number, reason: string) {
+    // Get stream
+    const stream = this.outputStreams.getStream(streamIndex);
+    if (!stream) {
+      return;
+    }
+
+    // Signal ack if handler defined
+    if (stream.onack) {
+      let error = undefined;
+      if (code >= 0x0100) {
+        error = new StreamError(reason, code);
+      }
+
+      stream.onack(error);
+    }
+
+    // If code is an error, invalidate stream if not already
+    // invalidated by onack handler
+    if (code >= 0x0100) {
+      this.outputStreams.freeStream(streamIndex);
+    }
+  }
+
   private handleFilesystemInstruction(objectIndex: number, name: string) {
-    if (this.onfilesystem === null) {
+    const listener = this.events.getEventListener('onfilesystem');
+    if (!listener) {
       // If unsupported, simply ignore the availability of the filesystem
       return;
     }
@@ -1218,8 +1140,11 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
     const object = new GuacamoleObject(this, objectIndex);
 
     this.objects.set(objectIndex, object);
-    this.onfilesystem(object, name);
+    listener(object, name);
   }
+
+  //</editor-fold>
+  //<editor-fold defaultstate="collapsed" desc="DisplayHandler">
 
   private handleUndefineInstruction(objectIndex: number) {
     // Get object
@@ -1230,9 +1155,6 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
       object.onundefine();
     }
   }
-
-  //</editor-fold>
-  //<editor-fold defaultstate="collapsed" desc="DisplayHandler">
 
   private handleArcInstruction(layerIndex: number, x: number, y: number, radius: number, startAngle: number, endAngle: number, negative: number) {
     const layer = this.getLayer(layerIndex);
@@ -1424,38 +1346,11 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
     }
   }
 
+  //</editor-fold>
+
   private handleTransformInstruction(layerIndex: number, a: number, b: number, c: number, d: number, e: number, f: number) {
     const layer = this.getLayer(layerIndex);
     this.display.transform(layer, a, b, c, d, e, f);
-  }
-
-  //</editor-fold>
-
-  /**
-   * Returns the index passed to getLayer() when the given layer was created.
-   * Positive indices refer to visible layers, an index of zero refers to the
-   * default layer, and negative indices refer to buffers.
-   *
-   * @param layer - The layer whose index should be determined.
-   * @returns The index of the given layer, or null if no such layer is associated
-   *          with this client.
-   */
-  public getLayerIndex(layer: VisibleLayer | Layer | null): number | null {
-    // Avoid searching if there clearly is no such layer
-    if (!layer) {
-      return null;
-    }
-
-    // Search through each layer, returning the index of the given layer
-    // once found
-    for (const [key, layer2] of this.layers) {
-      if (layer === layer2) {
-        return key;
-      }
-    }
-
-    // Otherwise, no such index
-    return null;
   }
 
   private setState(state: State) {
@@ -1464,8 +1359,10 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
     }
 
     this.currentState = state;
-    if (this.onstatechange !== null) {
-      this.onstatechange(state);
+
+    const listener = this.events.getEventListener('onstatechange');
+    if (listener) {
+      listener(state);
     }
   }
 

@@ -72,9 +72,7 @@ import { ConnectableWebSocket, xhr } from '@guacamole-client/net';
   display.appendChild(guac.getDisplay().getElement());
 
   // Error handler
-  guac.onerror = function(error) {
-    console.error(error);
-  };
+  guac.addEventListener('onerror', console.error);
 
   // Connect
   guac.connect(`token=${token}&GUAC_DATA_SOURCE=default&GUAC_ID=DEFAULT&GUAC_TYPE=c&GUAC_WIDTH=2880&GUAC_HEIGHT=598&GUAC_DPI=192&GUAC_TIMEZONE=Europe/Madrid&GUAC_AUDIO=audio/L8&GUAC_AUDIO=audio/L16&GUAC_IMAGE=image/jpeg&GUAC_IMAGE=image/png&GUAC_IMAGE=image/webp`);
