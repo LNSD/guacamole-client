@@ -7,6 +7,7 @@ const SELECT_OPCODE = 'select';
 const SIZE_OPCODE = 'size';
 const TIMEZONE_OPCODE = 'timezone';
 const VIDEO_OPCODE = 'video';
+
 /**
  * Specifies which audio mimetypes are supported by the client. Each parameter must be a single
  * mimetype, listed in order of client preference, with the optimal mimetype being the first
@@ -18,7 +19,9 @@ export type AudioHandler = (...mimetype: string[]) => void;
 
 export const audio = createInstruction<AudioHandler>(AUDIO_OPCODE,
   (...mimetype: string[]) => [...mimetype],
-  (handler: AudioHandler) => (params) => {},
+  (handler: AudioHandler) => (params) => {
+    handler(...params);
+  }
 );
 
 
@@ -34,7 +37,9 @@ export type ConnectHandler = (...params: string[]) => void;
 
 export const connect = createInstruction<ConnectHandler>(CONNECT_OPCODE,
   (...params: string[]) => [...params],
-  (handler: ConnectHandler) => (params) => {},
+  (handler: ConnectHandler) => (params) => {
+    handler(...params);
+  }
 );
 
 
@@ -53,7 +58,9 @@ export type ImageHandler = (...mimetype: string[]) => void;
 
 export const image = createInstruction<ImageHandler>(IMAGE_OPCODE,
   (...mimetype: string[]) => [...mimetype],
-  (handler: ImageHandler) => (params) => {},
+  (handler: ImageHandler) => (params) => {
+    handler(...params);
+  }
 );
 
 
@@ -73,7 +80,11 @@ export type SelectHandler = (id: string) => void;
 
 export const select = createInstruction<SelectHandler>(SELECT_OPCODE,
   (id: string) => [id],
-  (handler: SelectHandler) => (params) => {},
+  (handler: SelectHandler) => (params) => {
+    const id = params[0];
+
+    handler(id);
+  }
 );
 
 
@@ -88,7 +99,13 @@ export type SizeHandler = (width: number, height: number, dpi: number) => void;
 
 export const size = createInstruction<SizeHandler>(SIZE_OPCODE,
   (width: number, height: number, dpi: number) => [width, height, dpi],
-  (handler: SizeHandler) => (params) => {},
+  (handler: SizeHandler) => (params) => {
+    const width = parseInt(params[0], 10);
+    const height = parseInt(params[1], 10);
+    const dpi = parseInt(params[2], 10);
+
+    handler(width, height, dpi);
+  }
 );
 
 
@@ -102,8 +119,12 @@ export const size = createInstruction<SizeHandler>(SIZE_OPCODE,
 export type TimezoneHandler = (timezone: string) => void;
 
 export const timezone = createInstruction<TimezoneHandler>(TIMEZONE_OPCODE,
-  (timezone: string) => [timezone],
-  (handler: TimezoneHandler) => (params) => {},
+  (tz: string) => [tz],
+  (handler: TimezoneHandler) => (params) => {
+    const tz = params[0];
+
+    handler(tz);
+  }
 );
 
 
@@ -118,5 +139,7 @@ export type VideoHandler = (...mimetypes: string[]) => void;
 
 export const video = createInstruction<VideoHandler>(VIDEO_OPCODE,
   (...mimetypes: string[]) => [...mimetypes],
-  (handler: VideoHandler) => (params) => {},
+  (handler: VideoHandler) => (params) => {
+    handler(...params);
+  }
 );
