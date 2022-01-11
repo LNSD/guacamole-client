@@ -279,24 +279,13 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
       this.handleBlobInstruction(streamIndex, data);
     },
 
-    // TODO: Pending
     body: (parameters: string[]) => {
-      // Get object
       const objectIndex = parseInt(parameters[0], 10);
-      const object = this.objects.get(objectIndex);
-
       const streamIndex = parseInt(parameters[1], 10);
       const mimetype = parameters[2];
       const name = parameters[3];
 
-      // Create stream if handler defined
-      if (object?.onbody) {
-        const stream = this.inputStreams.createStream(streamIndex);
-        object.onbody(stream, mimetype, name);
-      } else {
-        // Otherwise, unsupported
-        this.sendAck(streamIndex, new StreamError('Receipt of body unsupported', StatusCode.UNSUPPORTED));
-      }
+      this.handleBodyInstruction(objectIndex, streamIndex, mimetype, name);
     },
 
     cfill: (parameters: string[]) => {
@@ -385,26 +374,10 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
       this.handleDisconnectInstruction();
     },
 
-    // TODO: Pending
     dispose: (parameters: string[]) => {
       const layerIndex = parseInt(parameters[0], 10);
 
-      // If visible layer, remove from parent
-      if (layerIndex > 0) {
-        // Remove from parent
-        const layer = this.getLayer(layerIndex);
-        this.display.dispose(layer);
-
-        // Delete reference
-        this.layers.delete(layerIndex);
-      } else if (layerIndex < 0) {
-        // If buffer, just delete reference
-        // TODO Review the following lint suppression
-        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-        this.layers.delete(layerIndex);
-      }
-
-      // Attempting to dispose the root layer currently has no effect.
+      this.handleDisposeInstruction(layerIndex);
     },
 
     distort: (parameters: string[]) => {
@@ -525,10 +498,10 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
       this.handleNameInstruction(parameters);
     },
 
-    // TODO: Pending
     nest: (parameters: string[]) => {
-      const parser = this.getParser(parseInt(parameters[0], 10));
-      parser.receive(parameters[1]);
+      const parserIndex = parseInt(parameters[0], 10);
+
+      this.handleNestInstruction(parserIndex, parameters);
     },
 
     pipe: (parameters: string[]) => {
@@ -581,19 +554,12 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
       this.handleResetInstruction(layerIndex);
     },
 
-    // TODO: Pending
     set: (parameters: string[]) => {
       const layerIndex = parseInt(parameters[0], 10);
       const name = parameters[1];
       const value = parameters[2];
 
-      const layer = this.getLayer(layerIndex);
-
-      // Call property handler if defined
-      const handler = this.layerPropertyHandlers.get(name);
-      if (handler) {
-        handler(layer, value);
-      }
+      this.handleSetInstruction(layerIndex, name, value);
     },
 
     shade: (parameters: string[]) => {
@@ -619,35 +585,10 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
       this.handleStartInstruction(layerIndex, x, y);
     },
 
-    // TODO: Pending
     sync: (parameters: string[]) => {
       const timestamp = parseInt(parameters[0], 10);
 
-      // Flush display, send sync when done
-      this.display.flush(() => {
-        // Synchronize all audio players
-        for (const [_, audioPlayer] of this.audioPlayers) {
-          if (audioPlayer) {
-            audioPlayer.sync();
-          }
-        }
-
-        // Send sync response to server
-        if (timestamp !== this.currentTimestamp) {
-          this.tunnel.sendMessage(...ClientControl.sync(timestamp));
-          this.currentTimestamp = timestamp;
-        }
-      });
-
-      // If received first update, no longer waiting.
-      if (this.currentState === State.WAITING) {
-        this.setState(State.CONNECTED);
-      }
-
-      // Call sync handler if defined
-      if (this.onsync) {
-        this.onsync(timestamp);
-      }
+      this.handleSyncInstruction(timestamp);
     },
 
     transfer: (parameters: string[]) => {
@@ -690,8 +631,6 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
       this.handleVideoInstruction(streamIndex, layerIndex, mimetype);
     }
   };
-
-
 
   /**
    * @constructor
@@ -976,6 +915,19 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
     this.tunnel.sendMessage(...ObjectInstruction.get(index, name));
   }
 
+  private handleBodyInstruction(objectIndex: number, streamIndex: number, mimetype: string, name: string) {
+    const object = this.objects.get(objectIndex);
+
+    // Create stream only if handler is defined
+    if (!object?.onbody) {
+      this.sendAck(streamIndex, new StreamError('Receipt of body unsupported', StatusCode.UNSUPPORTED));
+      return;
+    }
+
+    const stream = this.inputStreams.createStream(streamIndex);
+    object.onbody(stream, mimetype, name);
+  }
+
   private handleDisconnectInstruction() {
     // Explicitly tear down connection
     this.disconnect();
@@ -996,9 +948,42 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
     }
   }
 
+  private handleNestInstruction(parserIndex: number, parameters: string[]) {
+    const parser = this.getParser(parserIndex);
+    parser.receive(parameters[1]);
+  }
+
   private handleRequiredInstruction(parameters: string[]) {
     if (this.onrequired !== null) {
       this.onrequired(parameters);
+    }
+  }
+
+  private handleSyncInstruction(timestamp: number) {
+    // Flush display, send sync when done
+    this.display.flush(() => {
+      // Synchronize all audio players
+      for (const [_, audioPlayer] of this.audioPlayers) {
+        if (audioPlayer) {
+          audioPlayer.sync();
+        }
+      }
+
+      // Send sync response to server
+      if (timestamp !== this.currentTimestamp) {
+        this.tunnel.sendMessage(...ClientControl.sync(timestamp));
+        this.currentTimestamp = timestamp;
+      }
+    });
+
+    // If received first update, no longer waiting.
+    if (this.currentState === State.WAITING) {
+      this.setState(State.CONNECTED);
+    }
+
+    // Call sync handler if defined
+    if (this.onsync !== null) {
+      this.onsync(timestamp);
     }
   }
 
@@ -1293,6 +1278,25 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
     this.display.curveTo(layer, cp1x, cp1y, cp2x, cp2y, x, y);
   }
 
+  private handleDisposeInstruction(layerIndex: number) {
+    // If visible layer, remove from parent
+    if (layerIndex > 0) {
+      // Remove from parent
+      const layer = this.getLayer(layerIndex);
+      this.display.dispose(layer);
+
+      // Delete reference
+      this.layers.delete(layerIndex);
+    } else if (layerIndex < 0) {
+      // If buffer, just delete reference
+      // TODO Review the following lint suppression
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+      this.layers.delete(layerIndex);
+    }
+
+    // Attempting to dispose the root layer currently has no effect.
+  }
+
   private handleDistortInstruction(layerIndex: number, a: number, b: number, c: number, d: number, e: number, f: number) {
     // Only valid for visible layers (not buffers)
     if (layerIndex < 0) {
@@ -1375,6 +1379,16 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
   private handleResetInstruction(layerIndex: number) {
     const layer = this.getLayer(layerIndex);
     this.display.reset(layer);
+  }
+
+  private handleSetInstruction(layerIndex: number, name: string, value: string) {
+    const layer = this.getLayer(layerIndex);
+
+    // Call property handler if defined
+    const handler = this.layerPropertyHandlers.get(name);
+    if (handler) {
+      handler(layer, value);
+    }
   }
 
   private handleShadeInstruction(layerIndex: number, a: number) {
