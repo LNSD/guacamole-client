@@ -1,19 +1,18 @@
-import InputStream from './InputStream';
+import { InputStream } from './InputStream';
 
 export type OnEndCallback = () => void;
 
 /**
  * A reader which automatically handles the given input stream, returning
  * received blobs as a single data URI built over the course of the stream.
+ *
  * Note that this object will overwrite any installed event handlers on the
  * given InputStream.
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export default class DataURIReader {
+export class DataURIReader {
 	/**
    * Fired once this stream is finished and no further data will be written.
-   *
-   * @event
    */
 	public onend: OnEndCallback | null = null;
 
@@ -21,15 +20,14 @@ export default class DataURIReader {
    * Current data URI.
    *
    * @private
-   * @type {String}
    */
 	private uri: string;
 
 	/*
   * @constructor
-  * @param {InputStream} stream
-  *     The stream that data will be read from.
-  * @param {String} mimetype
+  *
+  * @param stream - The stream that data will be read from.
+  * @param mimetype - The mimetype of the data within the stream.
   */
 	constructor(stream: InputStream, mimetype: string) {
 		this.uri = 'data:' + mimetype + ';base64,';

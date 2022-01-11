@@ -1,5 +1,4 @@
 import {
-  ChannelMask,
   DEFAULT_TRANSFER_FUNCTION,
   Display,
   Layer,
@@ -7,7 +6,7 @@ import {
   LINE_JOIN,
   VisibleLayer
 } from './display';
-import IntegerPool from './IntegerPool';
+import { IntegerPool } from './IntegerPool';
 import { Status, StatusCode } from './Status';
 import GuacamoleObject from './GuacamoleObject';
 import { InputStream, OutputStream } from '@guacamole-client/io';
@@ -36,8 +35,6 @@ export type OnPipeCallback = (stream: InputStream, mimetype: string, name: strin
 export type OnRequiredCallback = (parameters: string[]) => void;
 export type OnSyncCallback = (timeout: number) => void;
 
-export type ExportStateCallback = (state: Record<string, any>) => void;
-
 const PING_INTERVAL = 5000;
 
 /**
@@ -49,7 +46,6 @@ export default class Client {
   /**
    * Fired whenever the state of this Client changes.
    *
-   * @event
    * @param state - The new state of the client.
    */
   public onstatechange: OnStateChangeCallback | null = null;
@@ -57,7 +53,6 @@ export default class Client {
   /**
    * Fired when the remote client sends a name update.
    *
-   * @event
    * @param name - The new name of this client.
    */
   public onname: OnNameCallback | null = null;
@@ -66,7 +61,6 @@ export default class Client {
    * Fired when an error is reported by the remote client, and the connection
    * is being closed.
    *
-   * @event
    * @param status - A status object which describes the error.
    */
   public onerror: OnErrorCallback | null = null;
@@ -75,7 +69,6 @@ export default class Client {
    * Fired when a audio stream is created. The stream provided to this event
    * handler will contain its own event handlers for received data.
    *
-   * @event
    * @param stream - The stream that will receive audio data from the server.
    * @param mimetype - The mimetype of the audio data which will be received.
    *
@@ -90,7 +83,6 @@ export default class Client {
    * Fired when a video stream is created. The stream provided to this event
    * handler will contain its own event handlers for received data.
    *
-   * @event
    * @param stream - The stream that will receive video data from the server.
    * @param layer - The destination layer on which the received video data should be
    *     played. It is the responsibility of the VideoPlayer
@@ -108,7 +100,6 @@ export default class Client {
    * Fired when the current value of a connection parameter is being exposed
    * by the server.
    *
-   * @event
    * @param stream - The stream that will receive connection parameter data from the server.
    * @param mimetype - The mimetype of the data which will be received.
    * @param name - The name of the connection parameter whose value is being exposed.
@@ -118,7 +109,6 @@ export default class Client {
   /**
    * Fired when the clipboard of the remote client is changing.
    *
-   * @event
    * @param stream - The stream that will receive clipboard data from the server.
    * @param mimetype - The mimetype of the data which will be received.
    */
@@ -128,7 +118,6 @@ export default class Client {
    * Fired when a file stream is created. The stream provided to this event
    * handler will contain its own event handlers for received data.
    *
-   * @event
    * @param stream - The stream that will receive data from the server.
    * @param mimetype - The mimetype of the file received.
    * @param filename - The name of the file received.
@@ -140,7 +129,6 @@ export default class Client {
    * event handler will contain its own event handlers and functions for
    * requesting and handling data.
    *
-   * @event
    * @param object - The created filesystem object.
    * @param name - The name of the filesystem.
    */
@@ -150,7 +138,6 @@ export default class Client {
    * Fired when a pipe stream is created. The stream provided to this event
    * handler will contain its own event handlers for received data;
    *
-   * @event
    * @param stream - The stream that will receive data from the server.
    * @param mimetype - The mimetype of the data which will be received.
    * @param name - The name of the pipe.
@@ -162,7 +149,6 @@ export default class Client {
    * indicates that additional parameters are required for the connection to
    * continue, such as user credentials.
    *
-   * @event
    * @param parameters - The names of the connection parameters that are required to be
    *                     provided for the connection to continue.
    */
@@ -173,7 +159,6 @@ export default class Client {
    * that the server is finished processing any input from the client and
    * has sent any results.
    *
-   * @event
    * @param timestamp - The timestamp associated with the sync
    *                    instruction.
    */
@@ -186,17 +171,18 @@ export default class Client {
    * The underlying Guacamole display.
    *
    * @private
-   * @type {Display}
    */
   private readonly display: Display;
   // Pool of available stream indices
   private readonly streamIndices = new IntegerPool();
+
   /**
    * All available layers and buffers
    *
    * @private
    */
   private readonly layers: Map<number, VisibleLayer> = new Map();
+
   /**
    * All audio players currently in use by the client. Initially, this will
    * be empty, but audio players may be allocated by the server upon request.
@@ -211,10 +197,10 @@ export default class Client {
    * @private
    */
   private readonly videoPlayers: Map<number, VideoPlayer> = new Map();
-  // No initial parsers
   private readonly decoders: Map<number, Decoder> = new Map();
-  // No initial streams
-  private readonly streams: Map<number, InputStream> = new Map();
+
+  private readonly inputStreams: Map<number, InputStream> = new Map();
+  private readonly outputStreams: Map<number, OutputStream> = new Map();
   /**
    * All current objects. The index of each object is dictated by the
    * Guacamole server.
@@ -222,11 +208,10 @@ export default class Client {
    * @private
    */
   private readonly objects: Map<number, GuacamoleObject> = new Map();
-  // Array of allocated output streams by index
-  private readonly outputStreams: Map<number, OutputStream> = new Map();
 
   /**
    * Handlers for all defined layer properties.
+   *
    * @private
    */
     // TODO Review the following lint suppression
@@ -240,6 +225,7 @@ export default class Client {
   /**
    * Handlers for all instruction opcodes receivable by a Guacamole protocol
    * client.
+   *
    * @private
    */
     // TODO Review the following lint suppression
@@ -288,7 +274,7 @@ export default class Client {
       // Create stream
       if (this.onargv) {
         const stream = new InputStream(this, streamIndex);
-        this.streams.set(streamIndex, stream);
+        this.inputStreams.set(streamIndex, stream);
         this.onargv(stream, mimetype, name);
       } else {
         // Otherwise, unsupported
@@ -302,7 +288,7 @@ export default class Client {
 
       // Create stream
       const stream = new InputStream(this, streamIndex);
-      this.streams.set(streamIndex, stream);
+      this.inputStreams.set(streamIndex, stream);
 
       // Get player instance via callback
       let audioPlayer: AudioPlayer | null = null;
@@ -329,7 +315,7 @@ export default class Client {
       // Get stream
       const streamIndex = parseInt(parameters[0], 10);
       const data = parameters[1];
-      const stream = this.streams.get(streamIndex);
+      const stream = this.inputStreams.get(streamIndex);
 
       // Write data
       if (stream?.onblob) {
@@ -349,7 +335,7 @@ export default class Client {
       // Create stream if handler defined
       if (object?.onbody) {
         const stream = new InputStream(this, streamIndex);
-        this.streams.set(streamIndex, stream);
+        this.inputStreams.set(streamIndex, stream);
         object.onbody(stream, mimetype, name);
       } else {
         // Otherwise, unsupported
@@ -382,7 +368,7 @@ export default class Client {
       // Create stream
       if (this.onclipboard) {
         const stream = new InputStream(this, streamIndex);
-        this.streams.set(streamIndex, stream);
+        this.inputStreams.set(streamIndex, stream);
         this.onclipboard(stream, mimetype);
       } else {
         // Otherwise, unsupported
@@ -508,7 +494,7 @@ export default class Client {
       const streamIndex = parseInt(parameters[0], 10);
 
       // Get stream
-      const stream = this.streams.get(streamIndex);
+      const stream = this.inputStreams.get(streamIndex);
       if (stream) {
         // Signal end of stream if handler defined
         if (stream.onend) {
@@ -516,7 +502,7 @@ export default class Client {
         }
 
         // Invalidate stream
-        this.streams.delete(streamIndex);
+        this.inputStreams.delete(streamIndex);
       }
     },
 
@@ -528,7 +514,7 @@ export default class Client {
       // Create stream
       if (this.onfile) {
         const stream = new InputStream(this, streamIndex);
-        this.streams.set(streamIndex, stream);
+        this.inputStreams.set(streamIndex, stream);
         this.onfile(stream, mimetype, filename);
       } else {
         // Otherwise, unsupported
@@ -566,7 +552,7 @@ export default class Client {
 
       // Create stream
       const stream = new InputStream(this, streamIndex);
-      this.streams.set(streamIndex, stream);
+      this.inputStreams.set(streamIndex, stream);
 
       // Draw received contents once decoded
       this.display.setChannelMask(layer, channelMask);
@@ -654,7 +640,7 @@ export default class Client {
       // Create stream
       if (this.onpipe) {
         const stream = new InputStream(this, streamIndex);
-        this.streams.set(streamIndex, stream);
+        this.inputStreams.set(streamIndex, stream);
         this.onpipe(stream, mimetype, name);
       } else {
         // Otherwise, unsupported
@@ -827,7 +813,7 @@ export default class Client {
 
       // Create stream
       const stream = new InputStream(this, streamIndex);
-      this.streams.set(streamIndex, stream);
+      this.inputStreams.set(streamIndex, stream);
 
       // Get player instance via callback
       let videoPlayer: VideoPlayer | null = null;
@@ -854,8 +840,7 @@ export default class Client {
 
   /*
    * @constructor
-   * @param {Tunnel} tunnel
-   *    The tunnel to use to send and receive Guacamole instructions.
+   * @param tunnel - The tunnel to use to send and receive Guacamole instructions.
    */
   constructor(private readonly tunnel: Tunnel) {
     this.display = new Display();
@@ -875,140 +860,6 @@ export default class Client {
 
   public isConnected(): boolean {
     return this.currentState === State.CONNECTED || this.currentState === State.WAITING;
-  }
-
-  /**
-   * Produces an opaque representation of Client state which can be
-   * later imported through a call to importState(). This object is
-   * effectively an independent, compressed snapshot of protocol and display
-   * state. Invoking this function implicitly flushes the display.
-   *
-   * @param callback -  Callback which should be invoked once the state object
-   *     is ready. The state object will be passed to the callback as the sole
-   *     parameter. This callback may be invoked immediately, or later as the
-   *     display finishes rendering and becomes ready.
-   */
-  public exportState(callback: ExportStateCallback) {
-    // Start with empty state
-    const state = {
-      currentState: this.currentState,
-      currentTimestamp: this.currentTimestamp,
-      // TODO Review the following lint suppression
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-      layers: {} as Record<string, any>
-    };
-
-    const layersSnapshot: Record<number, VisibleLayer> = {};
-
-    // Make a copy of all current layers (protocol state)
-    for (const [key, layer] of this.layers) {
-      layersSnapshot[key] = layer;
-    }
-
-    // Populate layers once data is available (display state, requires flush)
-    this.display.flush(() => {
-      // Export each defined layer/buffer
-      for (const key in layersSnapshot) {
-        const index = parseInt(key, 10);
-        const layer = layersSnapshot[key];
-        const canvas = layer.toCanvas();
-
-        // Store layer/buffer dimensions
-        const exportLayer: Record<string, any> = {
-          width: layer.width,
-          height: layer.height
-        };
-
-        // Store layer/buffer image data, if it can be generated
-        if (layer.width && layer.height) {
-          exportLayer.url = canvas.toDataURL('image/png');
-        }
-
-        // Add layer properties if not a buffer nor the default layer
-        if (index > 0) {
-          exportLayer.x = layer.x;
-          exportLayer.y = layer.y;
-          exportLayer.z = layer.z;
-          exportLayer.alpha = layer.alpha;
-          exportLayer.matrix = layer.matrix;
-          exportLayer.parent = this.getLayerIndex(layer.parent);
-        }
-
-        // Store exported layer
-        state.layers[key] = exportLayer;
-      }
-
-      // Invoke callback now that the state is ready
-      callback(state);
-    });
-  }
-
-  /**
-   * Restores Client protocol and display state based on an opaque
-   * object from a prior call to exportState(). The Client instance
-   * used to export that state need not be the same as this instance.
-   *
-   * @param state - An opaque representation of Client state from a prior call
-   *                to exportState().
-   *
-   * @param callback - The function to invoke when state has finished being
-   *                   imported. This may happen immediately, or later as
-   *                   images within the provided state object are loaded.
-   */
-  public importState(state: any, callback: () => void) {
-    let index;
-
-    this.currentState = state.currentState;
-    this.currentTimestamp = state.currentTimestamp;
-
-    // Dispose of all layers
-    for (const [index, layer] of this.layers) {
-      if (index > 0) {
-        this.display.dispose(layer);
-      }
-    }
-
-    this.layers.clear();
-
-    // Import state of each layer/buffer
-    for (const key in state.layers) {
-      index = parseInt(key, 10);
-
-      const importLayer = state.layers[key];
-      const layer = this.getLayer(index);
-
-      // Reset layer size
-      this.display.resize(layer, importLayer.width, importLayer.height);
-
-      // Initialize new layer if it has associated data
-      this.display.setChannelMask(layer, ChannelMask.SRC);
-      if (importLayer.url) {
-        this.display.draw(layer, 0, 0, importLayer.url);
-      }
-
-      // Set layer-specific properties if not a buffer nor the default layer
-      if (index > 0 && importLayer.parent >= 0) {
-        // Apply layer position and set parent
-        const parent = this.getLayer(importLayer.parent);
-        this.display.move(layer, parent, importLayer.x, importLayer.y, importLayer.z);
-
-        // Set layer transparency
-        this.display.shade(layer, importLayer.alpha);
-
-        // Apply matrix transform
-        const { matrix } = importLayer;
-        this.display.distort(layer,
-          matrix[0],
-          matrix[1],
-          matrix[2],
-          matrix[3],
-          matrix[4],
-          matrix[5]);
-      }
-    }
-
-    // Flush changes to display
-    this.display.flush(callback);
   }
 
   /**
@@ -1293,9 +1144,9 @@ export default class Client {
     this.tunnel.sendMessage(...Streaming.end(index));
 
     // Free associated index and stream if they exist
-    if (this.outputStreams.get(index)) {
-      this.streamIndices.free(index);
+    if (this.outputStreams.has(index)) {
       this.outputStreams.delete(index);
+      this.streamIndices.free(index);
     }
   }
 
@@ -1359,9 +1210,9 @@ export default class Client {
 
     try {
       this.tunnel.connect(data);
-    } catch (status: unknown) {
+    } catch (err: unknown) {
       this.setState(State.IDLE);
-      throw status;
+      throw err;
     }
 
     // Ping every 5 seconds (ensure connection alive)

@@ -1,14 +1,14 @@
 // Buffer and Streams
-export { default as ArrayBufferReader } from './lib/ArrayBufferReader';
+export { ArrayBufferReader } from './lib/ArrayBufferReader';
 export { default as ArrayBufferWriter } from './lib/ArrayBufferWriter';
-export { default as BlobReader } from './lib/BlobReader';
+export { BlobReader } from './lib/BlobReader';
 export { default as BlobWriter } from './lib/BlobWriter';
-export { default as DataURIReader } from './lib/DataURIReader';
-export { default as InputStream } from './lib/InputStream';
-export { default as JSONReader } from './lib/JSONReader';
+export { DataURIReader } from './lib/DataURIReader';
+export { InputStream } from './lib/InputStream';
+export { JSONReader } from './lib/JSONReader';
 export { default as OutputStream } from './lib/OutputStream';
 export { default as StringWriter } from './lib/StringWriter';
-export { default as StringReader } from './lib/StringReader';
+export { StringReader } from './lib/StringReader';
 
 // Net
 export type { WS } from './lib/net/websocket';

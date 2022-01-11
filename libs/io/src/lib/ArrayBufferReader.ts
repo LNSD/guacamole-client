@@ -1,4 +1,4 @@
-import InputStream from './InputStream';
+import { InputStream } from './InputStream';
 
 export type OnDataCallback = (buffer: ArrayBuffer) => void;
 export type OnEndCallback = () => void;
@@ -8,19 +8,16 @@ export type OnEndCallback = () => void;
  * strictly received packets as array buffers. Note that this object will
  * overwrite any installed event handlers on the given InputStream.
  */
-export default class ArrayBufferReader {
+export class ArrayBufferReader {
   /**
    * Fired once for every blob of data received.
    *
-   * @event
    * @param buffer - The data packet received.
    */
   public ondata: OnDataCallback | null = null;
 
   /**
    * Fired once this stream is finished and no further data will be written.
-   *
-   * @event
    */
   public onend: OnEndCallback | null = null;
 

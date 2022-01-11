@@ -401,9 +401,7 @@ export default class Display {
    * given image stream, and should be preferred for received streams except
    * where manual decoding of the stream is unavoidable.
    *
-   * @param {Layer} layer
-   *     The layer to draw upon.
-   *
+   * @param layer - The layer to draw upon.
    * @param x - The destination X coordinate.
    * @param y - The destination Y coordinate.
    * @param stream - The stream along which image data will be received.
@@ -834,8 +832,7 @@ export default class Display {
    * opaque.
    *
    * @param layer - The layer to modify.
-   * @param mask - The channel mask for future operations on this
-   *                      Layer.
+   * @param mask - The channel mask for future operations on this Layer.
    */
   public setChannelMask(layer: Layer, mask: number) {
     this.scheduleTask(() => {
@@ -850,8 +847,7 @@ export default class Display {
    * joint of the path.
    *
    * @param layer - The layer to modify.
-   * @param limit - The miter limit for stroke operations using the
-   *                       miter join.
+   * @param limit - The miter limit for stroke operations using the miter join.
    */
   public setMiterLimit(layer: Layer, limit: number) {
     this.scheduleTask(() => {

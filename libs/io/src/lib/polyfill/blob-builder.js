@@ -21,7 +21,7 @@ export class BlobBuilder {
 
   getBlob(contentType) {
     if (contentType !== undefined) {
-      this.blob.type = contentType;
+      return new Blob([this.blob], {type: contentType});
     }
 
     return this.blob;

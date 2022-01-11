@@ -1,5 +1,5 @@
-import StringReader from './StringReader';
-import InputStream from './InputStream';
+import { StringReader } from './StringReader';
+import { InputStream } from './InputStream';
 
 export type OnProgressCallback = (length: number) => void;
 export type OnEndCallback = () => void;
@@ -12,26 +12,23 @@ export type OnEndCallback = () => void;
  */
 // TODO Review the following lint suppression
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export default class JSONReader {
+export class JSONReader {
   /**
    * Fired once for every blob of data received.
    *
-   * @event
-   * @param {Number} length
-   *     The number of characters received.
+   * @param length - The number of characters received.
    */
   onprogress: OnProgressCallback | null = null;
+
   /**
    * Fired once this stream is finished and no further data will be written.
-   *
-   * @event
    */
   onend: OnEndCallback | null = null;
+
   /**
    * Wrapped StringReader.
    *
    * @private
-   * @type {StringReader}
    */
   private readonly stringReader: StringReader;
 
@@ -39,19 +36,18 @@ export default class JSONReader {
    * All JSON read thus far.
    *
    * @private
-   * @type {String}
    */
   private json = '';
 
   /* @constructor
-   * @param {InputStream} stream
-   *     The stream that JSON will be read from.
+
+   * @param stream - The stream that JSON will be read from.
    */
   constructor(stream: InputStream) {
     this.stringReader = new StringReader(stream);
 
     // Append all received text
-    this.stringReader.ontext = text => {
+    this.stringReader.ontext = (text: string) => {
       // Append received text
       this.json += text;
 
@@ -72,8 +68,7 @@ export default class JSONReader {
   /**
    * Returns the current length of this JSONReader, in characters.
    *
-   * @return {Number}
-   *     The current length of this JSONReader.
+   * @return The current length of this JSONReader.
    */
   public getLength(): number {
     return this.json.length;

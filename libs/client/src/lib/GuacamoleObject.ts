@@ -7,7 +7,6 @@ export type OnUndefineCallback = () => void;
  * the root stream MUST be a JSON map of stream name to mimetype.
  *
  * @constant
- * @type {String}
  */
 // TODO Review the following lint suppression
 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -19,7 +18,6 @@ export const ROOT_STREAM = '/';
  * have this mimetype.
  *
  * @constant
- * @type {String}
  */
 // TODO Review the following lint suppression
 // eslint-disable-next-line @typescript-eslint/naming-convention

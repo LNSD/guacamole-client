@@ -1,7 +1,6 @@
 /* eslint-disable no-bitwise */
-
-import ArrayBufferReader from './ArrayBufferReader';
-import InputStream from './InputStream';
+import { ArrayBufferReader } from './ArrayBufferReader';
+import { InputStream } from './InputStream';
 
 export type OnTextCallback = (text: string) => void;
 export type OnEndCallback = () => void;
@@ -11,25 +10,23 @@ export type OnEndCallback = () => void;
  * strictly text data. Note that this object will overwrite any installed event
  * handlers on the given InputStream.
  */
-export default class StringReader {
+export class StringReader {
   /**
    * Fired once for every blob of text data received.
    *
-   * @event
-   * @param {String} text The data packet received.
+   * @param text - The data packet received.
    */
   public ontext: OnTextCallback | null = null;
 
   /**
    * Fired once this stream is finished and no further data will be written.
-   * @event
    */
   public onend: OnEndCallback | null = null;
 
   /**
    * Wrapped ArrayBufferReader.
+   *
    * @private
-   * @type {ArrayBufferReader}
    */
   private readonly arrayBufferReader: ArrayBufferReader;
 
@@ -37,20 +34,20 @@ export default class StringReader {
    * The number of bytes remaining for the current codepoint.
    *
    * @private
-   * @type {Number}
    */
   private bytesRemaining = 0;
+
   /**
    * The current codepoint value, as calculated from bytes read so far.
    *
    * @private
-   * @type {Number}
    */
   private codepoint = 0;
 
-  /*
+  /**
    * @constructor
-   * @param {InputStream} stream The stream that data will be read from.
+   *
+   * @param stream - The stream that data will be read from.
    */
   constructor(stream: InputStream) {
     this.arrayBufferReader = new ArrayBufferReader(stream);

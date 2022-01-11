@@ -1,5 +1,5 @@
-import InputStream from './InputStream';
-import {BlobBuilder} from './polyfill/blob-builder';
+import { InputStream } from './InputStream';
+import { BlobBuilder } from './polyfill/blob-builder';
 
 export type OnProgressCallback = (length: number) => void;
 export type OnEndCallback = () => void;
@@ -7,65 +7,40 @@ export type OnEndCallback = () => void;
 /**
  * A reader which automatically handles the given input stream, assembling all
  * received blobs into a single blob by appending them to each other in order.
+ *
  * Note that this object will overwrite any installed event handlers on the
  * given InputStream.
  */
-export default class BlobReader {
+export class BlobReader {
   /**
    * Fired once for every blob of data received.
    *
-   * @event
-   * @param {Number} length The number of bytes received.
+   * @param length - The number of bytes received.
    */
   public onprogress: OnProgressCallback | null = null;
 
   /**
    * Fired once this stream is finished and no further data will be written.
-   * @event
    */
   public onend: OnEndCallback | null = null;
 
+  private readonly blobBuilder: BlobBuilder;
+
   /**
    * The length of this InputStream in bytes.
+   *
    * @private
    */
   private length = 0;
 
-  // TODO Review this
-  private readonly blobBuilder: BlobBuilder;
-
-  /*
+  /**
    * @constructor
-   * @param {InputStream} stream The stream that data will be read
-   *                                       from.
-   * @param {String} mimetype The mimetype of the blob being built.
+   *
+   * @param stream - The stream that data will be read from.
+   * @param mimetype - The mimetype of the blob being built.
    */
-  constructor(stream: InputStream, _mimetype: string /* TODO Review this */) {
+  constructor(stream: InputStream, private readonly mimetype: string) {
     this.blobBuilder = new BlobBuilder();
-
-    // TODO Review this
-    // Get blob builder
-    // if (window.BlobBuilder) {
-    // 	blobBuilder = new window.BlobBuilder();
-    // } else if (window.WebKitBlobBuilder) {
-    // 	blobBuilder = new window.WebKitBlobBuilder();
-    // } else if (window.MozBlobBuilder) {
-    // 	blobBuilder = new window.MozBlobBuilder();
-    // } else {
-    // 	blobBuilder = new class {
-    // 		private readonly blobs: Blob[] = [];
-    //
-    // 		/** @ignore */
-    // 		append(data) {
-    // 			this.blobs.push(new Blob([data], {type: mimetype}));
-    // 		}
-    //
-    // 		/** @ignore */
-    // 		getBlob() {
-    // 			return new Blob(this.blobs, {type: mimetype});
-    // 		}
-    // 	}();
-    // }
 
     // Append received blobs
     stream.onblob = data => {
@@ -100,7 +75,8 @@ export default class BlobReader {
 
   /**
    * Returns the current length of this InputStream, in bytes.
-   * @return {Number} The current length of this InputStream.
+   *
+   * @return The current length of this InputStream.
    */
   getLength(): number {
     return this.length;
@@ -108,9 +84,10 @@ export default class BlobReader {
 
   /**
    * Returns the contents of this BlobReader as a Blob.
-   * @return {Blob} The contents of this BlobReader.
+   *
+   * @return The contents of this BlobReader.
    */
   getBlob(): Blob {
-    return this.blobBuilder.getBlob();
+    return this.blobBuilder.getBlob(this.mimetype);
   }
 }
