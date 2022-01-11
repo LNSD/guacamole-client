@@ -1,4 +1,4 @@
-import { InstructionElements } from './instructionElements';
+import { createInstruction, InstructionElements } from './instruction';
 
 // Streaming instructions
 const ACK_OPCODE = 'ack';
@@ -23,20 +23,18 @@ const VIDEO_OPCODE = 'video';
  *                  interface, and mainly helps with debugging.
  * @param status - The Guacamole status code denoting success or failure.
  */
-type AckHandler = (stream: number, message: string, status: number) => void;
+export type AckHandler = (stream: number, message: string, status: number) => void;
 
-const ackCreator = (stream: number, message: string, status: number): InstructionElements => [ACK_OPCODE, stream, message, status];
-const ackParser = (params: string[], handler: AckHandler): void => {
-  const streamIndex = parseInt(params[0], 10);
-  const message = params[1];
-  const code = parseInt(params[2], 10);
+export const ack = createInstruction<AckHandler>(ACK_OPCODE,
+  (stream: number, message: string, status: number): InstructionElements => [stream, message, status],
+  (params: string[], handler: AckHandler): void => {
+    const streamIndex = parseInt(params[0], 10);
+    const message = params[1];
+    const code = parseInt(params[2], 10);
 
-  handler(streamIndex, message, code);
-};
-export const ack = Object.assign(ackCreator, {
-  opcode: ACK_OPCODE,
-  parser: ackParser
-});
+    handler(streamIndex, message, code);
+  }
+);
 
 /**
  * Allocates a new stream, associating it with the given argument (connection parameter)
