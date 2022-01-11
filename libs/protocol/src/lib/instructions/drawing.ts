@@ -1,4 +1,30 @@
-// TODO https://guacamole.apache.org/doc/gug/protocol-reference.html#drawing-instructions
+// TODO: https://guacamole.apache.org/doc/gug/protocol-reference.html#drawing-instructions
+
+const ARC_OPCODE = 'arc';
+const CFILL_OPCODE = 'cfill';
+const CLIP_OPCODE = 'clip';
+const CLOSE_OPCODE = 'close';
+const COPY_OPCODE = 'copy';
+const CSTROKE_OPCODE = 'cstroke';
+const CURSOR_OPCODE = 'cursor';
+const CURVE_OPCODE = 'curve';
+const DISPOSE_OPCODE = 'dispose';
+const DISTORT_OPCODE = 'distort';
+const IDENTITY_OPCODE = 'identity';
+const LFILL_OPCODE = 'lfill';
+const LINE_OPCODE = 'line';
+const LSTROKE_OPCODE = 'lstroke';
+const MOVE_OPCODE = 'move';
+const POP_OPCODE = 'pop';
+const PUSH_OPCODE = 'push';
+const RECT_OPCODE = 'rect';
+const RESET_OPCODE = 'reset';
+const SET_OPCODE = 'set';
+const SHADE_OPCODE = 'shade';
+const SIZE_OPCODE = 'size';
+const START_OPCODE = 'start';
+const TRANSFER_OPCODE = 'transfer';
+const TRANSFORM_OPCODE = 'transform';
 
 export interface DrawingInstructionHandlers {
   handleUndefineInstruction(objectIndex: number): void;

@@ -1,4 +1,8 @@
-import { InstructionElements } from "./instruction";
+import { createInstruction } from './instruction';
+
+const DISCONNECT_OPCODE = 'disconnect';
+const NOP_OPCODE = 'nop';
+const SYNC_OPCODE = 'sync';
 
 /**
  * Notifies the server that the connection is about to be closed by the client. This message can be
@@ -6,14 +10,22 @@ import { InstructionElements } from "./instruction";
  */
 export type DisconnectHandler = () => void;
 
-export const disconnect = (): InstructionElements => ['disconnect'];
+export const disconnect = createInstruction<DisconnectHandler>(DISCONNECT_OPCODE,
+  () => [],
+  (handler: DisconnectHandler) => (params) => {},
+);
 
 /**
  * The client "nop" instruction does absolutely nothing, has no parameters, and is universally
  * ignored by the Guacamole server. Its main use is as a keep-alive signal, and may be sent by
  * Guacamole clients when there is no activity to ensure the socket is not closed due to timeout.
  */
-export const nop = () => ['nop'];
+export type NopHandler = () => void;
+
+export const nop = createInstruction<NopHandler>(NOP_OPCODE,
+  () => [],
+  (handler: NopHandler) => (params) => {},
+);
 
 /**
  * Reports that all operations as of the given server-relative timestamp have been completed. If a
@@ -27,4 +39,9 @@ export const nop = () => ['nop'];
  *
  * @param timestamp - A valid server-relative timestamp.
  */
-export const sync = (timestamp: number): InstructionElements => ['sync', timestamp];
+export type SyncHandler = (timestamp: number) => void;
+
+export const sync = createInstruction<SyncHandler>(SYNC_OPCODE,
+  (timestamp: number) => [timestamp],
+  (handler: SyncHandler) => (params) => {},
+);

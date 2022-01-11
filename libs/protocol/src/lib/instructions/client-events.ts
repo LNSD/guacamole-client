@@ -1,4 +1,8 @@
-import { InstructionElements } from "./instruction";
+import { createInstruction } from './instruction';
+
+const KEY_OPCODE = 'key';
+const MOUSE_OPCODE = 'mouse';
+const SIZE_OPCODE = 'size';
 
 /**
  * Sends the specified key press or release event.
@@ -8,7 +12,10 @@ import { InstructionElements } from "./instruction";
  */
 export type KeyHandler = (keysym: number, pressed: boolean) => void;
 
-export const key = (keysym: number, pressed: boolean): InstructionElements => ['key', keysym, pressed ? 1 : 0];
+export const key = createInstruction<KeyHandler>(KEY_OPCODE,
+  (keysym: number, pressed: boolean) => [keysym, pressed ? 1 : 0],
+  (handler: KeyHandler) => (params) => {},
+);
 
 /**
  * Sends the specified mouse movement or button press or release event (or combination thereof).
@@ -19,7 +26,10 @@ export const key = (keysym: number, pressed: boolean): InstructionElements => ['
  */
 export type MouseHandler = (x: number, y: number, mask: number) => void;
 
-export const mouse = (x: number, y: number, mask: number): InstructionElements => ['mouse', x, y, mask];
+export const mouse = createInstruction<MouseHandler>(MOUSE_OPCODE,
+  (x: number, y: number, mask: number) => [x, y, mask],
+  (handler: MouseHandler) => (params) => {},
+);
 
 /**
  * Specifies that the client's optimal screen size has changed from what was specified during the
@@ -30,4 +40,7 @@ export const mouse = (x: number, y: number, mask: number): InstructionElements =
  */
 export type SizeHandler = (width: number, height: number) => void;
 
-export const size = (width: number, height: number): InstructionElements => ['size', width, height];
+export const size = createInstruction<SizeHandler>(SIZE_OPCODE,
+  (width: number, height: number) => [width, height],
+  (handler: SizeHandler) => (params) => {},
+);

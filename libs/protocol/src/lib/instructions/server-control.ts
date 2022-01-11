@@ -1,4 +1,13 @@
-import { InstructionElements } from "./instruction";
+import { createInstruction } from './instruction';
+
+const DISCONNECT_OPCODE = 'disconnect';
+const ERROR_OPCODE = 'error';
+const LOG_OPCODE = 'log';
+const MOUSE_OPCODE = 'mouse';
+const NOP_OPCODE = 'nop';
+const READY_OPCODE = 'ready';
+const SYNC_OPCODE = 'sync';
+
 
 /**
  * Notifies the client that the connection is about to be closed by the server. This message can be
@@ -6,7 +15,11 @@ import { InstructionElements } from "./instruction";
  */
 export type DisconnectHandler = () => void;
 
-export const disconnect = (): InstructionElements => ['disconnect'];
+export const disconnect = createInstruction<DisconnectHandler>(DISCONNECT_OPCODE,
+  () => [],
+  (handler: DisconnectHandler) => (params) => {
+  }
+);
 
 /**
  * Notifies the client that the connection is about to be closed due to the specified error. This
@@ -18,7 +31,11 @@ export const disconnect = (): InstructionElements => ['disconnect'];
  */
 export type ErrorHandler = (text: string, status: number) => void;
 
-export const error = (text: string, status: number): InstructionElements => ['error', text, status];
+export const error = createInstruction<ErrorHandler>(ERROR_OPCODE,
+  (text: string, status: number) => [text, status],
+  (handler: ErrorHandler) => (params) => {
+  }
+);
 
 /**
  * The log instruction sends an arbitrary string for debugging purposes. This instruction will be
@@ -30,7 +47,11 @@ export const error = (text: string, status: number): InstructionElements => ['er
  */
 export type LogHandler = (message: string) => void;
 
-export const log = (message: string): InstructionElements => ['log', message];
+export const log = createInstruction<LogHandler>(LOG_OPCODE,
+  (message: string) => [message],
+  (handler: LogHandler) => (params) => {
+  }
+);
 
 /**
  * Reports that a user on the current connection has moved the mouse to the given coordinates.
@@ -40,7 +61,11 @@ export const log = (message: string): InstructionElements => ['log', message];
  */
 export type MouseHandler = (x: number, y: number) => void;
 
-export const mouse = (x: number, y: number): InstructionElements => ['mouse', x, y];
+export const mouse = createInstruction<MouseHandler>(MOUSE_OPCODE,
+  (x: number, y: number) => [x, y],
+  (handler: MouseHandler) => (params) => {
+  }
+);
 
 
 /**
@@ -50,7 +75,11 @@ export const mouse = (x: number, y: number): InstructionElements => ['mouse', x,
  */
 export type NopHandler = () => void;
 
-export const nop = () => ['nop'];
+export const nop = createInstruction<NopHandler>(NOP_OPCODE,
+  () => [],
+  (handler: NopHandler) => (params) => {
+  }
+);
 
 /**
  * The ready instruction sends the ID of a new connection and marks the beginning of the interactive
@@ -64,7 +93,11 @@ export const nop = () => ['nop'];
  */
 export type ReadyHandler = (id: string) => void;
 
-export const ready = (id: string): InstructionElements => ['ready', id];
+export const ready = createInstruction<ReadyHandler>(READY_OPCODE,
+  (id: string) => [id],
+  (handler: ReadyHandler) => (params) => {
+  }
+);
 
 
 /**
@@ -78,4 +111,8 @@ export const ready = (id: string): InstructionElements => ['ready', id];
  */
 export type SyncHandler = (timestamp: number) => void;
 
-export const sync = (timestamp: number): InstructionElements => ['sync', timestamp];
+export const sync = createInstruction<SyncHandler>(SYNC_OPCODE,
+  (timestamp: number) => [timestamp],
+  (handler: SyncHandler) => (params) => {
+  }
+);

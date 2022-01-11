@@ -1,5 +1,12 @@
-import { InstructionElements } from "./instruction";
+import { createInstruction } from './instruction';
 
+const AUDIO_OPCODE = 'audio';
+const CONNECT_OPCODE = 'connect';
+const IMAGE_OPCODE = 'image';
+const SELECT_OPCODE = 'select';
+const SIZE_OPCODE = 'size';
+const TIMEZONE_OPCODE = 'timezone';
+const VIDEO_OPCODE = 'video';
 /**
  * Specifies which audio mimetypes are supported by the client. Each parameter must be a single
  * mimetype, listed in order of client preference, with the optimal mimetype being the first
@@ -9,7 +16,10 @@ import { InstructionElements } from "./instruction";
  */
 export type AudioHandler = (...mimetype: string[]) => void;
 
-export const audio = (...mimetype: string[]): InstructionElements => ["audio", ...mimetype];
+export const audio = createInstruction<AudioHandler>(AUDIO_OPCODE,
+  (...mimetype: string[]) => [...mimetype],
+  (handler: AudioHandler) => (params) => {},
+);
 
 
 /**
@@ -22,7 +32,10 @@ export const audio = (...mimetype: string[]): InstructionElements => ["audio", .
  */
 export type ConnectHandler = (...params: string[]) => void;
 
-export const connect = (...params: string[]): InstructionElements => ["connect", ...params];
+export const connect = createInstruction<ConnectHandler>(CONNECT_OPCODE,
+  (...params: string[]) => [...params],
+  (handler: ConnectHandler) => (params) => {},
+);
 
 
 /**
@@ -38,7 +51,10 @@ export const connect = (...params: string[]): InstructionElements => ["connect",
  */
 export type ImageHandler = (...mimetype: string[]) => void;
 
-export const image = (...mimetype: string[]): InstructionElements => ["image", ...mimetype];
+export const image = createInstruction<ImageHandler>(IMAGE_OPCODE,
+  (...mimetype: string[]) => [...mimetype],
+  (handler: ImageHandler) => (params) => {},
+);
 
 
 /**
@@ -55,7 +71,10 @@ export const image = (...mimetype: string[]): InstructionElements => ["image", .
  */
 export type SelectHandler = (id: string) => void;
 
-export const select = (id: string): InstructionElements => ["select", id];
+export const select = createInstruction<SelectHandler>(SELECT_OPCODE,
+  (id: string) => [id],
+  (handler: SelectHandler) => (params) => {},
+);
 
 
 /**
@@ -67,7 +86,10 @@ export const select = (id: string): InstructionElements => ["select", id];
  */
 export type SizeHandler = (width: number, height: number, dpi: number) => void;
 
-export const size = (width: number, height: number, dpi: number): InstructionElements => ['size', width, height, dpi];
+export const size = createInstruction<SizeHandler>(SIZE_OPCODE,
+  (width: number, height: number, dpi: number) => [width, height, dpi],
+  (handler: SizeHandler) => (params) => {},
+);
 
 
 /**
@@ -79,7 +101,10 @@ export const size = (width: number, height: number, dpi: number): InstructionEle
  */
 export type TimezoneHandler = (timezone: string) => void;
 
-export const timezone = (timezone: string): InstructionElements => ['timezone', timezone];
+export const timezone = createInstruction<TimezoneHandler>(TIMEZONE_OPCODE,
+  (timezone: string) => [timezone],
+  (handler: TimezoneHandler) => (params) => {},
+);
 
 
 /**
@@ -91,4 +116,7 @@ export const timezone = (timezone: string): InstructionElements => ['timezone', 
  */
 export type VideoHandler = (...mimetypes: string[]) => void;
 
-export const video = (...mimetypes: string[]): InstructionElements => ['video', ...mimetypes];
+export const video = createInstruction<VideoHandler>(VIDEO_OPCODE,
+  (...mimetypes: string[]) => [...mimetypes],
+  (handler: VideoHandler) => (params) => {},
+);

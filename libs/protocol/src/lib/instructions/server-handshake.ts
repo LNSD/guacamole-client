@@ -1,4 +1,6 @@
-import { InstructionElements } from "./instruction";
+import { createInstruction } from './instruction';
+
+const ARGS_OPCODE = 'args';
 
 /**
  * Reports the expected format of the argument list for the protocol requested by the client. This
@@ -19,4 +21,7 @@ import { InstructionElements } from "./instruction";
  */
 export type ArgsHandler = (version: string, ...params: string[]) => void;
 
-export const args = (version: string, ...params: string[]): InstructionElements => ['args', version, ...params];
+export const args = createInstruction<ArgsHandler>(ARGS_OPCODE,
+  (version: string, ...params: string[]) => [version, ...params],
+  (handler: ArgsHandler) => (params) => {},
+);

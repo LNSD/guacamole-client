@@ -1,4 +1,10 @@
-import { InstructionElements } from "./instruction";
+import { createInstruction } from './instruction';
+
+const BODY_OPCODE = 'body';
+const FILESYSTEM_OPCODE = 'filesystem';
+const GET_OPCODE = 'get';
+const PUT_OPCODE = 'put';
+const UNDEFINE_OPCODE = 'undefine';
 
 /**
  * Allocates a new stream, associating it with the name of a stream previously requested by a get
@@ -12,7 +18,10 @@ import { InstructionElements } from "./instruction";
  */
 export type BodyHandler = (object: number, stream: number, mimetype: string, name: string) => void;
 
-export const body = (object: number, stream: number, mimetype: string, name: string): InstructionElements => ['body', object, stream, mimetype, name]
+export const body = createInstruction<BodyHandler>(BODY_OPCODE,
+  (object: number, stream: number, mimetype: string, name: string) => [object, stream, mimetype, name],
+  (handler: BodyHandler) => (params) => {},
+);
 
 /**
  * Allocates a new object, associating it with the given arbitrary filesystem metadata. The contents
@@ -24,7 +33,10 @@ export const body = (object: number, stream: number, mimetype: string, name: str
  */
 export type FilesystemHandler = (object: number, name: string) => void;
 
-export const filesystem = (object: number, name: string): InstructionElements => ['filesystem', object, name];
+export const filesystem = createInstruction<FilesystemHandler>(FILESYSTEM_OPCODE,
+  (object: number, name: string) => [object, name],
+  (handler: FilesystemHandler) => (params) => {},
+);
 
 /**
  * Requests that a new stream be created, providing read access to the object stream having the
@@ -52,7 +64,10 @@ export const filesystem = (object: number, name: string): InstructionElements =>
  */
 export type GetHandler = (object: number, name: string) => void;
 
-export const get = (object: number, name: string): InstructionElements => ['get', object, name];
+export const get = createInstruction<GetHandler>(GET_OPCODE,
+  (object: number, name: string) => [object, name],
+  (handler: GetHandler) => (params) => {},
+);
 
 /**
  * Allocates a new stream, associating it with the given arbitrary object and stream name. The
@@ -65,7 +80,10 @@ export const get = (object: number, name: string): InstructionElements => ['get'
  */
 export type PutHandler = (object: number, stream: number, mimetype: string, name: string) => void;
 
-export const put = (object: number, stream: number, mimetype: string, name: string): InstructionElements => ['put', object, stream, mimetype, name]
+export const put = createInstruction<PutHandler>(PUT_OPCODE,
+  (object: number, stream: number, mimetype: string, name: string) => [object, stream, mimetype, name],
+  (handler: PutHandler) => (params) => {},
+);
 
 /**
  * Undefines an existing object, allowing its index to be reused by another future object. The
@@ -76,4 +94,7 @@ export const put = (object: number, stream: number, mimetype: string, name: stri
  */
 export type UndefineHandler = (object: number) => void;
 
-export const undefine = (object: number): InstructionElements => ['undefine', object];
+export const undefine = createInstruction<UndefineHandler>(UNDEFINE_OPCODE,
+  (object: number) => [object],
+  (handler: UndefineHandler) => (params) => {},
+);

@@ -156,7 +156,10 @@ export const end = createInstruction<EndHandler>( END_OPCODE,
  */
 export type FileHandler = (stream: number, mimetype: string, filename: string) => void;
 
-export const file = (stream: number, mimetype: string, filename: string): InstructionElements => [FILE_OPCODE, stream, mimetype, filename];
+export const file = createInstruction<FileHandler>(FILE_OPCODE,
+  (stream: number, mimetype: string, filename: string) => [stream, mimetype, filename],
+  (handler: FileHandler) => (params) => {},
+);
 
 
 /**
@@ -176,7 +179,10 @@ export const file = (stream: number, mimetype: string, filename: string): Instru
  */
 export type ImgHandler = (stream: number, mimetype: string, mask: string, layer: number, x: number, y: number) => void;
 
-export const img = (stream: number, mimetype: string, mask: string, layer: number, x: number, y: number): InstructionElements => [IMG_OPCODE, stream, mimetype, mask, layer, x, y];
+export const img = createInstruction<ImgHandler>(IMG_OPCODE,
+  (stream: number, mimetype: string, mask: string, layer: number, x: number, y: number) => [stream, mimetype, mask, layer, x, y],
+  (handler: ImgHandler) => (params) => {},
+);
 
 /**
  * Encodes part of one or more instructions within a single instruction, associating that packet of
@@ -191,7 +197,10 @@ export const img = (stream: number, mimetype: string, mask: string, layer: numbe
  */
 export type NestHandler = (index: number, data: string) => void;
 
-export const nest = (index: number, data: string): InstructionElements => [NEST_OPCODE, index, data];
+export const nest = createInstruction<NestHandler>(NEST_OPCODE,
+  (index: number, data: string) => [index, data],
+  (handler: NestHandler) => (params) => {},
+);
 
 /**
  * Allocates a new stream, associating it with the given arbitrary named pipe metadata. The contents
@@ -206,7 +215,10 @@ export const nest = (index: number, data: string): InstructionElements => [NEST_
  */
 export type PipeHandler = (stream: number, mimetype: string, name: string) => void;
 
-export const pipe = (stream: number, mimetype: string, name: string): InstructionElements => [PIPE_OPCODE, stream, mimetype, name];
+export const pipe = createInstruction<PipeHandler>(PIPE_OPCODE,
+  (stream: number, mimetype: string, name: string) => [stream, mimetype, name],
+  (handler: PipeHandler) => (params) => {},
+);
 
 
 /**
@@ -224,4 +236,7 @@ export const pipe = (stream: number, mimetype: string, name: string): Instructio
  */
 export type VideoHandler = (stream: number, layer: number, mimetype: string) => void;
 
-export const video = (stream: number, layer: number, mimetype: string): InstructionElements => [VIDEO_OPCODE, stream, layer, mimetype];
+export const video = createInstruction<VideoHandler>(VIDEO_OPCODE,
+  (stream: number, layer: number, mimetype: string) => [stream, layer, mimetype],
+  (handler: VideoHandler) => (params) => {},
+);
