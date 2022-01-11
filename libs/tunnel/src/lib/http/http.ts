@@ -13,7 +13,7 @@ import {
   UpstreamTimeoutError
 } from '../errors';
 import { GuacamoleHttpClient } from './client';
-import { HttpRequest } from '@guacamole-client/io';
+import { HttpRequest } from '@guacamole-client/net';
 
 /**
  * The number of milliseconds to wait between connection stability test
@@ -313,7 +313,7 @@ export class HTTPTunnel extends AbstractTunnel implements Tunnel {
       // Start reading data
       this.readRequest = this.makeReadRequest(this.uuid, this.requestId++);
     };
-    connectRequest.onError = (req) => this.handleOnError(req);
+    connectRequest.onError = (req: XMLHttpRequest) => this.handleOnError(req);
     connectRequest.send();
 
     return connectRequest;
@@ -321,9 +321,9 @@ export class HTTPTunnel extends AbstractTunnel implements Tunnel {
 
   private makeReadRequest(uuid: string | null, requestId: number): HttpRequest {
     const readRequest = this.client.read(String(uuid), requestId);
-    readRequest.onLoading = (req, previousLength) => this.handleOnReadResponse(req, previousLength);
-    readRequest.onComplete = (req, previousLength) => this.handleOnReadResponse(req, previousLength);
-    readRequest.onError = (req) => this.handleOnError(req);
+    readRequest.onLoading = (req: XMLHttpRequest, previousLength: number) => this.handleOnReadResponse(req, previousLength);
+    readRequest.onComplete = (req: XMLHttpRequest, previousLength: number) => this.handleOnReadResponse(req, previousLength);
+    readRequest.onError = (req: XMLHttpRequest) => this.handleOnError(req);
     readRequest.send();
 
     return readRequest;
@@ -331,11 +331,11 @@ export class HTTPTunnel extends AbstractTunnel implements Tunnel {
 
   private makeWriteRequest(uuid: string | null, outputMessageBuffer: string): HttpRequest {
     const writeRequest = this.client.write(String(uuid), outputMessageBuffer);
-    writeRequest.onComplete = (req) => {
+    writeRequest.onComplete = (_: XMLHttpRequest) => {
       this.resetTimeout();
       this.sendPendingMessages();
     };
-    writeRequest.onError = (req) => this.handleOnError(req);
+    writeRequest.onError = (req: XMLHttpRequest) => this.handleOnError(req);
     writeRequest.send();
 
     return writeRequest;

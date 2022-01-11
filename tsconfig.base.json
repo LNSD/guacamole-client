@@ -19,6 +19,7 @@
       "@guacamole-client/input": ["libs/input/src/index.ts"],
       "@guacamole-client/io": ["libs/io/src/index.ts"],
       "@guacamole-client/media": ["libs/media/src/index.ts"],
+      "@guacamole-client/net": ["libs/net/src/index.ts"],
       "@guacamole-client/protocol": ["libs/protocol/src/index.ts"],
       "@guacamole-client/tunnel": ["libs/tunnel/src/index.ts"]
     }

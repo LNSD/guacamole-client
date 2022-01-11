@@ -7,6 +7,7 @@
     "input": "libs/input",
     "io": "libs/io",
     "media": "libs/media",
+    "net": "libs/net",
     "protocol": "libs/protocol",
     "tunnel": "libs/tunnel"
   }

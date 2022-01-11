@@ -10,18 +10,5 @@ export { OutputStream } from './lib/OutputStream';
 export { StringWriter } from './lib/StringWriter';
 export { StringReader } from './lib/StringReader';
 
-// Net
-export type { WS } from './lib/net/websocket';
-export { ConnectableWebSocket } from './lib/net/websocket';
-
-export type {
-  HttpRequest,
-  HttpRequestFactory,
-  RequestConfig,
-  OnCompleteCallback,
-  OnLoadingCallback
-} from './lib/net/http';
-export { xhr } from './lib/net/http';
-
 // Errors
 export * from './lib/error';

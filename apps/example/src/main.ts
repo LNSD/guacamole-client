@@ -9,7 +9,7 @@ import {
 } from '@guacamole-client/tunnel';
 import { Client } from '@guacamole-client/client';
 import { Keyboard, Mouse } from '@guacamole-client/input';
-import { ConnectableWebSocket, xhr } from '@guacamole-client/io';
+import { ConnectableWebSocket, xhr } from '@guacamole-client/net';
 
 // // @ts-ignore
 // declare global {

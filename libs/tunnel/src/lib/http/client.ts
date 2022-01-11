@@ -1,4 +1,4 @@
-import { HttpRequest, HttpRequestFactory } from '@guacamole-client/io';
+import { HttpRequest, HttpRequestFactory } from '@guacamole-client/net';
 
 export interface GuacamoleHttpClient {
   connect(data?: any): HttpRequest;

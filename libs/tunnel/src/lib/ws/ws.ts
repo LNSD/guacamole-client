@@ -1,7 +1,7 @@
 import { AbstractTunnel, INTERNAL_DATA_OPCODE, Tunnel } from '../tunnel';
 import { TunnelState } from '../state';
 import { Decoder, Encoder } from '@guacamole-client/protocol';
-import { WS } from '@guacamole-client/io';
+import { WS } from '@guacamole-client/net';
 import {
   ServerError,
   TunnelError,

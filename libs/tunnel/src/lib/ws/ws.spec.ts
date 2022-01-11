@@ -1,6 +1,6 @@
 import * as faker from 'faker';
 
-import { WS } from '@guacamole-client/io';
+import { WS } from '@guacamole-client/net';
 
 import { PING_FREQUENCY, WebSocketCloseError, WebSocketTunnel } from './ws';
 
