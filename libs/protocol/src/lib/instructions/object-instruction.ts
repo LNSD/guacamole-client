@@ -20,7 +20,14 @@ export type BodyHandler = (object: number, stream: number, mimetype: string, nam
 
 export const body = createInstruction<BodyHandler>(BODY_OPCODE,
   (object: number, stream: number, mimetype: string, name: string) => [object, stream, mimetype, name],
-  (handler: BodyHandler) => (params) => {},
+  (handler: BodyHandler) => (params) => {
+    const objectIndex = parseInt(params[0], 10);
+    const streamIndex = parseInt(params[1], 10);
+    const mimetype = params[2];
+    const name = params[3];
+
+    handler(objectIndex, streamIndex, mimetype, name);
+  }
 );
 
 /**
@@ -35,7 +42,12 @@ export type FilesystemHandler = (object: number, name: string) => void;
 
 export const filesystem = createInstruction<FilesystemHandler>(FILESYSTEM_OPCODE,
   (object: number, name: string) => [object, name],
-  (handler: FilesystemHandler) => (params) => {},
+  (handler: FilesystemHandler) => (params) => {
+    const objectIndex = parseInt(params[0], 10);
+    const name = params[1];
+
+    handler(objectIndex, name);
+  }
 );
 
 /**
@@ -66,7 +78,12 @@ export type GetHandler = (object: number, name: string) => void;
 
 export const get = createInstruction<GetHandler>(GET_OPCODE,
   (object: number, name: string) => [object, name],
-  (handler: GetHandler) => (params) => {},
+  (handler: GetHandler) => (params) => {
+    const object = parseInt(params[0], 10);
+    const name = params[1];
+
+    handler(object, name);
+  }
 );
 
 /**
@@ -82,7 +99,14 @@ export type PutHandler = (object: number, stream: number, mimetype: string, name
 
 export const put = createInstruction<PutHandler>(PUT_OPCODE,
   (object: number, stream: number, mimetype: string, name: string) => [object, stream, mimetype, name],
-  (handler: PutHandler) => (params) => {},
+  (handler: PutHandler) => (params) => {
+    const object = parseInt(params[0], 10);
+    const stream = parseInt(params[1], 10);
+    const mimetype = params[2];
+    const name = params[3];
+
+    handler(object, stream, mimetype, name);
+  }
 );
 
 /**
@@ -96,5 +120,9 @@ export type UndefineHandler = (object: number) => void;
 
 export const undefine = createInstruction<UndefineHandler>(UNDEFINE_OPCODE,
   (object: number) => [object],
-  (handler: UndefineHandler) => (params) => {},
+  (handler: UndefineHandler) => (params) => {
+    const objectIndex = parseInt(params[0], 10);
+
+    handler(objectIndex);
+  }
 );
