@@ -44,7 +44,7 @@ const PING_INTERVAL = 5000;
  * provided tunnel, updating its display using one or more canvas elements.
  */
 export default class Client implements InputStreamHandlers, OutputStreamHandlers {
-  //<editor-fold defaultstate="collapsed" desc="Events" >
+  //<editor-fold defaultstate="collapsed" desc="Client events" >
 
   /**
    * Fired whenever the state of this Client changes.
@@ -242,37 +242,20 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
       const reason = parameters[1];
       const code = parseInt(parameters[2], 10);
 
-      // Get stream
-      const stream = this.outputStreams.getStream(streamIndex);
-      if (!stream) {
-        return;
-      }
-
-      // Signal ack if handler defined
-      if (stream.onack) {
-        let error = undefined;
-        if (code >= 0x0100) {
-          error = new StreamError(reason, code);
-        }
-
-        stream.onack(error);
-      }
-
-      // If code is an error, invalidate stream if not already
-      // invalidated by onack handler
-      if (code >= 0x0100) {
-        this.outputStreams.freeStream(streamIndex);
-      }
+      this.handleAckInstruction(streamIndex, code, reason);
     },
 
     arc: (parameters: string[]) => {
-      const layer = this.getLayer(parseInt(parameters[0], 10));
+      const layerIndex = parseInt(parameters[0], 10);
       const x = parseInt(parameters[1], 10);
       const y = parseInt(parameters[2], 10);
       const radius = parseInt(parameters[3], 10);
       const startAngle = parseFloat(parameters[4]);
       const endAngle = parseFloat(parameters[5]);
       const negative = parseInt(parameters[6], 10);
+
+      // Get layer
+      const layer = this.getLayer(layerIndex);
 
       this.display.arc(layer, x, y, radius, startAngle, endAngle, negative !== 0);
     },
@@ -282,54 +265,21 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
       const mimetype = parameters[1];
       const name = parameters[2];
 
-      // Create stream
-      if (this.onargv) {
-        const stream = this.inputStreams.createStream(streamIndex);
-        this.onargv(stream, mimetype, name);
-      } else {
-        // Otherwise, unsupported
-        this.sendAck(streamIndex, new StreamError('Receiving argument values unsupported', StatusCode.UNSUPPORTED));
-      }
+      this.handleArgvInstruction(streamIndex, mimetype, name);
     },
 
     audio: (parameters: string[]) => {
       const streamIndex = parseInt(parameters[0], 10);
       const mimetype = parameters[1];
 
-      // Create stream
-      const stream = this.inputStreams.createStream(streamIndex);
-
-      // Get player instance via callback
-      let audioPlayer: AudioPlayer | null = null;
-      if (this.onaudio) {
-        audioPlayer = this.onaudio(stream, mimetype);
-      }
-
-      // If unsuccessful, try to use a default implementation
-      if (!audioPlayer) {
-        audioPlayer = getAudioPlayerInstance(stream, mimetype);
-      }
-
-      // If we have successfully retrieved an audio player, send success response
-      if (audioPlayer) {
-        this.audioPlayers.set(streamIndex, audioPlayer);
-        this.sendAck(streamIndex);
-      } else {
-        // Otherwise, mimetype must be unsupported
-        this.sendAck(streamIndex, new StreamError('BAD TYPE', StatusCode.CLIENT_BAD_TYPE));
-      }
+      this.handleAudioInstruction(streamIndex, mimetype);
     },
 
     blob: (parameters: string[]) => {
-      // Get stream
       const streamIndex = parseInt(parameters[0], 10);
       const data = parameters[1];
-      const stream = this.inputStreams.getStream(streamIndex);
 
-      // Write data
-      if (stream?.onblob) {
-        stream.onblob(data);
-      }
+      this.handleBlobInstruction(streamIndex, data);
     },
 
     body: (parameters: string[]) => {
@@ -353,60 +303,51 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
 
     cfill: (parameters: string[]) => {
       const channelMask = parseInt(parameters[0], 10);
-      const layer = this.getLayer(parseInt(parameters[1], 10));
+      const layerIndex = parseInt(parameters[1], 10);
       const r = parseInt(parameters[2], 10);
       const g = parseInt(parameters[3], 10);
       const b = parseInt(parameters[4], 10);
       const a = parseInt(parameters[5], 10);
 
-      this.display.setChannelMask(layer, channelMask);
-      this.display.fillColor(layer, r, g, b, a);
+      this.handleCfillInstruction(layerIndex, channelMask, r, g, b, a);
     },
 
     clip: (parameters: string[]) => {
-      const layer = this.getLayer(parseInt(parameters[0], 10));
+      const layerIndex = parseInt(parameters[0], 10);
 
-      this.display.clip(layer);
+      this.handleClipInstruction(layerIndex);
     },
 
     clipboard: (parameters: string[]) => {
       const streamIndex = parseInt(parameters[0], 10);
       const mimetype = parameters[1];
 
-      // Create stream
-      if (this.onclipboard) {
-        const stream = this.inputStreams.createStream(streamIndex);
-        this.onclipboard(stream, mimetype);
-      } else {
-        // Otherwise, unsupported
-        this.sendAck(streamIndex, new StreamError('Clipboard unsupported', StatusCode.UNSUPPORTED));
-      }
+      this.handleClipboardInstruction(streamIndex, mimetype);
     },
 
     close: (parameters: string[]) => {
-      const layer = this.getLayer(parseInt(parameters[0], 10));
+      const layerIndex = parseInt(parameters[0], 10);
 
-      this.display.close(layer);
+      this.handleCloseInstruction(layerIndex);
     },
 
     copy: (parameters: string[]) => {
-      const srcL = this.getLayer(parseInt(parameters[0], 10));
+      const srcLayerIndex = parseInt(parameters[0], 10);
       const srcX = parseInt(parameters[1], 10);
       const srcY = parseInt(parameters[2], 10);
       const srcWidth = parseInt(parameters[3], 10);
       const srcHeight = parseInt(parameters[4], 10);
       const channelMask = parseInt(parameters[5], 10);
-      const dstL = this.getLayer(parseInt(parameters[6], 10));
+      const dstLayerIndex = parseInt(parameters[6], 10);
       const dstX = parseInt(parameters[7], 10);
       const dstY = parseInt(parameters[8], 10);
 
-      this.display.setChannelMask(dstL, channelMask);
-      this.display.copy(srcL, srcX, srcY, srcWidth, srcHeight, dstL, dstX, dstY);
+      this.handleCopyInstruction(srcLayerIndex, dstLayerIndex, channelMask, srcX, srcY, srcWidth, srcHeight, dstX, dstY);
     },
 
     cstroke: (parameters: string[]) => {
       const channelMask = parseInt(parameters[0], 10);
-      const layer = this.getLayer(parseInt(parameters[1], 10));
+      const layerIndex = parseInt(parameters[1], 10);
       const cap = LINE_CAP[parseInt(parameters[2], 10)];
       const join = LINE_JOIN[parseInt(parameters[3], 10)];
       const thickness = parseInt(parameters[4], 10);
@@ -415,24 +356,23 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
       const b = parseInt(parameters[7], 10);
       const a = parseInt(parameters[8], 10);
 
-      this.display.setChannelMask(layer, channelMask);
-      this.display.strokeColor(layer, cap, join, thickness, r, g, b, a);
+      this.handleCstrokeInstruction(layerIndex, channelMask, cap, join, thickness, r, g, b, a);
     },
 
     cursor: (parameters: string[]) => {
       const cursorHotspotX = parseInt(parameters[0], 10);
       const cursorHotspotY = parseInt(parameters[1], 10);
-      const srcL = this.getLayer(parseInt(parameters[2], 10));
+      const srcLayerIndex = parseInt(parameters[2], 10);
       const srcX = parseInt(parameters[3], 10);
       const srcY = parseInt(parameters[4], 10);
       const srcWidth = parseInt(parameters[5], 10);
       const srcHeight = parseInt(parameters[6], 10);
 
-      this.display.setCursor(cursorHotspotX, cursorHotspotY, srcL, srcX, srcY, srcWidth, srcHeight);
+      this.handleCursorInstruction(srcLayerIndex, cursorHotspotX, cursorHotspotY, srcX, srcY, srcWidth, srcHeight);
     },
 
     curve: (parameters: string[]) => {
-      const layer = this.getLayer(parseInt(parameters[0], 10));
+      const layerIndex = parseInt(parameters[0], 10);
       const cp1x = parseInt(parameters[1], 10);
       const cp1y = parseInt(parameters[2], 10);
       const cp2x = parseInt(parameters[3], 10);
@@ -440,12 +380,11 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
       const x = parseInt(parameters[5], 10);
       const y = parseInt(parameters[6], 10);
 
-      this.display.curveTo(layer, cp1x, cp1y, cp2x, cp2y, x, y);
+      this.handleCurveInstruction(layerIndex, cp1x, cp1y, cp2x, cp2y, x, y);
     },
 
-    disconnect: (_parameters: string[]) => {
-      // Explicitly tear down connection
-      this.disconnect();
+    disconnect: () => {
+      this.handleDisconnectInstruction();
     },
 
     dispose: (parameters: string[]) => {
@@ -478,39 +417,20 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
       const e = parseFloat(parameters[5]);
       const f = parseFloat(parameters[6]);
 
-      // Only valid for visible layers (not buffers)
-      if (layerIndex >= 0) {
-        const layer = this.getLayer(layerIndex);
-        this.display.distort(layer, a, b, c, d, e, f);
-      }
+      this.handleDistortInstruction(layerIndex, a, b, c, d, e, f);
     },
 
     error: (parameters: string[]) => {
       const reason = parameters[0];
       const code = parseInt(parameters[1], 10);
 
-      // Call handler if defined
-      if (this.onerror) {
-        this.onerror(new Status(code, reason));
-      }
-
-      this.disconnect();
+      this.handleErrorInstruction(code, reason);
     },
 
     end: (parameters: string[]) => {
       const streamIndex = parseInt(parameters[0], 10);
 
-      // Get stream
-      const stream = this.inputStreams.getStream(streamIndex);
-      if (stream) {
-        // Signal end of stream if handler defined
-        if (stream.onend) {
-          stream.onend();
-        }
-
-        // Invalidate stream
-        this.inputStreams.freeStream(streamIndex);
-      }
+      this.handleEndInstruction(streamIndex);
     },
 
     file: (parameters: string[]) => {
@@ -518,97 +438,78 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
       const mimetype = parameters[1];
       const filename = parameters[2];
 
-      // Create stream
-      if (this.onfile) {
-        const stream = this.inputStreams.createStream(streamIndex);
-        this.onfile(stream, mimetype, filename);
-      } else {
-        // Otherwise, unsupported
-        this.sendAck(streamIndex, new StreamError('File transfer unsupported', StatusCode.UNSUPPORTED));
-      }
+      this.handleFileInstruction(streamIndex, mimetype, filename);
     },
 
     filesystem: (parameters: string[]) => {
       const objectIndex = parseInt(parameters[0], 10);
       const name = parameters[1];
 
-      // Create object, if supported
-      if (this.onfilesystem) {
-        const object = new GuacamoleObject(this, objectIndex);
-        this.objects.set(objectIndex, object);
-        this.onfilesystem(object, name);
-      }
-
-      // If unsupported, simply ignore the availability of the filesystem
+      this.handleFilesystemInstruction(objectIndex, name);
     },
 
     identity: (parameters: string[]) => {
-      const layer = this.getLayer(parseInt(parameters[0], 10));
+      const layerIndex = parseInt(parameters[0], 10);
 
-      this.display.setTransform(layer, 1, 0, 0, 1, 0, 0);
+      this.handleIdentityInstruction(layerIndex);
     },
 
     img: (parameters: string[]) => {
       const streamIndex = parseInt(parameters[0], 10);
       const channelMask = parseInt(parameters[1], 10);
-      const layer = this.getLayer(parseInt(parameters[2], 10));
+      const layerIndex = parseInt(parameters[2], 10);
       const mimetype = parameters[3];
       const x = parseInt(parameters[4], 10);
       const y = parseInt(parameters[5], 10);
 
-      // Create stream
-      const stream = this.inputStreams.createStream(streamIndex);
-
-      // Draw received contents once decoded
-      this.display.setChannelMask(layer, channelMask);
-      this.display.drawStream(layer, x, y, stream, mimetype);
+      this.handleImgInstruction(streamIndex, layerIndex, channelMask, x, y, mimetype);
     },
 
     jpeg: (parameters: string[]) => {
       const channelMask = parseInt(parameters[0], 10);
-      const layer = this.getLayer(parseInt(parameters[1], 10));
+      const layerIndex = parseInt(parameters[1], 10);
       const x = parseInt(parameters[2], 10);
       const y = parseInt(parameters[3], 10);
       const data = parameters[4];
 
-      this.display.setChannelMask(layer, channelMask);
-      this.display.draw(layer, x, y, `data:image/jpeg;base64,${data}`);
+      this.handleJpegInstruction(layerIndex, channelMask, x, y, data);
     },
 
     lfill: (parameters: string[]) => {
       const channelMask = parseInt(parameters[0], 10);
-      const layer = this.getLayer(parseInt(parameters[1], 10));
+      const layerIndex = parseInt(parameters[1], 10);
       const srcLayer = this.getLayer(parseInt(parameters[2], 10));
 
-      this.display.setChannelMask(layer, channelMask);
-      this.display.fillLayer(layer, srcLayer);
+      this.handleLfillInstruction(layerIndex, channelMask, srcLayer);
     },
 
     line: (parameters: string[]) => {
-      const layer = this.getLayer(parseInt(parameters[0], 10));
+      const layerIndex = parseInt(parameters[0], 10);
       const x = parseInt(parameters[1], 10);
       const y = parseInt(parameters[2], 10);
 
-      this.display.lineTo(layer, x, y);
+      this.handleLineInstruction(layerIndex, x, y);
     },
 
-    // TODO Review this
-    // lstroke: (parameters: string[]) => {
-    //   const channelMask = parseInt(parameters[0], 10);
-    //   const layer = this.getLayer(parseInt(parameters[1], 10));
-    //   const srcLayer = this.getLayer(parseInt(parameters[2], 10));
-    //
-    //   this.display.setChannelMask(layer, channelMask);
-    //   this.display.strokeLayer(layer, srcLayer);
-    // },
+    lstroke: (parameters: string[]) => {
+      const channelMask = parseInt(parameters[0], 10);
+      const layerIndex = parseInt(parameters[1], 10);
+      const capIndex = parseInt(parameters[2], 10);
+      const joinIndex = parseInt(parameters[3], 10);
+      const thickness = parseInt(parameters[4], 10);
+      const srcLayerIndex = parseInt(parameters[5], 10);
+
+      const cap = LINE_CAP[capIndex];
+      const join = LINE_JOIN[joinIndex];
+
+      this.handleLstrokeInstruction(layerIndex, srcLayerIndex, channelMask, cap, join, thickness);
+    },
 
     mouse: (parameters: string[]) => {
       const x = parseInt(parameters[0], 10);
       const y = parseInt(parameters[1], 10);
 
-      // Display and move software cursor to received coordinates
-      this.display.showCursor(true);
-      this.display.moveCursor(x, y);
+      this.handleMouseInstruction(x, y);
     },
 
     move: (parameters: string[]) => {
@@ -618,18 +519,11 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
       const y = parseInt(parameters[3], 10);
       const z = parseInt(parameters[4], 10);
 
-      // Only valid for non-default layers
-      if (layerIndex > 0 && parentIndex >= 0) {
-        const layer = this.getLayer(layerIndex);
-        const parent = this.getLayer(parentIndex);
-        this.display.move(layer, parent, x, y, z);
-      }
+      this.handleMoveInstruction(layerIndex, parentIndex, x, y, z);
     },
 
     name: (parameters: string[]) => {
-      if (this.onname) {
-        this.onname(parameters[0]);
-      }
+      this.handleNameInstruction(parameters);
     },
 
     nest: (parameters: string[]) => {
@@ -642,41 +536,39 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
       const mimetype = parameters[1];
       const name = parameters[2];
 
-      // Create stream
-      if (this.onpipe) {
-        const stream = this.inputStreams.createStream(streamIndex);
-        this.onpipe(stream, mimetype, name);
-      } else {
-        // Otherwise, unsupported
-        this.sendAck(streamIndex, new StreamError('Named pipes unsupported', StatusCode.UNSUPPORTED));
-      }
+      this.handlePipeInstruction(streamIndex, mimetype, name);
     },
 
     png: (parameters: string[]) => {
       const channelMask = parseInt(parameters[0], 10);
-      const layer = this.getLayer(parseInt(parameters[1], 10));
+      const layerIndex = parseInt(parameters[1], 10);
       const x = parseInt(parameters[2], 10);
       const y = parseInt(parameters[3], 10);
       const data = parameters[4];
+
+      // Get layer
+      const layer = this.getLayer(layerIndex);
 
       this.display.setChannelMask(layer, channelMask);
       this.display.draw(layer, x, y, `data:image/png;base64,${data}`);
     },
 
     pop: (parameters: string[]) => {
-      const layer = this.getLayer(parseInt(parameters[0], 10));
+      const layerIndex = parseInt(parameters[0], 10);
 
-      this.display.pop(layer);
+      this.handlePopInstruction(layerIndex);
     },
 
     push: (parameters: string[]) => {
-      const layer = this.getLayer(parseInt(parameters[0], 10));
+      const layerIndex = parseInt(parameters[0], 10);
+const layer = this.getLayer(layerIndex);
 
       this.display.push(layer);
     },
 
     rect: (parameters: string[]) => {
-      const layer = this.getLayer(parseInt(parameters[0], 10));
+      const layerIndex = parseInt(parameters[0], 10);
+const layer = this.getLayer(layerIndex);
       const x = parseInt(parameters[1], 10);
       const y = parseInt(parameters[2], 10);
       const w = parseInt(parameters[3], 10);
@@ -686,19 +578,18 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
     },
 
     required: (parameters: string[]) => {
-      if (this.onrequired !== null) {
-        this.onrequired(parameters);
-      }
+      this.handleRequiredInstruction(parameters);
     },
 
     reset: (parameters: string[]) => {
-      const layer = this.getLayer(parseInt(parameters[0], 10));
+      const layerIndex = parseInt(parameters[0], 10);
 
-      this.display.reset(layer);
+      this.handleResetInstruction(layerIndex);
     },
 
     set: (parameters: string[]) => {
-      const layer = this.getLayer(parseInt(parameters[0], 10));
+      const layerIndex = parseInt(parameters[0], 10);
+const layer = this.getLayer(layerIndex);
       const name = parameters[1];
       const value = parameters[2];
 
@@ -713,24 +604,20 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
       const layerIndex = parseInt(parameters[0], 10);
       const a = parseInt(parameters[1], 10);
 
-      // Only valid for visible layers (not buffers)
-      if (layerIndex >= 0) {
-        const layer = this.getLayer(layerIndex);
-        this.display.shade(layer, a);
-      }
+      this.handleShadeInstruction(layerIndex, a);
     },
 
     size: (parameters: string[]) => {
       const layerIndex = parseInt(parameters[0], 10);
-      const layer = this.getLayer(layerIndex);
       const width = parseInt(parameters[1], 10);
       const height = parseInt(parameters[2], 10);
 
-      this.display.resize(layer, width, height);
+      this.handleSizeInstruction(layerIndex, width, height);
     },
 
     start: (parameters: string[]) => {
-      const layer = this.getLayer(parseInt(parameters[0], 10));
+      const layerIndex = parseInt(parameters[0], 10);
+const layer = this.getLayer(layerIndex);
       const x = parseInt(parameters[1], 10);
       const y = parseInt(parameters[2], 10);
 
@@ -768,27 +655,21 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
     },
 
     transfer: (parameters: string[]) => {
-      const srcL = this.getLayer(parseInt(parameters[0], 10));
+      const srcLayerIndex = parseInt(parameters[0], 10);
       const srcX = parseInt(parameters[1], 10);
       const srcY = parseInt(parameters[2], 10);
       const srcWidth = parseInt(parameters[3], 10);
       const srcHeight = parseInt(parameters[4], 10);
       const functionIndex = parseInt(parameters[5], 10);
-      const dstL = this.getLayer(parseInt(parameters[6], 10));
+      const dstLayerIndex = parseInt(parameters[6], 10);
       const dstX = parseInt(parameters[7], 10);
       const dstY = parseInt(parameters[8], 10);
 
-      /* SRC */
-      if (functionIndex === 0x3) {
-        this.display.put(srcL, srcX, srcY, srcWidth, srcHeight, dstL, dstX, dstY);
-      } else if (functionIndex !== 0x5) {
-        /* Anything else that isn't a NO-OP */
-        this.display.transfer(srcL, srcX, srcY, srcWidth, srcHeight, dstL, dstX, dstY, DEFAULT_TRANSFER_FUNCTION[functionIndex]);
-      }
+      this.handleTransferInstruction(srcLayerIndex, dstLayerIndex, functionIndex, srcX, srcY, srcWidth, srcHeight, dstX, dstY);
     },
 
     transform: (parameters: string[]) => {
-      const layer = this.getLayer(parseInt(parameters[0], 10));
+      const layerIndex = parseInt(parameters[0], 10);
       const a = parseFloat(parameters[1]);
       const b = parseFloat(parameters[2]);
       const c = parseFloat(parameters[3]);
@@ -796,55 +677,29 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
       const e = parseFloat(parameters[5]);
       const f = parseFloat(parameters[6]);
 
-      this.display.transform(layer, a, b, c, d, e, f);
+      this.handleTransformInstruction(layerIndex, a, b, c, d, e, f);
     },
 
     undefine: (parameters: string[]) => {
-      // Get object
       const objectIndex = parseInt(parameters[0], 10);
-      const object = this.objects.get(objectIndex);
 
-      // Signal end of object definition
-      if (object?.onundefine) {
-        object.onundefine();
-      }
+      this.handleUndefineInstruction(objectIndex);
     },
 
     video: (parameters: string[]) => {
       const streamIndex = parseInt(parameters[0], 10);
-      const layer = this.getLayer(parseInt(parameters[1], 10));
+      const layerIndex = parseInt(parameters[1], 10);
       const mimetype = parameters[2];
 
-      // Create stream
-      const stream = this.inputStreams.createStream(streamIndex);
-
-      // Get player instance via callback
-      let videoPlayer: VideoPlayer | null = null;
-      if (this.onvideo) {
-        videoPlayer = this.onvideo(stream, layer, mimetype);
-      }
-
-      // If unsuccessful, try to use a default implementation
-      if (!videoPlayer) {
-        videoPlayer = VideoPlayer.getInstance(stream, layer, mimetype);
-      }
-
-      // If we have successfully retrieved an video player, send success response
-      if (videoPlayer) {
-        this.videoPlayers.set(streamIndex, videoPlayer);
-        this.sendAck(streamIndex);
-      } else {
-        // Otherwise, mimetype must be unsupported
-        this.sendAck(streamIndex, new StreamError('BAD TYPE', StatusCode.CLIENT_BAD_TYPE));
-      }
+      this.handleVideoInstruction(streamIndex, layerIndex, mimetype);
     }
-
   };
 
+
   /*
-   * @constructor
-   * @param tunnel - The tunnel to use to send and receive Guacamole instructions.
-   */
+                                                                         * @constructor
+                                                                         * @param tunnel - The tunnel to use to send and receive Guacamole instructions.
+                                                                         */
   constructor(private readonly tunnel: Tunnel) {
     this.outputStreams = new OutputStreamsManager(this);
     this.inputStreams = new InputStreamsManager(this);
@@ -866,6 +721,52 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
 
   public isConnected(): boolean {
     return this.currentState === State.CONNECTED || this.currentState === State.WAITING;
+  }
+
+  /**
+   * Connects the underlying tunnel of this Client, passing the
+   * given arbitrary data to the tunnel during the connection process.
+   *
+   * @param data - Arbitrary connection data to be sent to the underlying
+   *               tunnel during the connection process.
+   * @throws {Status} If an error occurs during connection.
+   */
+  public connect(data?: string) {
+    this.setState(State.CONNECTING);
+
+    try {
+      this.tunnel.connect(data);
+    } catch (err: unknown) {
+      this.setState(State.IDLE);
+      throw err;
+    }
+
+    // Ping every 5 seconds (ensure connection alive)
+    this.pingIntervalHandler = window.setInterval(() => {
+      this.tunnel.sendMessage(...ClientControl.nop());
+    }, PING_INTERVAL);
+
+    this.setState(State.WAITING);
+  }
+
+  /**
+   * Sends a disconnect instruction to the server and closes the tunnel.
+   */
+  public disconnect() {
+    // Only attempt disconnection not disconnected.
+    if (this.currentState !== State.DISCONNECTED && this.currentState !== State.DISCONNECTING) {
+      this.setState(State.DISCONNECTING);
+
+      // Stop ping
+      if (this.pingIntervalHandler) {
+        window.clearInterval(this.pingIntervalHandler);
+      }
+
+      // Send disconnect message and disconnect
+      this.tunnel.sendMessage(...ClientControl.disconnect());
+      this.tunnel.disconnect();
+      this.setState(State.DISCONNECTED);
+    }
   }
 
   /**
@@ -1077,6 +978,168 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
     this.tunnel.sendMessage(...ObjectInstruction.get(index, name));
   }
 
+  private handleDisconnectInstruction() {
+    // Explicitly tear down connection
+    this.disconnect();
+  }
+
+  private handleErrorInstruction(code: number, reason: string) {
+    // Call handler if set
+    if (this.onerror !== null) {
+      this.onerror(new Status(code, reason));
+    }
+
+    this.disconnect();
+  }
+
+  private handleNameInstruction(parameters: string[]) {
+    if (this.onname !== null) {
+      this.onname(parameters[0]);
+    }
+  }
+
+  private handleRequiredInstruction(parameters: string[]) {
+    if (this.onrequired !== null) {
+      this.onrequired(parameters);
+    }
+  }
+
+  //<editor-fold defaultstate="collapsed" desc="InputStreamHandler">
+
+  private handleArgvInstruction(streamIndex: number, mimetype: string, name: string) {
+    if (this.onargv === null) {
+      this.sendAck(streamIndex, new StreamError('Receiving argument values unsupported', StatusCode.UNSUPPORTED));
+      return;
+    }
+
+    // Create stream
+    const stream = this.inputStreams.createStream(streamIndex);
+    this.onargv(stream, mimetype, name);
+  }
+
+  private handleImgInstruction(streamIndex: number, layerIndex: number, channelMask: number, x: number, y: number, mimetype: string) {
+    // Create stream
+    const stream = this.inputStreams.createStream(streamIndex);
+
+    // Get layer
+    const layer = this.getLayer(layerIndex);
+
+    // Draw received contents once decoded
+    this.display.setChannelMask(layer, channelMask);
+    this.display.drawStream(layer, x, y, stream, mimetype);
+  }
+
+  private handleAudioInstruction(streamIndex: number, mimetype: string) {
+    // Create stream
+    const stream = this.inputStreams.createStream(streamIndex);
+
+    // Get player instance via callback
+    let audioPlayer: AudioPlayer | null = null;
+    if (this.onaudio) {
+      audioPlayer = this.onaudio(stream, mimetype);
+    }
+
+    // If unsuccessful, try to use a default implementation
+    if (!audioPlayer) {
+      audioPlayer = getAudioPlayerInstance(stream, mimetype);
+    }
+
+    // If we have successfully retrieved an audio player, send success response
+    if (audioPlayer) {
+      this.audioPlayers.set(streamIndex, audioPlayer);
+      this.sendAck(streamIndex);
+    } else {
+      // Otherwise, mimetype must be unsupported
+      this.sendAck(streamIndex, new StreamError('BAD TYPE', StatusCode.CLIENT_BAD_TYPE));
+    }
+  }
+
+  private handleVideoInstruction(streamIndex: number, layerIndex: number, mimetype: string) {
+    // Create stream
+    const stream = this.inputStreams.createStream(streamIndex);
+
+    // Get layer
+    const layer = this.getLayer(layerIndex);
+
+    // Get player instance via callback
+    let videoPlayer: VideoPlayer | null = null;
+    if (this.onvideo) {
+      videoPlayer = this.onvideo(stream, layer, mimetype);
+    }
+
+    // If unsuccessful, try to use a default implementation
+    if (!videoPlayer) {
+      videoPlayer = VideoPlayer.getInstance(stream, layer, mimetype);
+    }
+
+    // If we have successfully retrieved an video player, send success response
+    if (videoPlayer) {
+      this.videoPlayers.set(streamIndex, videoPlayer);
+      this.sendAck(streamIndex);
+    } else {
+      // Otherwise, mimetype must be unsupported
+      this.sendAck(streamIndex, new StreamError('BAD TYPE', StatusCode.CLIENT_BAD_TYPE));
+    }
+  }
+
+  private handleClipboardInstruction(streamIndex: number, mimetype: string) {
+    if (this.onclipboard === null) {
+      this.sendAck(streamIndex, new StreamError('Clipboard unsupported', StatusCode.UNSUPPORTED));
+      return;
+    }
+
+    // Create stream
+    const stream = this.inputStreams.createStream(streamIndex);
+
+    this.onclipboard(stream, mimetype);
+  }
+
+  private handleFileInstruction(streamIndex: number, mimetype: string, filename: string) {
+    if (this.onfile === null) {
+      this.sendAck(streamIndex, new StreamError('File transfer unsupported', StatusCode.UNSUPPORTED));
+      return;
+    }
+
+    // Create stream
+    const stream = this.inputStreams.createStream(streamIndex);
+    this.onfile(stream, mimetype, filename);
+  }
+
+  private handleBlobInstruction(streamIndex: number, data: string) {
+    // Get stream
+    const stream = this.inputStreams.getStream(streamIndex);
+
+    // Write data
+    if (stream?.onblob) {
+      stream.onblob(data);
+    }
+  }
+
+  private handleEndInstruction(streamIndex: number) {
+    // Get stream
+    const stream = this.inputStreams.getStream(streamIndex);
+    if (stream) {
+      // Signal end of stream if handler defined
+      if (stream.onend) {
+        stream.onend();
+      }
+
+      // Invalidate stream
+      this.inputStreams.freeStream(streamIndex);
+    }
+  }
+
+  private handlePipeInstruction(streamIndex: number, mimetype: string, name: string) {
+    if (this.onpipe === null) {
+      this.sendAck(streamIndex, new StreamError('Named pipes unsupported', StatusCode.UNSUPPORTED));
+      return;
+    }
+
+    // Create stream
+    const stream = this.inputStreams.createStream(streamIndex);
+    this.onpipe(stream, mimetype, name);
+  }
+
   /**
    * Acknowledge receipt of a blob on the stream with the given index.
    *
@@ -1094,6 +1157,33 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
     const code = error?.code ?? StatusCode.SUCCESS;
 
     this.tunnel.sendMessage(...Streaming.ack(index, message, code));
+  }
+
+  //</editor-fold>
+  //<editor-fold defaultstate="collapsed" desc="OutputStreamHandler">
+
+  private handleAckInstruction(streamIndex: number, code: number, reason: string) {
+    // Get stream
+    const stream = this.outputStreams.getStream(streamIndex);
+    if (!stream) {
+      return;
+    }
+
+    // Signal ack if handler defined
+    if (stream.onack) {
+      let error = undefined;
+      if (code >= 0x0100) {
+        error = new StreamError(reason, code);
+      }
+
+      stream.onack(error);
+    }
+
+    // If code is an error, invalidate stream if not already
+    // invalidated by onack handler
+    if (code >= 0x0100) {
+      this.outputStreams.freeStream(streamIndex);
+    }
   }
 
   /**
@@ -1132,6 +1222,176 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
     this.outputStreams.freeStream(index);
   }
 
+  //</editor-fold>
+  //<editor-fold defaultstate="collapsed" desc="ObjectHandler">
+
+  private handleFilesystemInstruction(objectIndex: number, name: string) {
+    if (this.onfilesystem === null) {
+      // If unsupported, simply ignore the availability of the filesystem
+      return;
+    }
+
+    // Create object, if supported
+    const object = new GuacamoleObject(this, objectIndex);
+
+    this.objects.set(objectIndex, object);
+    this.onfilesystem(object, name);
+  }
+
+  private handleUndefineInstruction(objectIndex: number) {
+    // Get object
+    const object = this.objects.get(objectIndex);
+
+    // Signal end of object definition
+    if (object?.onundefine) {
+      object.onundefine();
+    }
+  }
+
+  //</editor-fold>
+  //<editor-fold defaultstate="collapsed" desc="DisplayHandler">
+
+  private handleCfillInstruction(layerIndex: number, channelMask: number, r: number, g: number, b: number, a: number) {
+    const layer = this.getLayer(layerIndex);
+    this.display.setChannelMask(layer, channelMask);
+    this.display.fillColor(layer, r, g, b, a);
+  }
+
+  private handleClipInstruction(layerIndex: number) {
+    const layer = this.getLayer(layerIndex);
+    this.display.clip(layer);
+  }
+
+  private handleCloseInstruction(layerIndex: number) {
+    const layer = this.getLayer(layerIndex);
+    this.display.close(layer);
+  }
+
+  private handleCopyInstruction(srcLayerIndex: number, dstLayerIndex: number, channelMask: number, srcX: number, srcY: number, srcWidth: number, srcHeight: number, dstX: number, dstY: number) {
+    const srcLayer = this.getLayer(srcLayerIndex);
+    const dstLayer = this.getLayer(dstLayerIndex);
+    this.display.setChannelMask(dstLayer, channelMask);
+    this.display.copy(srcLayer, srcX, srcY, srcWidth, srcHeight, dstLayer, dstX, dstY);
+  }
+
+  private handleCstrokeInstruction(layerIndex: number, channelMask: number, cap: CanvasLineCap, join: CanvasLineJoin, thickness: number, r: number, g: number, b: number, a: number) {
+    const layer = this.getLayer(layerIndex);
+    this.display.setChannelMask(layer, channelMask);
+    this.display.strokeColor(layer, cap, join, thickness, r, g, b, a);
+  }
+
+  private handleCursorInstruction(srcLayerIndex: number, cursorHotspotX: number, cursorHotspotY: number, srcX: number, srcY: number, srcWidth: number, srcHeight: number) {
+    const srcLayer = this.getLayer(srcLayerIndex);
+    this.display.setCursor(cursorHotspotX, cursorHotspotY, srcLayer, srcX, srcY, srcWidth, srcHeight);
+  }
+
+  private handleCurveInstruction(layerIndex: number, cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number) {
+    const layer = this.getLayer(layerIndex);
+    this.display.curveTo(layer, cp1x, cp1y, cp2x, cp2y, x, y);
+  }
+
+  private handleDistortInstruction(layerIndex: number, a: number, b: number, c: number, d: number, e: number, f: number) {
+    // Only valid for visible layers (not buffers)
+    if (layerIndex < 0) {
+      return;
+    }
+
+    const layer = this.getLayer(layerIndex);
+    this.display.distort(layer, a, b, c, d, e, f);
+  }
+
+  private handleIdentityInstruction(layerIndex: number) {
+    const layer = this.getLayer(layerIndex);
+    this.display.setTransform(layer, 1, 0, 0, 1, 0, 0);
+  }
+
+  private handleJpegInstruction(layerIndex: number, channelMask: number, x: number, y: number, data: string) {
+    const layer = this.getLayer(layerIndex);
+    this.display.setChannelMask(layer, channelMask);
+    this.display.draw(layer, x, y, `data:image/jpeg;base64,${data}`);
+  }
+
+  private handleLfillInstruction(layerIndex: number, channelMask: number, srcLayer: VisibleLayer) {
+    const layer = this.getLayer(layerIndex);
+    this.display.setChannelMask(layer, channelMask);
+    this.display.fillLayer(layer, srcLayer);
+  }
+
+  private handleLineInstruction(layerIndex: number, x: number, y: number) {
+    const layer = this.getLayer(layerIndex);
+    this.display.lineTo(layer, x, y);
+  }
+
+  private handleLstrokeInstruction(layerIndex: number, srcLayerIndex: number, channelMask: number, cap: CanvasLineCap, join: CanvasLineJoin, thickness: number) {
+    const layer = this.getLayer(layerIndex);
+    const srcLayer = this.getLayer(srcLayerIndex);
+
+    this.display.setChannelMask(layer, channelMask);
+    this.display.strokeLayer(layer, cap, join, thickness, srcLayer);
+  }
+
+  private handleMouseInstruction(x: number, y: number) {
+    // Display and move software cursor to received coordinates
+    this.display.showCursor(true);
+    this.display.moveCursor(x, y);
+  }
+
+  private handleMoveInstruction(layerIndex: number, parentIndex: number, x: number, y: number, z: number) {
+    // Only valid for non-default layers
+    if (layerIndex <= 0 || parentIndex < 0) {
+      return;
+    }
+
+    const layer = this.getLayer(layerIndex);
+    const parent = this.getLayer(parentIndex);
+    this.display.move(layer, parent, x, y, z);
+  }
+
+  private handlePopInstruction(layerIndex: number) {
+    const layer = this.getLayer(layerIndex);
+    this.display.pop(layer);
+  }
+
+  private handleResetInstruction(layerIndex: number) {
+    const layer = this.getLayer(layerIndex);
+    this.display.reset(layer);
+  }
+
+  private handleShadeInstruction(layerIndex: number, a: number) {
+    // Only valid for visible layers (not buffers)
+    if (layerIndex < 0) {
+      return;
+    }
+
+    const layer = this.getLayer(layerIndex);
+    this.display.shade(layer, a);
+  }
+
+  private handleSizeInstruction(layerIndex: number, width: number, height: number) {
+    const layer = this.getLayer(layerIndex);
+    this.display.resize(layer, width, height);
+  }
+
+  private handleTransferInstruction(srcLayerIndex: number, dstLayerIndex: number, functionIndex: number, srcX: number, srcY: number, srcWidth: number, srcHeight: number, dstX: number, dstY: number) {
+    const srcLayer = this.getLayer(srcLayerIndex);
+    const dstLayer = this.getLayer(dstLayerIndex);
+
+    /* SRC */
+    if (functionIndex === 0x3) {
+      this.display.put(srcLayer, srcX, srcY, srcWidth, srcHeight, dstLayer, dstX, dstY);
+    } else if (functionIndex !== 0x5) {
+      /* Anything else that isn't a NO-OP */
+      this.display.transfer(srcLayer, srcX, srcY, srcWidth, srcHeight, dstLayer, dstX, dstY, DEFAULT_TRANSFER_FUNCTION[functionIndex]);
+    }
+  }
+
+  private handleTransformInstruction(layerIndex: number, a: number, b: number, c: number, d: number, e: number, f: number) {
+    const layer = this.getLayer(layerIndex);
+    this.display.transform(layer, a, b, c, d, e, f);
+  }
+
+  //</editor-fold>
+
   /**
    * Returns the index passed to getLayer() when the given layer was created.
    * Positive indices refer to visible layers, an index of zero refers to the
@@ -1157,52 +1417,6 @@ export default class Client implements InputStreamHandlers, OutputStreamHandlers
 
     // Otherwise, no such index
     return null;
-  }
-
-  /**
-   * Sends a disconnect instruction to the server and closes the tunnel.
-   */
-  public disconnect() {
-    // Only attempt disconnection not disconnected.
-    if (this.currentState !== State.DISCONNECTED && this.currentState !== State.DISCONNECTING) {
-      this.setState(State.DISCONNECTING);
-
-      // Stop ping
-      if (this.pingIntervalHandler) {
-        window.clearInterval(this.pingIntervalHandler);
-      }
-
-      // Send disconnect message and disconnect
-      this.tunnel.sendMessage(...ClientControl.disconnect());
-      this.tunnel.disconnect();
-      this.setState(State.DISCONNECTED);
-    }
-  }
-
-  /**
-   * Connects the underlying tunnel of this Client, passing the
-   * given arbitrary data to the tunnel during the connection process.
-   *
-   * @param data - Arbitrary connection data to be sent to the underlying
-   *               tunnel during the connection process.
-   * @throws {Status} If an error occurs during connection.
-   */
-  public connect(data?: string) {
-    this.setState(State.CONNECTING);
-
-    try {
-      this.tunnel.connect(data);
-    } catch (err: unknown) {
-      this.setState(State.IDLE);
-      throw err;
-    }
-
-    // Ping every 5 seconds (ensure connection alive)
-    this.pingIntervalHandler = window.setInterval(() => {
-      this.tunnel.sendMessage(...ClientControl.nop());
-    }, PING_INTERVAL);
-
-    this.setState(State.WAITING);
   }
 
   private setState(state: State) {
