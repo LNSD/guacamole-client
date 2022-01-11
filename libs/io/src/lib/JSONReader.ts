@@ -39,8 +39,9 @@ export class JSONReader {
    */
   private json = '';
 
-  /* @constructor
-
+  /**
+   * @constructor
+   *
    * @param stream - The stream that JSON will be read from.
    */
   constructor(stream: InputStream) {
