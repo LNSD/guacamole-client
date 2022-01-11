@@ -18,6 +18,7 @@ export type DisconnectHandler = () => void;
 export const disconnect = createInstruction<DisconnectHandler>(DISCONNECT_OPCODE,
   () => [],
   (handler: DisconnectHandler) => (params) => {
+    handler();
   }
 );
 
@@ -25,15 +26,19 @@ export const disconnect = createInstruction<DisconnectHandler>(DISCONNECT_OPCODE
  * Notifies the client that the connection is about to be closed due to the specified error. This
  * message can be sent by the server during any phase.
  *
- * @param text - An arbitrary message describing the error
- * @param status - The Guacamole status code describing the error. For a list of status codes, see
- *                 the table in the section called “Status codes”.
+ * @param reason - An arbitrary message describing the error
+ * @param code - The Guacamole status code describing the error. For a list of status codes, see
+ *               the table in the section called “Status codes”.
  */
-export type ErrorHandler = (text: string, status: number) => void;
+export type ErrorHandler = (reason: string, code: number) => void;
 
 export const error = createInstruction<ErrorHandler>(ERROR_OPCODE,
   (text: string, status: number) => [text, status],
   (handler: ErrorHandler) => (params) => {
+    const reason = params[0];
+    const code = parseInt(params[1], 10);
+
+    handler(reason, code);
   }
 );
 
@@ -50,6 +55,9 @@ export type LogHandler = (message: string) => void;
 export const log = createInstruction<LogHandler>(LOG_OPCODE,
   (message: string) => [message],
   (handler: LogHandler) => (params) => {
+    const message = params[0];
+
+    handler(message);
   }
 );
 
@@ -64,6 +72,10 @@ export type MouseHandler = (x: number, y: number) => void;
 export const mouse = createInstruction<MouseHandler>(MOUSE_OPCODE,
   (x: number, y: number) => [x, y],
   (handler: MouseHandler) => (params) => {
+    const x = parseInt(params[0], 10);
+    const y = parseInt(params[1], 10);
+
+    handler(x, y);
   }
 );
 
@@ -78,6 +90,7 @@ export type NopHandler = () => void;
 export const nop = createInstruction<NopHandler>(NOP_OPCODE,
   () => [],
   (handler: NopHandler) => (params) => {
+    handler();
   }
 );
 
@@ -96,6 +109,9 @@ export type ReadyHandler = (id: string) => void;
 export const ready = createInstruction<ReadyHandler>(READY_OPCODE,
   (id: string) => [id],
   (handler: ReadyHandler) => (params) => {
+    const id = params[0];
+
+    handler(id);
   }
 );
 
@@ -114,5 +130,8 @@ export type SyncHandler = (timestamp: number) => void;
 export const sync = createInstruction<SyncHandler>(SYNC_OPCODE,
   (timestamp: number) => [timestamp],
   (handler: SyncHandler) => (params) => {
+    const timestamp = parseInt(params[0], 10);
+
+    handler(timestamp);
   }
 );
