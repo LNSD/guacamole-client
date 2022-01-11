@@ -27,7 +27,7 @@ export const STREAM_INDEX_MIMETYPE = 'application/vnd.glyptodon.stream-index+jso
  * An object used by the Guacamole client to house arbitrarily-many named
  * input and output streams.
  */
-export default class GuacamoleObject {
+export class GuacamoleObject {
   /**
    * The index of this object.
    */
