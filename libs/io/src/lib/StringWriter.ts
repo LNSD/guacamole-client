@@ -1,9 +1,8 @@
 // TODO Review the following lint suppression
 /* eslint-disable no-bitwise */
-
-import ArrayBufferWriter from './ArrayBufferWriter';
-import OutputStream from './OutputStream';
-import {Status} from './Status';
+import { ArrayBufferWriter } from './ArrayBufferWriter';
+import { OutputStream } from './OutputStream';
+import { Status } from './Status';
 
 export type OnAckCallback = (status: Status) => void;
 
@@ -14,7 +13,7 @@ const BUFFER_SIZE = 8192;
  * A writer which automatically writes to the given output stream with text
  * data.
  */
-export default class StringWriter {
+export class StringWriter {
   /**
    * Fired for received data, if acknowledged by the server.
    * @event

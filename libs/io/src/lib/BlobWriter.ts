@@ -1,6 +1,6 @@
-import ArrayBufferWriter from './ArrayBufferWriter';
-import OutputStream from './OutputStream';
-import {Status} from './Status';
+import { ArrayBufferWriter } from './ArrayBufferWriter';
+import { OutputStream } from './OutputStream';
+import { Status } from './Status';
 
 export type OnAckCallback = (status: Status) => void;
 export type OnErrorCallback = (blob: Blob, offset: number, error: DOMException | null) => void;
@@ -15,7 +15,7 @@ export type OnCompleteCallback = (blob: Blob) => void;
  * @param {OutputStream} stream
  *     The stream that data will be written to.
  */
-export default class BlobWriter {
+export class BlobWriter {
   /**
    * Wrapped ArrayBufferWriter which will be used to send any
    * provided file data.
@@ -129,7 +129,7 @@ export default class BlobWriter {
         return;
       }
 
-      const {result} = ev.target;
+      const { result } = ev.target;
       if (result !== null) {
         // Send the successfully-read chunk
         this.arrayBufferWriter.sendData(result);

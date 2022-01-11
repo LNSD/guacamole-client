@@ -1,5 +1,5 @@
-import {Status} from './Status';
-import OutputStream from './OutputStream';
+import { Status } from './Status';
+import { OutputStream } from './OutputStream';
 
 export type OnAckCallback = (status: Status) => void;
 
@@ -17,7 +17,7 @@ const DEFAULT_BLOB_LENGTH = 6048;
  * A writer which automatically writes to the given output stream with arbitrary
  * binary data, supplied as ArrayBuffers.
  */
-export default class ArrayBufferWriter {
+export class ArrayBufferWriter {
   /**
    * Fired for received data, if acknowledged by the server.
    * @event

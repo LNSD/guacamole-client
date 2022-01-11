@@ -239,18 +239,20 @@ export default class Client {
 
       // Get stream
       const stream = this.outputStreams.get(streamIndex);
-      if (stream) {
-        // Signal ack if handler defined
-        if (stream.onack) {
-          stream.onack(new Status(code, reason));
-        }
+      if (!stream) {
+        return;
+      }
 
-        // If code is an error, invalidate stream if not already
-        // invalidated by onack handler
-        if (code >= 0x0100 && this.outputStreams.get(streamIndex) === stream) {
-          this.streamIndices.free(streamIndex);
-          this.outputStreams.delete(streamIndex);
-        }
+      // Signal ack if handler defined
+      if (stream.onack) {
+        stream.onack(new Status(code, reason));
+      }
+
+      // If code is an error, invalidate stream if not already
+      // invalidated by onack handler
+      if (code >= 0x0100) {
+        this.streamIndices.free(streamIndex);
+        this.outputStreams.delete(streamIndex);
       }
     },
 
@@ -981,7 +983,10 @@ export default class Client {
     const index = this.streamIndices.next();
 
     // Return new stream
-    const stream = new OutputStream(this, index);
+    const stream = new OutputStream(index);
+    stream.sendblob = (idx, data) => this.sendBlob(idx, data);
+    stream.sendend = (idx) => this.endOutputStream(idx);
+
     this.outputStreams.set(index, stream);
     return stream;
   }
@@ -1150,7 +1155,7 @@ export default class Client {
    *
    * @param index - The index of the stream to end.
    */
-  public endStream(index: number) {
+  public endOutputStream(index: number) {
     // Do not send requests if not connected
     if (!this.isConnected()) {
       return;

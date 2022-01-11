@@ -1,13 +1,13 @@
 // Buffer and Streams
 export { ArrayBufferReader } from './lib/ArrayBufferReader';
-export { default as ArrayBufferWriter } from './lib/ArrayBufferWriter';
+export { ArrayBufferWriter } from './lib/ArrayBufferWriter';
 export { BlobReader } from './lib/BlobReader';
-export { default as BlobWriter } from './lib/BlobWriter';
+export { BlobWriter } from './lib/BlobWriter';
 export { DataURIReader } from './lib/DataURIReader';
 export { InputStream } from './lib/InputStream';
 export { JSONReader } from './lib/JSONReader';
-export { default as OutputStream } from './lib/OutputStream';
-export { default as StringWriter } from './lib/StringWriter';
+export { OutputStream } from './lib/OutputStream';
+export { StringWriter } from './lib/StringWriter';
 export { StringReader } from './lib/StringReader';
 
 // Net
