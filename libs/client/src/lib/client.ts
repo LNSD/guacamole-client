@@ -273,7 +273,9 @@ export default class Client {
 
       // Create stream
       if (this.onargv) {
-        const stream = new InputStream(this, streamIndex);
+        const stream = new InputStream(streamIndex);
+        stream.sendack = (index, message, code) => this.sendAck(index, message, code);
+
         this.inputStreams.set(streamIndex, stream);
         this.onargv(stream, mimetype, name);
       } else {
@@ -287,7 +289,9 @@ export default class Client {
       const mimetype = parameters[1];
 
       // Create stream
-      const stream = new InputStream(this, streamIndex);
+      const stream = new InputStream(streamIndex);
+      stream.sendack = (index, message, code) => this.sendAck(index, message, code);
+
       this.inputStreams.set(streamIndex, stream);
 
       // Get player instance via callback
@@ -334,7 +338,9 @@ export default class Client {
 
       // Create stream if handler defined
       if (object?.onbody) {
-        const stream = new InputStream(this, streamIndex);
+        const stream = new InputStream(streamIndex);
+        stream.sendack = (index, message, code) => this.sendAck(index, message, code);
+
         this.inputStreams.set(streamIndex, stream);
         object.onbody(stream, mimetype, name);
       } else {
@@ -367,7 +373,9 @@ export default class Client {
 
       // Create stream
       if (this.onclipboard) {
-        const stream = new InputStream(this, streamIndex);
+        const stream = new InputStream(streamIndex);
+        stream.sendack = (index, message, code) => this.sendAck(index, message, code);
+
         this.inputStreams.set(streamIndex, stream);
         this.onclipboard(stream, mimetype);
       } else {
@@ -513,7 +521,9 @@ export default class Client {
 
       // Create stream
       if (this.onfile) {
-        const stream = new InputStream(this, streamIndex);
+        const stream = new InputStream(streamIndex);
+        stream.sendack = (index, message, code) => this.sendAck(index, message, code);
+
         this.inputStreams.set(streamIndex, stream);
         this.onfile(stream, mimetype, filename);
       } else {
@@ -551,7 +561,9 @@ export default class Client {
       const y = parseInt(parameters[5], 10);
 
       // Create stream
-      const stream = new InputStream(this, streamIndex);
+      const stream = new InputStream(streamIndex);
+      stream.sendack = (index, message, code) => this.sendAck(index, message, code);
+
       this.inputStreams.set(streamIndex, stream);
 
       // Draw received contents once decoded
@@ -639,7 +651,9 @@ export default class Client {
 
       // Create stream
       if (this.onpipe) {
-        const stream = new InputStream(this, streamIndex);
+        const stream = new InputStream(streamIndex);
+        stream.sendack = (index, message, code) => this.sendAck(index, message, code);
+
         this.inputStreams.set(streamIndex, stream);
         this.onpipe(stream, mimetype, name);
       } else {
@@ -812,7 +826,9 @@ export default class Client {
       const mimetype = parameters[2];
 
       // Create stream
-      const stream = new InputStream(this, streamIndex);
+      const stream = new InputStream(streamIndex);
+      stream.sendack = (index, message, code) => this.sendAck(index, message, code);
+
       this.inputStreams.set(streamIndex, stream);
 
       // Get player instance via callback
