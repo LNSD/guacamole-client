@@ -17,7 +17,7 @@ export type DisconnectHandler = () => void;
 
 export const disconnect = createInstruction<DisconnectHandler>(DISCONNECT_OPCODE,
   () => [],
-  (handler: DisconnectHandler) => (params) => {
+  (handler: DisconnectHandler) => () => {
     handler();
   }
 );
@@ -89,7 +89,7 @@ export type NopHandler = () => void;
 
 export const nop = createInstruction<NopHandler>(NOP_OPCODE,
   () => [],
-  (handler: NopHandler) => (params) => {
+  (handler: NopHandler) => () => {
     handler();
   }
 );

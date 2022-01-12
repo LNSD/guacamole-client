@@ -237,7 +237,8 @@ export type PipeHandler = (stream: number, mimetype: string, name: string) => vo
 
 export const pipe = createInstruction<PipeHandler>(PIPE_OPCODE,
   (stream: number, mimetype: string, name: string) => [stream, mimetype, name],
-  (handler: PipeHandler) => (params) => {      const streamIndex = parseInt(params[0], 10);
+  (handler: PipeHandler) => (params) => {
+    const streamIndex = parseInt(params[0], 10);
     const mimetype = params[1];
     const name = params[2];
 
