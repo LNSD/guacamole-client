@@ -1014,6 +1014,7 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
    */
   private registerInstructionRoutes() {
     this.registerStreamingInstructionRoutes(this.instructionRouter);
+    this.registerObjectInstructionRoutes(this.instructionRouter);
 
     this.instructionRouter.addInstructionHandler('arc', (params: string[]) => {
       const layerIndex = parseInt(params[0], 10);
@@ -1025,14 +1026,6 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
       const negative = parseInt(params[6], 10);
 
       this.handleArcInstruction(layerIndex, x, y, radius, startAngle, endAngle, negative);
-    });
-    this.instructionRouter.addInstructionHandler('body', (params: string[]) => {
-      const objectIndex = parseInt(params[0], 10);
-      const streamIndex = parseInt(params[1], 10);
-      const mimetype = params[2];
-      const name = params[3];
-
-      this.handleBodyInstruction(objectIndex, streamIndex, mimetype, name);
     });
     this.instructionRouter.addInstructionHandler('cfill', (params: string[]) => {
       const channelMask = parseInt(params[0], 10);
@@ -1126,12 +1119,6 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
       const code = parseInt(params[1], 10);
 
       this.handleErrorInstruction(code, reason);
-    });
-    this.instructionRouter.addInstructionHandler('filesystem', (params: string[]) => {
-      const objectIndex = parseInt(params[0], 10);
-      const name = params[1];
-
-      this.handleFilesystemInstruction(objectIndex, name);
     });
     this.instructionRouter.addInstructionHandler('identity', (params: string[]) => {
       const layerIndex = parseInt(params[0], 10);
@@ -1286,11 +1273,6 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
 
       this.handleTransformInstruction(layerIndex, a, b, c, d, e, f);
     });
-    this.instructionRouter.addInstructionHandler('undefine', (params: string[]) => {
-      const objectIndex = parseInt(params[0], 10);
-
-      this.handleUndefineInstruction(objectIndex);
-    });
   }
 
   private registerStreamingInstructionRoutes(router: InstructionRouter) {
@@ -1326,6 +1308,18 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
     ));
     router.addInstructionHandler(Streaming.video.opcode, Streaming.video.parser(
       this.handleVideoInstruction.bind(this)
+    ));
+  }
+
+  private registerObjectInstructionRoutes(router: InstructionRouter) {
+    router.addInstructionHandler(ObjectInstruction.body.opcode, ObjectInstruction.body.parser(
+      this.handleBodyInstruction.bind(this)
+    ));
+    router.addInstructionHandler(ObjectInstruction.filesystem.opcode, ObjectInstruction.filesystem.parser(
+      this.handleFilesystemInstruction.bind(this)
+    ));
+    router.addInstructionHandler(ObjectInstruction.undefine.opcode, ObjectInstruction.undefine.parser(
+      this.handleUndefineInstruction.bind(this)
     ));
   }
 }
