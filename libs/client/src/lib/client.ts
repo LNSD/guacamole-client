@@ -450,33 +450,6 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
     this.outputStreams.freeStream(index);
   }
 
-  /**
-   * Returns the index passed to getLayer() when the given layer was created.
-   * Positive indices refer to visible layers, an index of zero refers to the
-   * default layer, and negative indices refer to buffers.
-   *
-   * @param layer - The layer whose index should be determined.
-   * @returns The index of the given layer, or null if no such layer is associated
-   *          with this client.
-   */
-  public getLayerIndex(layer: VisibleLayer | Layer | null): number | null {
-    // Avoid searching if there clearly is no such layer
-    if (!layer) {
-      return null;
-    }
-
-    // Search through each layer, returning the index of the given layer
-    // once found
-    for (const [key, layer2] of this.layers) {
-      if (layer === layer2) {
-        return key;
-      }
-    }
-
-    // Otherwise, no such index
-    return null;
-  }
-
   private handleBodyInstruction(objectIndex: number, streamIndex: number, mimetype: string, name: string) {
     const object = this.objects.get(objectIndex);
 
