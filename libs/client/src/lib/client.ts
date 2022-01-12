@@ -1127,13 +1127,6 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
 
       this.handleErrorInstruction(code, reason);
     });
-    this.instructionRouter.addInstructionHandler('file', (params: string[]) => {
-      const streamIndex = parseInt(params[0], 10);
-      const mimetype = params[1];
-      const filename = params[2];
-
-      this.handleFileInstruction(streamIndex, mimetype, filename);
-    });
     this.instructionRouter.addInstructionHandler('filesystem', (params: string[]) => {
       const objectIndex = parseInt(params[0], 10);
       const name = params[1];
@@ -1144,16 +1137,6 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
       const layerIndex = parseInt(params[0], 10);
 
       this.handleIdentityInstruction(layerIndex);
-    });
-    this.instructionRouter.addInstructionHandler('img', (params: string[]) => {
-      const streamIndex = parseInt(params[0], 10);
-      const channelMask = parseInt(params[1], 10);
-      const layerIndex = parseInt(params[2], 10);
-      const mimetype = params[3];
-      const x = parseInt(params[4], 10);
-      const y = parseInt(params[5], 10);
-
-      this.handleImgInstruction(streamIndex, layerIndex, channelMask, x, y, mimetype);
     });
     this.instructionRouter.addInstructionHandler('jpeg', (params: string[]) => {
       const channelMask = parseInt(params[0], 10);
@@ -1210,19 +1193,6 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
       const name = params[0];
 
       this.handleNameInstruction(name);
-    });
-    this.instructionRouter.addInstructionHandler('nest', (params: string[]) => {
-      const parserIndex = parseInt(params[0], 10);
-      const packet = params[1];
-
-      this.handleNestInstruction(parserIndex, packet);
-    });
-    this.instructionRouter.addInstructionHandler('pipe', (params: string[]) => {
-      const streamIndex = parseInt(params[0], 10);
-      const mimetype = params[1];
-      const name = params[2];
-
-      this.handlePipeInstruction(streamIndex, mimetype, name);
     });
     this.instructionRouter.addInstructionHandler('png', (params: string[]) => {
       const channelMask = parseInt(params[0], 10);
@@ -1321,33 +1291,41 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
 
       this.handleUndefineInstruction(objectIndex);
     });
-    this.instructionRouter.addInstructionHandler('video', (params: string[]) => {
-      const streamIndex = parseInt(params[0], 10);
-      const layerIndex = parseInt(params[1], 10);
-      const mimetype = params[2];
-
-      this.handleVideoInstruction(streamIndex, layerIndex, mimetype);
-    });
   }
 
   private registerStreamingInstructionRoutes(router: InstructionRouter) {
     router.addInstructionHandler(Streaming.ack.opcode, Streaming.ack.parser(
-      (streamIndex: number, message: string, code: number) => this.handleAckInstruction(streamIndex, message, code)
+      this.handleAckInstruction.bind(this)
     ));
     router.addInstructionHandler(Streaming.argv.opcode, Streaming.argv.parser(
-      (streamIndex: number, mimetype: string, name: string) => this.handleArgvInstruction(streamIndex, mimetype, name)
+      this.handleArgvInstruction.bind(this)
     ));
     router.addInstructionHandler(Streaming.audio.opcode, Streaming.audio.parser(
-      (streamIndex: number, mimetype: string) => this.handleAudioInstruction(streamIndex, mimetype)
+      this.handleAudioInstruction.bind(this)
     ));
     router.addInstructionHandler(Streaming.blob.opcode, Streaming.blob.parser(
-      (streamIndex: number, data: string) => this.handleBlobInstruction(streamIndex, data)
+      this.handleBlobInstruction.bind(this)
     ));
     router.addInstructionHandler(Streaming.clipboard.opcode, Streaming.clipboard.parser(
-      (streamIndex: number, mimetype: string) => this.handleClipboardInstruction(streamIndex, mimetype)
+      this.handleClipboardInstruction.bind(this)
     ));
     router.addInstructionHandler(Streaming.end.opcode, Streaming.end.parser(
-      (streamIndex: number) => this.handleEndInstruction(streamIndex)
+      this.handleEndInstruction.bind(this)
+    ));
+    router.addInstructionHandler(Streaming.file.opcode, Streaming.file.parser(
+      this.handleFileInstruction.bind(this)
+    ));
+    router.addInstructionHandler(Streaming.img.opcode, Streaming.img.parser(
+      this.handleImgInstruction.bind(this)
+    ));
+    router.addInstructionHandler(Streaming.nest.opcode, Streaming.nest.parser(
+      this.handleNestInstruction.bind(this)
+    ));
+    router.addInstructionHandler(Streaming.pipe.opcode, Streaming.pipe.parser(
+      this.handlePipeInstruction.bind(this)
+    ));
+    router.addInstructionHandler(Streaming.video.opcode, Streaming.video.parser(
+      this.handleVideoInstruction.bind(this)
     ));
   }
 }
