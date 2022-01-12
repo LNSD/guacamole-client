@@ -15,6 +15,7 @@ import {
   ClientEvents,
   Decoder,
   ObjectInstruction,
+  ServerControl,
   Streaming
 } from '@guacamole-client/protocol';
 import { Tunnel } from '@guacamole-client/tunnel';
@@ -1015,263 +1016,19 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
   private registerInstructionRoutes() {
     this.registerStreamingInstructionRoutes(this.instructionRouter);
     this.registerObjectInstructionRoutes(this.instructionRouter);
+    this.registerClientControlInstructionRoutes(this.instructionRouter);
+    this.registerServerControlInstructionHandlers(this.instructionRouter);
+    this.registerDrawingInstructionHandlers(this.instructionRouter);
 
-    this.instructionRouter.addInstructionHandler('arc', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-      const x = parseInt(params[1], 10);
-      const y = parseInt(params[2], 10);
-      const radius = parseInt(params[3], 10);
-      const startAngle = parseFloat(params[4]);
-      const endAngle = parseFloat(params[5]);
-      const negative = parseInt(params[6], 10);
-
-      this.handleArcInstruction(layerIndex, x, y, radius, startAngle, endAngle, negative);
+    // TODO Review this handler
+    this.instructionRouter.addInstructionHandler('required', (params: string[]) => {
+      this.handleRequiredInstruction(params);
     });
-    this.instructionRouter.addInstructionHandler('cfill', (params: string[]) => {
-      const channelMask = parseInt(params[0], 10);
-      const layerIndex = parseInt(params[1], 10);
-      const r = parseInt(params[2], 10);
-      const g = parseInt(params[3], 10);
-      const b = parseInt(params[4], 10);
-      const a = parseInt(params[5], 10);
-
-      this.handleCfillInstruction(layerIndex, channelMask, r, g, b, a);
-    });
-    this.instructionRouter.addInstructionHandler('clip', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-
-      this.handleClipInstruction(layerIndex);
-    });
-    this.instructionRouter.addInstructionHandler('close', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-
-      this.handleCloseInstruction(layerIndex);
-    });
-    this.instructionRouter.addInstructionHandler('copy', (params: string[]) => {
-      const srcLayerIndex = parseInt(params[0], 10);
-      const srcX = parseInt(params[1], 10);
-      const srcY = parseInt(params[2], 10);
-      const srcWidth = parseInt(params[3], 10);
-      const srcHeight = parseInt(params[4], 10);
-      const channelMask = parseInt(params[5], 10);
-      const dstLayerIndex = parseInt(params[6], 10);
-      const dstX = parseInt(params[7], 10);
-      const dstY = parseInt(params[8], 10);
-
-      this.handleCopyInstruction(srcLayerIndex, dstLayerIndex, channelMask, srcX, srcY, srcWidth, srcHeight, dstX, dstY);
-    });
-    this.instructionRouter.addInstructionHandler('cstroke', (params: string[]) => {
-      const channelMask = parseInt(params[0], 10);
-      const layerIndex = parseInt(params[1], 10);
-      const cap = LINE_CAP[parseInt(params[2], 10)];
-      const join = LINE_JOIN[parseInt(params[3], 10)];
-      const thickness = parseInt(params[4], 10);
-      const r = parseInt(params[5], 10);
-      const g = parseInt(params[6], 10);
-      const b = parseInt(params[7], 10);
-      const a = parseInt(params[8], 10);
-
-      this.handleCstrokeInstruction(layerIndex, channelMask, cap, join, thickness, r, g, b, a);
-    });
-    this.instructionRouter.addInstructionHandler('cursor', (params: string[]) => {
-      const cursorHotspotX = parseInt(params[0], 10);
-      const cursorHotspotY = parseInt(params[1], 10);
-      const srcLayerIndex = parseInt(params[2], 10);
-      const srcX = parseInt(params[3], 10);
-      const srcY = parseInt(params[4], 10);
-      const srcWidth = parseInt(params[5], 10);
-      const srcHeight = parseInt(params[6], 10);
-
-      this.handleCursorInstruction(srcLayerIndex, cursorHotspotX, cursorHotspotY, srcX, srcY, srcWidth, srcHeight);
-    });
-    this.instructionRouter.addInstructionHandler('curve', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-      const cp1x = parseInt(params[1], 10);
-      const cp1y = parseInt(params[2], 10);
-      const cp2x = parseInt(params[3], 10);
-      const cp2y = parseInt(params[4], 10);
-      const x = parseInt(params[5], 10);
-      const y = parseInt(params[6], 10);
-
-      this.handleCurveInstruction(layerIndex, cp1x, cp1y, cp2x, cp2y, x, y);
-    });
-    this.instructionRouter.addInstructionHandler('disconnect', () => {
-      this.handleDisconnectInstruction();
-    });
-    this.instructionRouter.addInstructionHandler('dispose', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-
-      this.handleDisposeInstruction(layerIndex);
-    });
-    this.instructionRouter.addInstructionHandler('distort', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-      const a = parseFloat(params[1]);
-      const b = parseFloat(params[2]);
-      const c = parseFloat(params[3]);
-      const d = parseFloat(params[4]);
-      const e = parseFloat(params[5]);
-      const f = parseFloat(params[6]);
-
-      this.handleDistortInstruction(layerIndex, a, b, c, d, e, f);
-    });
-    this.instructionRouter.addInstructionHandler('error', (params: string[]) => {
-      const reason = params[0];
-      const code = parseInt(params[1], 10);
-
-      this.handleErrorInstruction(code, reason);
-    });
-    this.instructionRouter.addInstructionHandler('identity', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-
-      this.handleIdentityInstruction(layerIndex);
-    });
-    this.instructionRouter.addInstructionHandler('jpeg', (params: string[]) => {
-      const channelMask = parseInt(params[0], 10);
-      const layerIndex = parseInt(params[1], 10);
-      const x = parseInt(params[2], 10);
-      const y = parseInt(params[3], 10);
-      const data = params[4];
-
-      this.handleJpegInstruction(layerIndex, channelMask, x, y, data);
-    });
-    this.instructionRouter.addInstructionHandler('lfill', (params: string[]) => {
-      const channelMask = parseInt(params[0], 10);
-      const layerIndex = parseInt(params[1], 10);
-      const srcLayerIndex = parseInt(params[2], 10);
-
-      this.handleLfillInstruction(layerIndex, channelMask, srcLayerIndex);
-    });
-    this.instructionRouter.addInstructionHandler('line', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-      const x = parseInt(params[1], 10);
-      const y = parseInt(params[2], 10);
-
-      this.handleLineInstruction(layerIndex, x, y);
-    });
-    this.instructionRouter.addInstructionHandler('lstroke', (params: string[]) => {
-      const channelMask = parseInt(params[0], 10);
-      const layerIndex = parseInt(params[1], 10);
-      const capIndex = parseInt(params[2], 10);
-      const joinIndex = parseInt(params[3], 10);
-      const thickness = parseInt(params[4], 10);
-      const srcLayerIndex = parseInt(params[5], 10);
-
-      const cap = LINE_CAP[capIndex];
-      const join = LINE_JOIN[joinIndex];
-
-      this.handleLstrokeInstruction(layerIndex, srcLayerIndex, channelMask, cap, join, thickness);
-    });
-    this.instructionRouter.addInstructionHandler('mouse', (params: string[]) => {
-      const x = parseInt(params[0], 10);
-      const y = parseInt(params[1], 10);
-
-      this.handleMouseInstruction(x, y);
-    });
-    this.instructionRouter.addInstructionHandler('move', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-      const parentIndex = parseInt(params[1], 10);
-      const x = parseInt(params[2], 10);
-      const y = parseInt(params[3], 10);
-      const z = parseInt(params[4], 10);
-
-      this.handleMoveInstruction(layerIndex, parentIndex, x, y, z);
-    });
+    // TODO Review this handler
     this.instructionRouter.addInstructionHandler('name', (params: string[]) => {
       const name = params[0];
 
       this.handleNameInstruction(name);
-    });
-    this.instructionRouter.addInstructionHandler('png', (params: string[]) => {
-      const channelMask = parseInt(params[0], 10);
-      const layerIndex = parseInt(params[1], 10);
-      const x = parseInt(params[2], 10);
-      const y = parseInt(params[3], 10);
-      const data = params[4];
-
-      this.handlePngInstruction(layerIndex, channelMask, x, y, data);
-    });
-    this.instructionRouter.addInstructionHandler('pop', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-
-      this.handlePopInstruction(layerIndex);
-    });
-    this.instructionRouter.addInstructionHandler('push', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-
-      this.handlePushInstruction(layerIndex);
-    });
-    this.instructionRouter.addInstructionHandler('rect', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-      const x = parseInt(params[1], 10);
-      const y = parseInt(params[2], 10);
-      const w = parseInt(params[3], 10);
-      const h = parseInt(params[4], 10);
-
-      this.handleRectInstruction(layerIndex, x, y, w, h);
-    });
-    this.instructionRouter.addInstructionHandler('required', (params: string[]) => {
-      this.handleRequiredInstruction(params);
-    });
-    this.instructionRouter.addInstructionHandler('reset', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-
-      this.handleResetInstruction(layerIndex);
-    });
-    this.instructionRouter.addInstructionHandler('set', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-      const name = params[1];
-      const value = params[2];
-
-      this.handleSetInstruction(layerIndex, name, value);
-    });
-    this.instructionRouter.addInstructionHandler('shade', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-      const a = parseInt(params[1], 10);
-
-      this.handleShadeInstruction(layerIndex, a);
-    });
-    this.instructionRouter.addInstructionHandler('size', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-      const width = parseInt(params[1], 10);
-      const height = parseInt(params[2], 10);
-
-      this.handleSizeInstruction(layerIndex, width, height);
-    });
-    this.instructionRouter.addInstructionHandler('start', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-      const x = parseInt(params[1], 10);
-      const y = parseInt(params[2], 10);
-
-      this.handleStartInstruction(layerIndex, x, y);
-    });
-    this.instructionRouter.addInstructionHandler('sync', (params: string[]) => {
-      const timestamp = parseInt(params[0], 10);
-
-      this.handleSyncInstruction(timestamp);
-    });
-    this.instructionRouter.addInstructionHandler('transfer', (params: string[]) => {
-      const srcLayerIndex = parseInt(params[0], 10);
-      const srcX = parseInt(params[1], 10);
-      const srcY = parseInt(params[2], 10);
-      const srcWidth = parseInt(params[3], 10);
-      const srcHeight = parseInt(params[4], 10);
-      const functionIndex = parseInt(params[5], 10);
-      const dstLayerIndex = parseInt(params[6], 10);
-      const dstX = parseInt(params[7], 10);
-      const dstY = parseInt(params[8], 10);
-
-      this.handleTransferInstruction(srcLayerIndex, dstLayerIndex, functionIndex, srcX, srcY, srcWidth, srcHeight, dstX, dstY);
-    });
-    this.instructionRouter.addInstructionHandler('transform', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-      const a = parseFloat(params[1]);
-      const b = parseFloat(params[2]);
-      const c = parseFloat(params[3]);
-      const d = parseFloat(params[4]);
-      const e = parseFloat(params[5]);
-      const f = parseFloat(params[6]);
-
-      this.handleTransformInstruction(layerIndex, a, b, c, d, e, f);
     });
   }
 
@@ -1321,5 +1078,255 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
     router.addInstructionHandler(ObjectInstruction.undefine.opcode, ObjectInstruction.undefine.parser(
       this.handleUndefineInstruction.bind(this)
     ));
+  }
+
+  private registerClientControlInstructionRoutes(router: InstructionRouter) {
+    router.addInstructionHandler(ClientControl.disconnect.opcode, ClientControl.disconnect.parser(
+      this.handleDisconnectInstruction.bind(this)
+    ));
+    router.addInstructionHandler(ClientControl.sync.opcode, ClientControl.sync.parser(
+      this.handleSyncInstruction.bind(this)
+    ));
+  }
+
+  private registerServerControlInstructionHandlers(router: InstructionRouter) {
+    router.addInstructionHandler(ServerControl.mouse.opcode, ServerControl.mouse.handler(
+      this.handleMouseInstruction.bind(this)
+    ));
+    router.addInstructionHandler(ServerControl.error.opcode, ServerControl.error.handler(
+      this.handleErrorInstruction.bind(this)
+    ));
+  }
+
+  private registerDrawingInstructionHandlers(router: InstructionRouter) {
+    router.addInstructionHandler('arc', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+      const x = parseInt(params[1], 10);
+      const y = parseInt(params[2], 10);
+      const radius = parseInt(params[3], 10);
+      const startAngle = parseFloat(params[4]);
+      const endAngle = parseFloat(params[5]);
+      const negative = parseInt(params[6], 10);
+
+      this.handleArcInstruction(layerIndex, x, y, radius, startAngle, endAngle, negative);
+    });
+    router.addInstructionHandler('cfill', (params: string[]) => {
+      const channelMask = parseInt(params[0], 10);
+      const layerIndex = parseInt(params[1], 10);
+      const r = parseInt(params[2], 10);
+      const g = parseInt(params[3], 10);
+      const b = parseInt(params[4], 10);
+      const a = parseInt(params[5], 10);
+
+      this.handleCfillInstruction(layerIndex, channelMask, r, g, b, a);
+    });
+    router.addInstructionHandler('clip', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+
+      this.handleClipInstruction(layerIndex);
+    });
+    router.addInstructionHandler('close', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+
+      this.handleCloseInstruction(layerIndex);
+    });
+    router.addInstructionHandler('copy', (params: string[]) => {
+      const srcLayerIndex = parseInt(params[0], 10);
+      const srcX = parseInt(params[1], 10);
+      const srcY = parseInt(params[2], 10);
+      const srcWidth = parseInt(params[3], 10);
+      const srcHeight = parseInt(params[4], 10);
+      const channelMask = parseInt(params[5], 10);
+      const dstLayerIndex = parseInt(params[6], 10);
+      const dstX = parseInt(params[7], 10);
+      const dstY = parseInt(params[8], 10);
+
+      this.handleCopyInstruction(srcLayerIndex, dstLayerIndex, channelMask, srcX, srcY, srcWidth, srcHeight, dstX, dstY);
+    });
+    router.addInstructionHandler('cstroke', (params: string[]) => {
+      const channelMask = parseInt(params[0], 10);
+      const layerIndex = parseInt(params[1], 10);
+      const cap = LINE_CAP[parseInt(params[2], 10)];
+      const join = LINE_JOIN[parseInt(params[3], 10)];
+      const thickness = parseInt(params[4], 10);
+      const r = parseInt(params[5], 10);
+      const g = parseInt(params[6], 10);
+      const b = parseInt(params[7], 10);
+      const a = parseInt(params[8], 10);
+
+      this.handleCstrokeInstruction(layerIndex, channelMask, cap, join, thickness, r, g, b, a);
+    });
+    router.addInstructionHandler('cursor', (params: string[]) => {
+      const cursorHotspotX = parseInt(params[0], 10);
+      const cursorHotspotY = parseInt(params[1], 10);
+      const srcLayerIndex = parseInt(params[2], 10);
+      const srcX = parseInt(params[3], 10);
+      const srcY = parseInt(params[4], 10);
+      const srcWidth = parseInt(params[5], 10);
+      const srcHeight = parseInt(params[6], 10);
+
+      this.handleCursorInstruction(srcLayerIndex, cursorHotspotX, cursorHotspotY, srcX, srcY, srcWidth, srcHeight);
+    });
+    router.addInstructionHandler('curve', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+      const cp1x = parseInt(params[1], 10);
+      const cp1y = parseInt(params[2], 10);
+      const cp2x = parseInt(params[3], 10);
+      const cp2y = parseInt(params[4], 10);
+      const x = parseInt(params[5], 10);
+      const y = parseInt(params[6], 10);
+
+      this.handleCurveInstruction(layerIndex, cp1x, cp1y, cp2x, cp2y, x, y);
+    });
+    router.addInstructionHandler('dispose', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+
+      this.handleDisposeInstruction(layerIndex);
+    });
+    router.addInstructionHandler('distort', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+      const a = parseFloat(params[1]);
+      const b = parseFloat(params[2]);
+      const c = parseFloat(params[3]);
+      const d = parseFloat(params[4]);
+      const e = parseFloat(params[5]);
+      const f = parseFloat(params[6]);
+
+      this.handleDistortInstruction(layerIndex, a, b, c, d, e, f);
+    });
+    router.addInstructionHandler('identity', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+
+      this.handleIdentityInstruction(layerIndex);
+    });
+    router.addInstructionHandler('jpeg', (params: string[]) => {
+      const channelMask = parseInt(params[0], 10);
+      const layerIndex = parseInt(params[1], 10);
+      const x = parseInt(params[2], 10);
+      const y = parseInt(params[3], 10);
+      const data = params[4];
+
+      this.handleJpegInstruction(layerIndex, channelMask, x, y, data);
+    });
+    router.addInstructionHandler('lfill', (params: string[]) => {
+      const channelMask = parseInt(params[0], 10);
+      const layerIndex = parseInt(params[1], 10);
+      const srcLayerIndex = parseInt(params[2], 10);
+
+      this.handleLfillInstruction(layerIndex, channelMask, srcLayerIndex);
+    });
+    router.addInstructionHandler('line', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+      const x = parseInt(params[1], 10);
+      const y = parseInt(params[2], 10);
+
+      this.handleLineInstruction(layerIndex, x, y);
+    });
+    router.addInstructionHandler('lstroke', (params: string[]) => {
+      const channelMask = parseInt(params[0], 10);
+      const layerIndex = parseInt(params[1], 10);
+      const capIndex = parseInt(params[2], 10);
+      const joinIndex = parseInt(params[3], 10);
+      const thickness = parseInt(params[4], 10);
+      const srcLayerIndex = parseInt(params[5], 10);
+
+      const cap = LINE_CAP[capIndex];
+      const join = LINE_JOIN[joinIndex];
+
+      this.handleLstrokeInstruction(layerIndex, srcLayerIndex, channelMask, cap, join, thickness);
+    });
+    router.addInstructionHandler('move', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+      const parentIndex = parseInt(params[1], 10);
+      const x = parseInt(params[2], 10);
+      const y = parseInt(params[3], 10);
+      const z = parseInt(params[4], 10);
+
+      this.handleMoveInstruction(layerIndex, parentIndex, x, y, z);
+    });
+    router.addInstructionHandler('png', (params: string[]) => {
+      const channelMask = parseInt(params[0], 10);
+      const layerIndex = parseInt(params[1], 10);
+      const x = parseInt(params[2], 10);
+      const y = parseInt(params[3], 10);
+      const data = params[4];
+
+      this.handlePngInstruction(layerIndex, channelMask, x, y, data);
+    });
+    router.addInstructionHandler('pop', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+
+      this.handlePopInstruction(layerIndex);
+    });
+    router.addInstructionHandler('push', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+
+      this.handlePushInstruction(layerIndex);
+    });
+    router.addInstructionHandler('rect', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+      const x = parseInt(params[1], 10);
+      const y = parseInt(params[2], 10);
+      const w = parseInt(params[3], 10);
+      const h = parseInt(params[4], 10);
+
+      this.handleRectInstruction(layerIndex, x, y, w, h);
+    });
+    router.addInstructionHandler('reset', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+
+      this.handleResetInstruction(layerIndex);
+    });
+    router.addInstructionHandler('set', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+      const name = params[1];
+      const value = params[2];
+
+      this.handleSetInstruction(layerIndex, name, value);
+    });
+    router.addInstructionHandler('shade', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+      const a = parseInt(params[1], 10);
+
+      this.handleShadeInstruction(layerIndex, a);
+    });
+    router.addInstructionHandler('size', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+      const width = parseInt(params[1], 10);
+      const height = parseInt(params[2], 10);
+
+      this.handleSizeInstruction(layerIndex, width, height);
+    });
+    router.addInstructionHandler('start', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+      const x = parseInt(params[1], 10);
+      const y = parseInt(params[2], 10);
+
+      this.handleStartInstruction(layerIndex, x, y);
+    });
+    router.addInstructionHandler('transfer', (params: string[]) => {
+      const srcLayerIndex = parseInt(params[0], 10);
+      const srcX = parseInt(params[1], 10);
+      const srcY = parseInt(params[2], 10);
+      const srcWidth = parseInt(params[3], 10);
+      const srcHeight = parseInt(params[4], 10);
+      const functionIndex = parseInt(params[5], 10);
+      const dstLayerIndex = parseInt(params[6], 10);
+      const dstX = parseInt(params[7], 10);
+      const dstY = parseInt(params[8], 10);
+
+      this.handleTransferInstruction(srcLayerIndex, dstLayerIndex, functionIndex, srcX, srcY, srcWidth, srcHeight, dstX, dstY);
+    });
+    router.addInstructionHandler('transform', (params: string[]) => {
+      const layerIndex = parseInt(params[0], 10);
+      const a = parseFloat(params[1]);
+      const b = parseFloat(params[2]);
+      const c = parseFloat(params[3]);
+      const d = parseFloat(params[4]);
+      const e = parseFloat(params[5]);
+      const f = parseFloat(params[6]);
+
+      this.handleTransformInstruction(layerIndex, a, b, c, d, e, f);
+    });
   }
 }
