@@ -12,7 +12,9 @@ export type DisconnectHandler = () => void;
 
 export const disconnect = createInstruction<DisconnectHandler>(DISCONNECT_OPCODE,
   () => [],
-  (handler: DisconnectHandler) => (params) => {},
+  (handler: DisconnectHandler) => (params) => {
+    handler();
+  },
 );
 
 /**
@@ -24,7 +26,9 @@ export type NopHandler = () => void;
 
 export const nop = createInstruction<NopHandler>(NOP_OPCODE,
   () => [],
-  (handler: NopHandler) => (params) => {},
+  (handler: NopHandler) => (params) => {
+    handler();
+  },
 );
 
 /**
@@ -43,5 +47,9 @@ export type SyncHandler = (timestamp: number) => void;
 
 export const sync = createInstruction<SyncHandler>(SYNC_OPCODE,
   (timestamp: number) => [timestamp],
-  (handler: SyncHandler) => (params) => {},
+  (handler: SyncHandler) => (params) => {
+    const timestamp = parseInt(params[0], 10);
+
+    handler(timestamp);
+  },
 );
