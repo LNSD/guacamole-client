@@ -2,6 +2,7 @@
   "version": 2,
   "projects": {
     "client": "libs/client",
+    "display": "libs/display",
     "example": "apps/example",
     "example-e2e": "apps/example-e2e",
     "input": "libs/input",

@@ -5,7 +5,7 @@ import {
   LINE_CAP,
   LINE_JOIN,
   VisibleLayer
-} from './display';
+} from '@guacamole-client/display';
 import { Status, StatusCode } from './Status';
 import { GuacamoleObject } from './GuacamoleObject';
 import { OutputStream, StreamError } from '@guacamole-client/io';
@@ -592,7 +592,7 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
 
     const listener = this.events.getEventListener('onvideo');
     if (listener) {
-      videoPlayer = listener(stream, layer, mimetype);
+      videoPlayer = listener(stream, layer as any /* TODO: Review this as any */, mimetype);
     }
 
     // If unsuccessful, try to use a default implementation
@@ -1063,10 +1063,10 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
   }
 
   private registerServerControlInstructionHandlers(router: InstructionRouter) {
-    router.addInstructionHandler(ServerControl.mouse.opcode, ServerControl.mouse.handler(
+    router.addInstructionHandler(ServerControl.mouse.opcode, ServerControl.mouse.parser(
       this.handleMouseInstruction.bind(this)
     ));
-    router.addInstructionHandler(ServerControl.error.opcode, ServerControl.error.handler(
+    router.addInstructionHandler(ServerControl.error.opcode, ServerControl.error.parser(
       this.handleErrorInstruction.bind(this)
     ));
   }

@@ -16,6 +16,7 @@
     "baseUrl": ".",
     "paths": {
       "@guacamole-client/client": ["libs/client/src/index.ts"],
+      "@guacamole-client/display": ["libs/display/src/index.ts"],
       "@guacamole-client/input": ["libs/input/src/index.ts"],
       "@guacamole-client/io": ["libs/io/src/index.ts"],
       "@guacamole-client/media": ["libs/media/src/index.ts"],
