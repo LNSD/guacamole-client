@@ -178,17 +178,6 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
   }
 
   /**
-   * Returns the underlying display of this Client. The display
-   * contains an Element which can be added to the DOM, causing the
-   * display to become visible.
-   *
-   * @return The underlying display of this Client.
-   */
-  public getDisplay(): Display {
-    return this.display;
-  }
-
-  /**
    * Sends the current size of the screen.
    *
    * @param width - The width of the screen.
