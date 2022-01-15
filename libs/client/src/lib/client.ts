@@ -23,11 +23,7 @@ import { State } from './state';
 import { MouseState } from '@guacamole-client/input';
 import { InputStreamHandlers, InputStreamsManager } from './streams-manager/input';
 import { OutputStreamHandlers, OutputStreamsManager } from './streams-manager/output';
-import {
-  ClientEventMap,
-  ClientEventTarget,
-  ClientEventTargetMap,
-} from './client-events';
+import { ClientEventMap, ClientEventTarget, ClientEventTargetMap } from './client-events';
 import { InstructionRouter } from './instruction-router';
 
 const PING_INTERVAL = 5000;
@@ -48,13 +44,6 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
 
   private readonly inputStreams: InputStreamsManager;
   private readonly outputStreams: OutputStreamsManager;
-
-  /**
-   * The underlying Guacamole display.
-   *
-   * @private
-   */
-  private readonly display: Display;
 
   /**
    * All available layers and buffers
@@ -107,15 +96,17 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
    * @constructor
    *
    * @param tunnel - The tunnel to use to send and receive Guacamole instructions.
+   * @param display - The underlying Guacamole display.
    */
-  constructor(private readonly tunnel: Tunnel) {
+  constructor(
+    private readonly tunnel: Tunnel,
+    private readonly display: Display
+  ) {
     this.instructionRouter = new InstructionRouter();
     this.registerInstructionRoutes();
 
     this.outputStreams = new OutputStreamsManager(this);
     this.inputStreams = new InputStreamsManager(this);
-
-    this.display = new Display();
 
     this.tunnel.oninstruction = (opcode, params) => {
       this.instructionRouter.dispatchInstruction(opcode, params);
@@ -592,7 +583,7 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
 
     const listener = this.events.getEventListener('onvideo');
     if (listener) {
-      videoPlayer = listener(stream, layer as any /* TODO: Review this as any */, mimetype);
+      videoPlayer = listener(stream, layer, mimetype);
     }
 
     // If unsuccessful, try to use a default implementation

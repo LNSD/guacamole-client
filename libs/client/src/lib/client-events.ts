@@ -1,7 +1,7 @@
 import { InputStream } from '@guacamole-client/io';
 import { Status } from './Status';
 import { GuacamoleObject } from './GuacamoleObject';
-import { VisibleLayer } from './display';
+import { VisibleLayer } from '@guacamole-client/display';
 import { AudioPlayer, VideoPlayer } from '@guacamole-client/media';
 
 /**

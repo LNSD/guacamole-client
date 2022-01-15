@@ -10,6 +10,7 @@ import {
 import { Client } from '@guacamole-client/client';
 import { Keyboard, Mouse } from '@guacamole-client/input';
 import { ConnectableWebSocket, xhr } from '@guacamole-client/net';
+import { Display } from '@guacamole-client/display';
 
 // // @ts-ignore
 // declare global {
@@ -43,8 +44,8 @@ import { ConnectableWebSocket, xhr } from '@guacamole-client/net';
   const token = String(json.authToken);
 
   // Get display div from document
-  const display = document.getElementById('display');
-  if (display === null) {
+  const displayElement = document.getElementById('display');
+  if (displayElement === null) {
     throw new Error('Cannot find [id=\'display\'] element');
   }
 
@@ -65,11 +66,12 @@ import { ConnectableWebSocket, xhr } from '@guacamole-client/net';
     (tunnelSelector !== 'ws' ? wsTunnel : httpTunnel)
   );
 
-  // Instantiate client, using the HTTP tunnel for communications.
-  const guac = new Client(tunnel);
+  // Instantiate client
+  const display = new Display();
+  const guac = new Client(tunnel, display);
 
   // Add client to display div
-  display.appendChild(guac.getDisplay().getElement());
+  displayElement.appendChild(display.getElement());
 
   // Error handler
   guac.addEventListener('onerror', console.error);
@@ -83,7 +85,7 @@ import { ConnectableWebSocket, xhr } from '@guacamole-client/net';
   };
 
   // Mouse
-  const mouse = new Mouse(guac.getDisplay().getElement());
+  const mouse = new Mouse(display.getElement());
 
   const mouseCallback = function(mouseState) {
     guac.sendMouseState(mouseState);
