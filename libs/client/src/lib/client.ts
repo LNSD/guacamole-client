@@ -1,6 +1,6 @@
 import { Display } from '@guacamole-client/display';
 import { Status, StatusCode } from './Status';
-import { GuacamoleObject } from './GuacamoleObject';
+import { GuacamoleObject } from './object/GuacamoleObject';
 import { OutputStream, StreamError } from '@guacamole-client/io';
 import {
   ClientControl,
@@ -23,6 +23,7 @@ import {
   registerImgStreamHandlers
 } from './display';
 import { AudioPlayerManager, registerAudioStreamHandlers } from './audio-player';
+import { ClipboardManager, registerClipboardStreamHandlers } from './clipboard';
 
 const PING_INTERVAL = 5000;
 
@@ -45,6 +46,7 @@ export class Client implements InputStreamResponseSender, OutputStreamResponseSe
 
   private readonly display: DisplayManager;
   private readonly audioPlayer: AudioPlayerManager;
+  private readonly clipboard: ClipboardManager;
 
   private readonly decoders: Map<number, Decoder> = new Map();
 
@@ -67,6 +69,7 @@ export class Client implements InputStreamResponseSender, OutputStreamResponseSe
   constructor(private readonly tunnel: Tunnel, display: Display) {
     this.display = new DisplayManager(display, this);
     this.audioPlayer = new AudioPlayerManager(this);
+    this.clipboard = new ClipboardManager(this, this.events);
 
     this.instructionRouter = new InstructionRouter();
     this.registerInstructionRoutes();
@@ -482,17 +485,6 @@ export class Client implements InputStreamResponseSender, OutputStreamResponseSe
     listener(stream, mimetype, name);
   }
 
-  private handleClipboardInstruction(streamIndex: number, mimetype: string) {
-    const listener = this.events.getEventListener('onclipboard');
-    if (!listener) {
-      this.sendAck(streamIndex, new StreamError('Clipboard unsupported', StatusCode.UNSUPPORTED));
-      return;
-    }
-
-    const stream = this.inputStreams.createStream(streamIndex);
-    listener(stream, mimetype);
-  }
-
   //<editor-fold defaultstate="collapsed" desc="OutputStreamHandler">
   //</editor-fold>
 
@@ -618,6 +610,7 @@ export class Client implements InputStreamResponseSender, OutputStreamResponseSe
     registerImgStreamHandlers(this.instructionRouter, this.display);
     registerDrawingInstructionHandlers(this.instructionRouter, this.display);
     registerAudioStreamHandlers(this.instructionRouter, this.audioPlayer);
+    registerClipboardStreamHandlers(this.instructionRouter, this.clipboard);
 
     // TODO Review this handler
     this.instructionRouter.addInstructionHandler('required', (params: string[]) => {
@@ -637,9 +630,6 @@ export class Client implements InputStreamResponseSender, OutputStreamResponseSe
     ));
     router.addInstructionHandler(Streaming.argv.opcode, Streaming.argv.parser(
       this.handleArgvInstruction.bind(this)
-    ));
-    router.addInstructionHandler(Streaming.clipboard.opcode, Streaming.clipboard.parser(
-      this.handleClipboardInstruction.bind(this)
     ));
     router.addInstructionHandler(Streaming.file.opcode, Streaming.file.parser(
       this.handleFileInstruction.bind(this)

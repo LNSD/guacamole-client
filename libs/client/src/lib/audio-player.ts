@@ -55,7 +55,6 @@ export class AudioPlayerManager implements AudioStreamHandler {
   }
 
   handleBlobInstruction(streamIndex: number, data: string) {
-    // Get stream
     const stream = this.inputStreams.getStream(streamIndex);
     if (!stream) {
       return;

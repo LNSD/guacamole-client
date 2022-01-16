@@ -1,6 +1,6 @@
 import { InputStream } from '@guacamole-client/io';
 import { Status } from './Status';
-import { GuacamoleObject } from './GuacamoleObject';
+import { GuacamoleObject } from './object/GuacamoleObject';
 import { AudioPlayer, VideoPlayer } from '@guacamole-client/media';
 import { VisibleLayer } from '@guacamole-client/display';
 
@@ -124,7 +124,6 @@ export type OnRequiredCallback = (parameters: string[]) => void;
  *                    instruction.
  */
 export type OnSyncCallback = (timeout: number) => void;
-
 
 export interface ClientEventMap {
   "onstatechange"?: OnStateChangeCallback;
