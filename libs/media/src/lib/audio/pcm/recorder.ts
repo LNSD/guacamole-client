@@ -1,4 +1,4 @@
-import { Status, StatusCode } from '../../Status';
+import { StatusCode } from '../../Status';
 import { parseAudioMimeType, PcmAudioFormat } from './format';
 import AudioContextFactory from '../context';
 import AudioRecorder from '../recorder';

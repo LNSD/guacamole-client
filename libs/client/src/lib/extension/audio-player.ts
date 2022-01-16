@@ -9,7 +9,7 @@ import { AudioPlayer, getAudioPlayerInstance } from '@guacamole-client/media';
 import { InputStream, StreamError } from '@guacamole-client/io';
 import { StatusCode } from '../status';
 import { InstructionRouter } from '../instruction-router';
-import { ClientEventTargetMap } from '../client-events';
+import { ClientEventTargetMap } from '../events';
 
 export interface AudioInstructionHandler {
   handleAudioInstruction(streamIndex: number, mimetype: string): void;

@@ -5,7 +5,7 @@ import {
   InputStreamsManager,
   registerInputStreamHandlers
 } from '../streams/input';
-import { ClientEventTargetMap } from '../client-events';
+import { ClientEventTargetMap } from '../events';
 import { InputStream, OutputStream, StreamError } from '@guacamole-client/io';
 import { StatusCode } from '../status';
 import { InstructionRouter } from '../instruction-router';

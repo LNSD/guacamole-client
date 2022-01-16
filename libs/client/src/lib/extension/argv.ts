@@ -10,7 +10,7 @@ import {
   OutputStreamsManager,
   registerOutputStreamHandlers
 } from '../streams/output';
-import { ClientEventTargetMap } from '../client-events';
+import { ClientEventTargetMap } from '../events';
 import { InputStream, OutputStream, StreamError } from '@guacamole-client/io';
 import { Streaming } from '@guacamole-client/protocol';
 import { StatusCode } from '../status';

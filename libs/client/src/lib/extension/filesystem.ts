@@ -1,5 +1,5 @@
 import { InputStreamResponseSender } from '../streams/input';
-import { ClientEventTargetMap } from '../client-events';
+import { ClientEventTargetMap } from '../events';
 import {
   GuacamoleObjectManager,
   ObjectStreamHandler,
