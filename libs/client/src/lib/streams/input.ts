@@ -1,7 +1,7 @@
 import { InputStream, StreamError } from '@guacamole-client/io';
 import { InstructionRouter } from '../instruction-router';
 import { Streaming } from '@guacamole-client/protocol';
-import { StatusCode } from '../Status';
+import { StatusCode } from '../status';
 
 export interface InputStreamHandler {
   handleBlobInstruction(streamIndex: number, data: string): void;

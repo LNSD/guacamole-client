@@ -6,7 +6,7 @@ import {
   registerInputStreamHandlers
 } from './streams/input';
 import { ClientEventTargetMap } from './client-events';
-import { OutputStream, StreamError } from '@guacamole-client/io';
+import { InputStream, OutputStream, StreamError } from '@guacamole-client/io';
 import { StatusCode } from './Status';
 import { InstructionRouter } from './instruction-router';
 import {
@@ -22,6 +22,16 @@ export interface FileInstructionHandler {
 
 export interface FileTransferStreamHandler extends FileInstructionHandler, InputStreamHandler, OutputStreamHandler {
 }
+
+/**
+ * Fired when a file stream is created. The stream provided to this event
+ * handler will contain its own event handlers for received data.
+ *
+ * @param stream - The stream that will receive data from the server.
+ * @param mimetype - The mimetype of the file received.
+ * @param filename - The name of the file received.
+ */
+export type OnFileCallback = (stream: InputStream, mimetype: string, filename: string) => void;
 
 export class FileTransferManager implements FileTransferStreamHandler {
   private readonly inputStreams: InputStreamsManager;

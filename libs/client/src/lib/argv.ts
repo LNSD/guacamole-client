@@ -11,9 +11,9 @@ import {
   registerOutputStreamHandlers
 } from './streams/output';
 import { ClientEventTargetMap } from './client-events';
-import { OutputStream, StreamError } from '@guacamole-client/io';
+import { InputStream, OutputStream, StreamError } from '@guacamole-client/io';
 import { Streaming } from '@guacamole-client/protocol';
-import { StatusCode } from './Status';
+import { StatusCode } from './status';
 import { InstructionRouter } from './instruction-router';
 
 export interface ArgvInstructionHandler {
@@ -22,6 +22,15 @@ export interface ArgvInstructionHandler {
 
 export interface ArgvStreamHandler extends ArgvInstructionHandler, InputStreamHandler, OutputStreamHandler {
 }
+
+/**
+ * Fired when the current value of a connection parameter is being exposed by the server.
+ *
+ * @param stream - The stream that will receive connection parameter data from the server.
+ * @param mimetype - The mimetype of the data which will be received.
+ * @param name - The name of the connection parameter whose value is being exposed.
+ */
+export type OnArgvCallback = (stream: InputStream, mimetype: string, name: string) => void;
 
 export class ArgvManager implements ArgvStreamHandler {
   private readonly inputStreams: InputStreamsManager;

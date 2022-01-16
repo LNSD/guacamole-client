@@ -1,5 +1,5 @@
 import { Display } from '@guacamole-client/display';
-import { Status, StatusCode } from './Status';
+import { Status, StatusCode } from './status';
 import {
   ClientControl,
   ClientEvents,
@@ -76,7 +76,7 @@ export class Client implements InputStreamResponseSender, OutputStreamResponseSe
     registerDrawingInstructionHandlers(this.instructionRouter, this.display);
 
     /* Audio player */
-    this.audioPlayer = new AudioPlayerManager(this);
+    this.audioPlayer = new AudioPlayerManager(this, this.events);
     registerAudioPlayerHandlers(this.instructionRouter, this.audioPlayer);
 
     /* Clipboard */

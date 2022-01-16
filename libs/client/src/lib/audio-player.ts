@@ -6,9 +6,10 @@ import {
   registerInputStreamHandlers
 } from './streams/input';
 import { AudioPlayer, getAudioPlayerInstance } from '@guacamole-client/media';
-import { StreamError } from '@guacamole-client/io';
+import { InputStream, StreamError } from '@guacamole-client/io';
 import { StatusCode } from './Status';
 import { InstructionRouter } from './instruction-router';
+import { ClientEventTargetMap } from './client-events';
 
 export interface AudioInstructionHandler {
   handleAudioInstruction(streamIndex: number, mimetype: string): void;
@@ -16,6 +17,20 @@ export interface AudioInstructionHandler {
 
 export interface AudioPlayerStreamHandler extends AudioInstructionHandler, InputStreamHandler {
 }
+
+/**
+ * Fired when a audio stream is created. The stream provided to this event
+ * handler will contain its own event handlers for received data.
+ *
+ * @param stream - The stream that will receive audio data from the server.
+ * @param mimetype - The mimetype of the audio data which will be received.
+ *
+ * @return An object which implements the AudioPlayer interface and
+ *     has been initialized to play the data in the provided stream, or null
+ *     if the built-in audio players of the Guacamole client should be
+ *     used.
+ */
+export type OnAudioCallback = (stream: InputStream, mimetype: string) => AudioPlayer;
 
 export class AudioPlayerManager implements AudioPlayerStreamHandler {
 
@@ -29,7 +44,10 @@ export class AudioPlayerManager implements AudioPlayerStreamHandler {
    */
   private readonly audioPlayers: Map<number, AudioPlayer> = new Map();
 
-  constructor(private readonly sender: InputStreamResponseSender) {
+  constructor(
+    private readonly sender: InputStreamResponseSender,
+    private readonly events: ClientEventTargetMap
+  ) {
     this.inputStreams = new InputStreamsManager(sender);
   }
 

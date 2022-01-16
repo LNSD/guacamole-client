@@ -8,6 +8,7 @@ import {
 import { OutputStreamResponseSender } from './streams/output';
 import { InstructionRouter } from './instruction-router';
 import { ObjectInstruction } from '@guacamole-client/protocol';
+import { GuacamoleObject } from './object/GuacamoleObject';
 
 export interface FilesystemInstructionHandler {
   handleFilesystemInstruction(objectIndex: number, name: string): void;
@@ -15,6 +16,16 @@ export interface FilesystemInstructionHandler {
 
 export interface FilesystemStreamHandler extends FilesystemInstructionHandler, ObjectStreamHandler {
 }
+
+/**
+ * Fired when a filesystem object is created. The object provided to this
+ * event handler will contain its own event handlers and functions for
+ * requesting and handling data.
+ *
+ * @param object - The created filesystem object.
+ * @param name - The name of the filesystem.
+ */
+export type OnFilesystemCallback = (object: GuacamoleObject, name: string) => void;
 
 export class FilesystemManager implements FilesystemStreamHandler {
   private readonly objects: GuacamoleObjectManager;
@@ -66,4 +77,3 @@ export function registerFilesystemStreamHandlers(router: InstructionRouter, hand
 
   registerObjectStreamHandlers(router, handler);
 }
-

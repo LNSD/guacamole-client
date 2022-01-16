@@ -6,7 +6,7 @@ import {
   registerInputStreamHandlers
 } from './streams/input';
 import { ClientEventTargetMap } from './client-events';
-import { OutputStream, StreamError } from '@guacamole-client/io';
+import { InputStream, OutputStream, StreamError } from '@guacamole-client/io';
 import { StatusCode } from './Status';
 import { InstructionRouter } from './instruction-router';
 import {
@@ -22,6 +22,16 @@ export interface PipeInstructionHandler {
 
 export interface NamedPipeStreamHandler extends PipeInstructionHandler, InputStreamHandler, OutputStreamHandler {
 }
+
+/**
+ * Fired when a pipe stream is created. The stream provided to this event
+ * handler will contain its own event handlers for received data;
+ *
+ * @param stream - The stream that will receive data from the server.
+ * @param mimetype - The mimetype of the data which will be received.
+ * @param name - The name of the pipe.
+ */
+export type OnPipeCallback = (stream: InputStream, mimetype: string, name: string) => void;
 
 export class NamedPipeManager implements NamedPipeStreamHandler {
   private readonly inputStreams: InputStreamsManager;

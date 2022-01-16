@@ -6,7 +6,7 @@ import {
   registerInputStreamHandlers
 } from './streams/input';
 import { ClientEventTargetMap } from './client-events';
-import { OutputStream, StreamError } from '@guacamole-client/io';
+import { InputStream, OutputStream, StreamError } from '@guacamole-client/io';
 import { StatusCode } from './Status';
 import { InstructionRouter } from './instruction-router';
 import {
@@ -22,6 +22,14 @@ export interface ClipboardInstructionHandler {
 
 export interface ClipboardStreamHandler extends ClipboardInstructionHandler, InputStreamHandler, OutputStreamHandler {
 }
+
+/**
+ * Fired when the clipboard of the remote client is changing.
+ *
+ * @param stream - The stream that will receive clipboard data from the server.
+ * @param mimetype - The mimetype of the data which will be received.
+ */
+export type OnClipboardCallback = (stream: InputStream, mimetype: string) => void;
 
 export class ClipboardManager implements ClipboardStreamHandler {
 
