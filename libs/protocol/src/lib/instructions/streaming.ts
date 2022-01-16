@@ -122,7 +122,7 @@ export const clipboard = createInstruction<ClipboardHandler>(CLIPBOARD_OPCODE,
     const mimetype = params[1];
 
     handler(streamIndex, mimetype);
-  },
+  }
 );
 
 
@@ -135,13 +135,13 @@ export const clipboard = createInstruction<ClipboardHandler>(CLIPBOARD_OPCODE,
  */
 export type EndHandler = (stream: number) => void;
 
-export const end = createInstruction<EndHandler>( END_OPCODE,
+export const end = createInstruction<EndHandler>(END_OPCODE,
   (stream: number) => [stream],
   (handler: EndHandler) => (params) => {
     const streamIndex = parseInt(params[0], 10);
 
     handler(streamIndex);
-  },
+  }
 );
 
 
@@ -164,7 +164,7 @@ export const file = createInstruction<FileHandler>(FILE_OPCODE,
     const filename = params[2];
 
     handler(streamIndex, mimetype, filename);
-  },
+  }
 );
 
 
@@ -196,7 +196,7 @@ export const img = createInstruction<ImgHandler>(IMG_OPCODE,
     const y = parseInt(params[5], 10);
 
     handler(streamIndex, layerIndex, channelMask, x, y, mimetype);
-  },
+  }
 );
 
 /**
@@ -219,7 +219,7 @@ export const nest = createInstruction<NestHandler>(NEST_OPCODE,
     const packet = params[1];
 
     handler(parserIndex, packet);
-  },
+  }
 );
 
 /**
@@ -243,7 +243,7 @@ export const pipe = createInstruction<PipeHandler>(PIPE_OPCODE,
     const name = params[2];
 
     handler(streamIndex, mimetype, name);
-  },
+  }
 );
 
 
@@ -264,10 +264,17 @@ export type VideoHandler = (stream: number, layer: number, mimetype: string) => 
 
 export const video = createInstruction<VideoHandler>(VIDEO_OPCODE,
   (stream: number, layer: number, mimetype: string) => [stream, layer, mimetype],
-  (handler: VideoHandler) => (params) => {      const streamIndex = parseInt(params[0], 10);
+  (handler: VideoHandler) => (params) => {
+    const streamIndex = parseInt(params[0], 10);
     const layerIndex = parseInt(params[1], 10);
     const mimetype = params[2];
 
     handler(streamIndex, layerIndex, mimetype);
-  },
+  }
 );
+
+export interface InputStreamInstructionHandler {
+  handleBlobInstruction(streamIndex: number, data: string): void;
+
+  handleEndInstruction(streamIndex: number): void;
+}

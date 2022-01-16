@@ -1,15 +1,7 @@
-import {
-  DEFAULT_TRANSFER_FUNCTION,
-  Display,
-  Layer,
-  LINE_CAP,
-  LINE_JOIN,
-  VisibleLayer
-} from '@guacamole-client/display';
+import { Display } from '@guacamole-client/display';
 import { Status, StatusCode } from './Status';
 import { GuacamoleObject } from './GuacamoleObject';
 import { OutputStream, StreamError } from '@guacamole-client/io';
-import { AudioPlayer, getAudioPlayerInstance, VideoPlayer } from '@guacamole-client/media';
 import {
   ClientControl,
   ClientEvents,
@@ -21,10 +13,16 @@ import {
 import { Tunnel } from '@guacamole-client/tunnel';
 import { State } from './state';
 import { MouseState } from '@guacamole-client/input';
-import { InputStreamHandlers, InputStreamsManager } from './streams-manager/input';
-import { OutputStreamHandlers, OutputStreamsManager } from './streams-manager/output';
+import { InputStreamResponseSender, InputStreamsManager } from './streams/input';
+import { OutputStreamResponseSender, OutputStreamsManager } from './streams/output';
 import { ClientEventMap, ClientEventTarget, ClientEventTargetMap } from './client-events';
 import { InstructionRouter } from './instruction-router';
+import {
+  DisplayManager,
+  registerDrawingInstructionHandlers,
+  registerImgStreamHandlers
+} from './display';
+import { AudioPlayerManager, registerAudioStreamHandlers } from './audio-player';
 
 const PING_INTERVAL = 5000;
 
@@ -33,7 +31,7 @@ const PING_INTERVAL = 5000;
  * automatically handles incoming and outgoing Guacamole instructions via the
  * provided tunnel, updating its display using one or more canvas elements.
  */
-export class Client implements InputStreamHandlers, OutputStreamHandlers, ClientEventTarget {
+export class Client implements InputStreamResponseSender, OutputStreamResponseSender, ClientEventTarget {
 
   private currentState: State = State.IDLE;
 
@@ -45,27 +43,8 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
   private readonly inputStreams: InputStreamsManager;
   private readonly outputStreams: OutputStreamsManager;
 
-  /**
-   * All available layers and buffers
-   *
-   * @private
-   */
-  private readonly layers: Map<number, VisibleLayer> = new Map();
-
-  /**
-   * All audio players currently in use by the client. Initially, this will
-   * be empty, but audio players may be allocated by the server upon request.
-   *
-   * @private
-   */
-  private readonly audioPlayers: Map<number, AudioPlayer> = new Map();
-  /**
-   * All video players currently in use by the client. Initially, this will
-   * be empty, but video players may be allocated by the server upon request.
-   *
-   * @private
-   */
-  private readonly videoPlayers: Map<number, VideoPlayer> = new Map();
+  private readonly display: DisplayManager;
+  private readonly audioPlayer: AudioPlayerManager;
 
   private readonly decoders: Map<number, Decoder> = new Map();
 
@@ -77,19 +56,6 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
    */
   private readonly objects: Map<number, GuacamoleObject> = new Map();
 
-  /**
-   * Handlers for all defined layer properties.
-   *
-   * @private
-   */
-    // TODO Review the following lint suppression
-    // eslint-disable-next-line @typescript-eslint/ban-types
-  private readonly layerPropertyHandlers: Record<string, Function> = {
-    'miter-limit': (layer: Layer, value: string) => {
-      this.display.setMiterLimit(layer, parseFloat(value));
-    }
-  };
-
   private readonly instructionRouter: InstructionRouter;
 
   /**
@@ -98,10 +64,10 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
    * @param tunnel - The tunnel to use to send and receive Guacamole instructions.
    * @param display - The underlying Guacamole display.
    */
-  constructor(
-    private readonly tunnel: Tunnel,
-    private readonly display: Display
-  ) {
+  constructor(private readonly tunnel: Tunnel, display: Display) {
+    this.display = new DisplayManager(display, this);
+    this.audioPlayer = new AudioPlayerManager(this);
+
     this.instructionRouter = new InstructionRouter();
     this.registerInstructionRoutes();
 
@@ -430,6 +396,12 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
     this.outputStreams.freeStream(index);
   }
 
+  public handleMouseInstruction(x: number, y: number) {
+    // Display and move software cursor to received coordinates
+    this.display.showCursor(true);
+    this.display.moveCursor(x, y);
+  }
+
   private handleBodyInstruction(objectIndex: number, streamIndex: number, mimetype: string, name: string) {
     const object = this.objects.get(objectIndex);
 
@@ -467,11 +439,6 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
     }
   }
 
-  private handleNestInstruction(parserIndex: number, packet: string) {
-    const parser = this.getParser(parserIndex);
-    parser.receive(packet);
-  }
-
   private handleRequiredInstruction(parameters: string[]) {
     const listener = this.events.getEventListener('onrequired');
     if (listener) {
@@ -482,12 +449,7 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
   private handleSyncInstruction(timestamp: number) {
     // Flush display, send sync when done
     this.display.flush(() => {
-      // Synchronize all audio players
-      for (const [_, audioPlayer] of this.audioPlayers) {
-        if (audioPlayer) {
-          audioPlayer.sync();
-        }
-      }
+      this.audioPlayer.sync();
 
       // Send sync response to server
       if (timestamp !== this.currentTimestamp) {
@@ -520,77 +482,6 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
     listener(stream, mimetype, name);
   }
 
-  private handleImgInstruction(streamIndex: number, layerIndex: number, channelMask: number, x: number, y: number, mimetype: string) {
-    // Create stream
-    const stream = this.inputStreams.createStream(streamIndex);
-
-    // Get layer
-    const layer = this.getLayer(layerIndex);
-
-    // Draw received contents once decoded
-    this.display.setChannelMask(layer, channelMask);
-    this.display.drawStream(layer, x, y, stream, mimetype);
-  }
-
-  private handleAudioInstruction(streamIndex: number, mimetype: string) {
-    // Create stream
-    const stream = this.inputStreams.createStream(streamIndex);
-
-    // Get player instance via callback
-    let audioPlayer: AudioPlayer | null = null;
-
-    const listener = this.events.getEventListener('onaudio');
-    if (listener) {
-      audioPlayer = listener(stream, mimetype);
-    }
-
-    // If unsuccessful, try to use a default implementation
-    if (!audioPlayer) {
-      audioPlayer = getAudioPlayerInstance(stream, mimetype);
-    }
-
-    if (!audioPlayer) {
-      // Mimetype must be unsupported
-      this.sendAck(streamIndex, new StreamError('BAD TYPE', StatusCode.CLIENT_BAD_TYPE));
-      return;
-    }
-
-    // If we have successfully retrieved an audio player, send success response
-    this.audioPlayers.set(streamIndex, audioPlayer);
-    this.sendAck(streamIndex);
-  }
-
-  private handleVideoInstruction(streamIndex: number, layerIndex: number, mimetype: string) {
-    // Create stream
-    const stream = this.inputStreams.createStream(streamIndex);
-
-    // Get layer
-    const layer = this.getLayer(layerIndex);
-
-    // Get player instance via callback
-    let videoPlayer: VideoPlayer | null = null;
-
-    const listener = this.events.getEventListener('onvideo');
-    if (listener) {
-      videoPlayer = listener(stream, layer, mimetype);
-    }
-
-    // If unsuccessful, try to use a default implementation
-    if (!videoPlayer) {
-      videoPlayer = VideoPlayer.getInstance(stream, layer, mimetype);
-    }
-
-    if (!videoPlayer) {
-      // Mimetype must be unsupported
-      this.sendAck(streamIndex, new StreamError('BAD TYPE', StatusCode.CLIENT_BAD_TYPE));
-      return;
-    }
-
-    // If we have successfully retrieved a video player, send success response
-    this.videoPlayers.set(streamIndex, videoPlayer);
-    this.sendAck(streamIndex);
-  }
-
   private handleClipboardInstruction(streamIndex: number, mimetype: string) {
     const listener = this.events.getEventListener('onclipboard');
     if (!listener) {
@@ -602,6 +493,9 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
     listener(stream, mimetype);
   }
 
+  //<editor-fold defaultstate="collapsed" desc="OutputStreamHandler">
+  //</editor-fold>
+
   private handleFileInstruction(streamIndex: number, mimetype: string, filename: string) {
     const listener = this.events.getEventListener('onfile');
     if (!listener) {
@@ -611,33 +505,6 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
 
     const stream = this.inputStreams.createStream(streamIndex);
     listener(stream, mimetype, filename);
-  }
-
-  //<editor-fold defaultstate="collapsed" desc="OutputStreamHandler">
-  //</editor-fold>
-
-  private handleBlobInstruction(streamIndex: number, data: string) {
-    // Get stream
-    const stream = this.inputStreams.getStream(streamIndex);
-
-    // Write data
-    if (stream?.onblob) {
-      stream.onblob(data);
-    }
-  }
-
-  private handleEndInstruction(streamIndex: number) {
-    // Get stream
-    const stream = this.inputStreams.getStream(streamIndex);
-    if (stream) {
-      // Signal end of stream if handler defined
-      if (stream.onend) {
-        stream.onend();
-      }
-
-      // Invalidate stream
-      this.inputStreams.freeStream(streamIndex);
-    }
   }
 
   private handlePipeInstruction(streamIndex: number, mimetype: string, name: string) {
@@ -693,9 +560,6 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
     listener(object, name);
   }
 
-  //</editor-fold>
-  //<editor-fold defaultstate="collapsed" desc="DisplayHandler">
-
   private handleUndefineInstruction(objectIndex: number) {
     // Get object
     const object = this.objects.get(objectIndex);
@@ -706,202 +570,7 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
     }
   }
 
-  private handleArcInstruction(layerIndex: number, x: number, y: number, radius: number, startAngle: number, endAngle: number, negative: number) {
-    const layer = this.getLayer(layerIndex);
-    this.display.arc(layer, x, y, radius, startAngle, endAngle, negative !== 0);
-  }
-
-  private handleCfillInstruction(layerIndex: number, channelMask: number, r: number, g: number, b: number, a: number) {
-    const layer = this.getLayer(layerIndex);
-    this.display.setChannelMask(layer, channelMask);
-    this.display.fillColor(layer, r, g, b, a);
-  }
-
-  private handleClipInstruction(layerIndex: number) {
-    const layer = this.getLayer(layerIndex);
-    this.display.clip(layer);
-  }
-
-  private handleCloseInstruction(layerIndex: number) {
-    const layer = this.getLayer(layerIndex);
-    this.display.close(layer);
-  }
-
-  private handleCopyInstruction(srcLayerIndex: number, dstLayerIndex: number, channelMask: number, srcX: number, srcY: number, srcWidth: number, srcHeight: number, dstX: number, dstY: number) {
-    const srcLayer = this.getLayer(srcLayerIndex);
-    const dstLayer = this.getLayer(dstLayerIndex);
-    this.display.setChannelMask(dstLayer, channelMask);
-    this.display.copy(srcLayer, srcX, srcY, srcWidth, srcHeight, dstLayer, dstX, dstY);
-  }
-
-  private handleCstrokeInstruction(layerIndex: number, channelMask: number, cap: CanvasLineCap, join: CanvasLineJoin, thickness: number, r: number, g: number, b: number, a: number) {
-    const layer = this.getLayer(layerIndex);
-    this.display.setChannelMask(layer, channelMask);
-    this.display.strokeColor(layer, cap, join, thickness, r, g, b, a);
-  }
-
-  private handleCursorInstruction(srcLayerIndex: number, cursorHotspotX: number, cursorHotspotY: number, srcX: number, srcY: number, srcWidth: number, srcHeight: number) {
-    const srcLayer = this.getLayer(srcLayerIndex);
-    this.display.setCursor(cursorHotspotX, cursorHotspotY, srcLayer, srcX, srcY, srcWidth, srcHeight);
-  }
-
-  private handleCurveInstruction(layerIndex: number, cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number) {
-    const layer = this.getLayer(layerIndex);
-    this.display.curveTo(layer, cp1x, cp1y, cp2x, cp2y, x, y);
-  }
-
-  private handleDisposeInstruction(layerIndex: number) {
-    // If visible layer, remove from parent
-    if (layerIndex > 0) {
-      // Remove from parent
-      const layer = this.getLayer(layerIndex);
-      this.display.dispose(layer);
-
-      // Delete reference
-      this.layers.delete(layerIndex);
-    } else if (layerIndex < 0) {
-      // If buffer, just delete reference
-      // TODO Review the following lint suppression
-      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-      this.layers.delete(layerIndex);
-    }
-
-    // Attempting to dispose the root layer currently has no effect.
-  }
-
-  private handleDistortInstruction(layerIndex: number, a: number, b: number, c: number, d: number, e: number, f: number) {
-    // Only valid for visible layers (not buffers)
-    if (layerIndex < 0) {
-      return;
-    }
-
-    const layer = this.getLayer(layerIndex);
-    this.display.distort(layer, a, b, c, d, e, f);
-  }
-
-  private handleIdentityInstruction(layerIndex: number) {
-    const layer = this.getLayer(layerIndex);
-    this.display.setTransform(layer, 1, 0, 0, 1, 0, 0);
-  }
-
-  private handleJpegInstruction(layerIndex: number, channelMask: number, x: number, y: number, data: string) {
-    const layer = this.getLayer(layerIndex);
-    this.display.setChannelMask(layer, channelMask);
-    this.display.draw(layer, x, y, `data:image/jpeg;base64,${data}`);
-  }
-
-  private handleLfillInstruction(layerIndex: number, channelMask: number, srcLayerIndex: number) {
-    const layer = this.getLayer(layerIndex);
-    const srcLayer = this.getLayer(srcLayerIndex);
-    this.display.setChannelMask(layer, channelMask);
-    this.display.fillLayer(layer, srcLayer);
-  }
-
-  private handleLineInstruction(layerIndex: number, x: number, y: number) {
-    const layer = this.getLayer(layerIndex);
-    this.display.lineTo(layer, x, y);
-  }
-
-  private handleLstrokeInstruction(layerIndex: number, srcLayerIndex: number, channelMask: number, cap: CanvasLineCap, join: CanvasLineJoin, thickness: number) {
-    const layer = this.getLayer(layerIndex);
-    const srcLayer = this.getLayer(srcLayerIndex);
-
-    this.display.setChannelMask(layer, channelMask);
-    this.display.strokeLayer(layer, cap, join, thickness, srcLayer);
-  }
-
-  private handleMouseInstruction(x: number, y: number) {
-    // Display and move software cursor to received coordinates
-    this.display.showCursor(true);
-    this.display.moveCursor(x, y);
-  }
-
-  private handleMoveInstruction(layerIndex: number, parentIndex: number, x: number, y: number, z: number) {
-    // Only valid for non-default layers
-    if (layerIndex <= 0 || parentIndex < 0) {
-      return;
-    }
-
-    const layer = this.getLayer(layerIndex);
-    const parent = this.getLayer(parentIndex);
-    this.display.move(layer, parent, x, y, z);
-  }
-
-  private handlePngInstruction(layerIndex: number, channelMask: number, x: number, y: number, data: string) {
-    const layer = this.getLayer(layerIndex);
-    this.display.setChannelMask(layer, channelMask);
-    this.display.draw(layer, x, y, `data:image/png;base64,${data}`);
-  }
-
-  private handlePopInstruction(layerIndex: number) {
-    const layer = this.getLayer(layerIndex);
-    this.display.pop(layer);
-  }
-
-  private handlePushInstruction(layerIndex: number) {
-    const layer = this.getLayer(layerIndex);
-    this.display.push(layer);
-  }
-
-  private handleRectInstruction(layerIndex: number, x: number, y: number, w: number, h: number) {
-    const layer = this.getLayer(layerIndex);
-    this.display.rect(layer, x, y, w, h);
-  }
-
-  private handleResetInstruction(layerIndex: number) {
-    const layer = this.getLayer(layerIndex);
-    this.display.reset(layer);
-  }
-
-  private handleSetInstruction(layerIndex: number, name: string, value: string) {
-    const layer = this.getLayer(layerIndex);
-
-    // Call property handler if defined
-    const handler = this.layerPropertyHandlers.get(name);
-    if (handler) {
-      handler(layer, value);
-    }
-  }
-
-  private handleShadeInstruction(layerIndex: number, a: number) {
-    // Only valid for visible layers (not buffers)
-    if (layerIndex < 0) {
-      return;
-    }
-
-    const layer = this.getLayer(layerIndex);
-    this.display.shade(layer, a);
-  }
-
-  private handleSizeInstruction(layerIndex: number, width: number, height: number) {
-    const layer = this.getLayer(layerIndex);
-    this.display.resize(layer, width, height);
-  }
-
-  private handleStartInstruction(layerIndex: number, x: number, y: number) {
-    const layer = this.getLayer(layerIndex);
-    this.display.moveTo(layer, x, y);
-  }
-
-  private handleTransferInstruction(srcLayerIndex: number, dstLayerIndex: number, functionIndex: number, srcX: number, srcY: number, srcWidth: number, srcHeight: number, dstX: number, dstY: number) {
-    const srcLayer = this.getLayer(srcLayerIndex);
-    const dstLayer = this.getLayer(dstLayerIndex);
-
-    /* SRC */
-    if (functionIndex === 0x3) {
-      this.display.put(srcLayer, srcX, srcY, srcWidth, srcHeight, dstLayer, dstX, dstY);
-    } else if (functionIndex !== 0x5) {
-      /* Anything else that isn't a NO-OP */
-      this.display.transfer(srcLayer, srcX, srcY, srcWidth, srcHeight, dstLayer, dstX, dstY, DEFAULT_TRANSFER_FUNCTION[functionIndex]);
-    }
-  }
-
   //</editor-fold>
-
-  private handleTransformInstruction(layerIndex: number, a: number, b: number, c: number, d: number, e: number, f: number) {
-    const layer = this.getLayer(layerIndex);
-    this.display.transform(layer, a, b, c, d, e, f);
-  }
 
   private setState(state: State) {
     if (this.currentState === state) {
@@ -916,38 +585,7 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
     }
   }
 
-  /**
-   * Returns the layer with the given index, creating it if necessary.
-   * Positive indices refer to visible layers, an index of zero refers to
-   * the default layer, and negative indices refer to buffers.
-   *
-   * @private
-   * @param index - The index of the layer to retrieve.
-   *
-   * @return The layer having the given index.
-   */
-  private getLayer(index: number): VisibleLayer {
-    // Get layer, create if necessary
-    let layer = this.layers.get(index);
-    if (!layer) {
-      // Create layer based on index
-      if (index === 0) {
-        layer = this.display.getDefaultLayer();
-      } else if (index > 0) {
-        layer = this.display.createLayer();
-      } else {
-        // TODO Review this
-        layer = this.display.createBuffer() as VisibleLayer;
-      }
-
-      // Add new layer
-      this.layers.set(index, layer);
-    }
-
-    return layer;
-  }
-
-  private getParser(index: number) {
+  private getDecoder(index: number) {
     let decoder = this.decoders.get(index);
 
     // If parser not yet created, create it, and tie to the
@@ -961,6 +599,11 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
     return decoder;
   }
 
+  private handleNestInstruction(parserIndex: number, packet: string) {
+    const parser = this.getDecoder(parserIndex);
+    parser.receive(packet);
+  }
+
   /**
    * Register all instruction handlers for the opcodes receivable by a Guacamole protocol client.
    *
@@ -971,7 +614,10 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
     this.registerObjectInstructionRoutes(this.instructionRouter);
     this.registerClientControlInstructionRoutes(this.instructionRouter);
     this.registerServerControlInstructionHandlers(this.instructionRouter);
-    this.registerDrawingInstructionHandlers(this.instructionRouter);
+
+    registerImgStreamHandlers(this.instructionRouter, this.display);
+    registerDrawingInstructionHandlers(this.instructionRouter, this.display);
+    registerAudioStreamHandlers(this.instructionRouter, this.audioPlayer);
 
     // TODO Review this handler
     this.instructionRouter.addInstructionHandler('required', (params: string[]) => {
@@ -992,32 +638,17 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
     router.addInstructionHandler(Streaming.argv.opcode, Streaming.argv.parser(
       this.handleArgvInstruction.bind(this)
     ));
-    router.addInstructionHandler(Streaming.audio.opcode, Streaming.audio.parser(
-      this.handleAudioInstruction.bind(this)
-    ));
-    router.addInstructionHandler(Streaming.blob.opcode, Streaming.blob.parser(
-      this.handleBlobInstruction.bind(this)
-    ));
     router.addInstructionHandler(Streaming.clipboard.opcode, Streaming.clipboard.parser(
       this.handleClipboardInstruction.bind(this)
     ));
-    router.addInstructionHandler(Streaming.end.opcode, Streaming.end.parser(
-      this.handleEndInstruction.bind(this)
-    ));
     router.addInstructionHandler(Streaming.file.opcode, Streaming.file.parser(
       this.handleFileInstruction.bind(this)
-    ));
-    router.addInstructionHandler(Streaming.img.opcode, Streaming.img.parser(
-      this.handleImgInstruction.bind(this)
     ));
     router.addInstructionHandler(Streaming.nest.opcode, Streaming.nest.parser(
       this.handleNestInstruction.bind(this)
     ));
     router.addInstructionHandler(Streaming.pipe.opcode, Streaming.pipe.parser(
       this.handlePipeInstruction.bind(this)
-    ));
-    router.addInstructionHandler(Streaming.video.opcode, Streaming.video.parser(
-      this.handleVideoInstruction.bind(this)
     ));
   }
 
@@ -1049,237 +680,5 @@ export class Client implements InputStreamHandlers, OutputStreamHandlers, Client
     router.addInstructionHandler(ServerControl.error.opcode, ServerControl.error.parser(
       this.handleErrorInstruction.bind(this)
     ));
-  }
-
-  private registerDrawingInstructionHandlers(router: InstructionRouter) {
-    router.addInstructionHandler('arc', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-      const x = parseInt(params[1], 10);
-      const y = parseInt(params[2], 10);
-      const radius = parseInt(params[3], 10);
-      const startAngle = parseFloat(params[4]);
-      const endAngle = parseFloat(params[5]);
-      const negative = parseInt(params[6], 10);
-
-      this.handleArcInstruction(layerIndex, x, y, radius, startAngle, endAngle, negative);
-    });
-    router.addInstructionHandler('cfill', (params: string[]) => {
-      const channelMask = parseInt(params[0], 10);
-      const layerIndex = parseInt(params[1], 10);
-      const r = parseInt(params[2], 10);
-      const g = parseInt(params[3], 10);
-      const b = parseInt(params[4], 10);
-      const a = parseInt(params[5], 10);
-
-      this.handleCfillInstruction(layerIndex, channelMask, r, g, b, a);
-    });
-    router.addInstructionHandler('clip', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-
-      this.handleClipInstruction(layerIndex);
-    });
-    router.addInstructionHandler('close', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-
-      this.handleCloseInstruction(layerIndex);
-    });
-    router.addInstructionHandler('copy', (params: string[]) => {
-      const srcLayerIndex = parseInt(params[0], 10);
-      const srcX = parseInt(params[1], 10);
-      const srcY = parseInt(params[2], 10);
-      const srcWidth = parseInt(params[3], 10);
-      const srcHeight = parseInt(params[4], 10);
-      const channelMask = parseInt(params[5], 10);
-      const dstLayerIndex = parseInt(params[6], 10);
-      const dstX = parseInt(params[7], 10);
-      const dstY = parseInt(params[8], 10);
-
-      this.handleCopyInstruction(srcLayerIndex, dstLayerIndex, channelMask, srcX, srcY, srcWidth, srcHeight, dstX, dstY);
-    });
-    router.addInstructionHandler('cstroke', (params: string[]) => {
-      const channelMask = parseInt(params[0], 10);
-      const layerIndex = parseInt(params[1], 10);
-      const cap = LINE_CAP[parseInt(params[2], 10)];
-      const join = LINE_JOIN[parseInt(params[3], 10)];
-      const thickness = parseInt(params[4], 10);
-      const r = parseInt(params[5], 10);
-      const g = parseInt(params[6], 10);
-      const b = parseInt(params[7], 10);
-      const a = parseInt(params[8], 10);
-
-      this.handleCstrokeInstruction(layerIndex, channelMask, cap, join, thickness, r, g, b, a);
-    });
-    router.addInstructionHandler('cursor', (params: string[]) => {
-      const cursorHotspotX = parseInt(params[0], 10);
-      const cursorHotspotY = parseInt(params[1], 10);
-      const srcLayerIndex = parseInt(params[2], 10);
-      const srcX = parseInt(params[3], 10);
-      const srcY = parseInt(params[4], 10);
-      const srcWidth = parseInt(params[5], 10);
-      const srcHeight = parseInt(params[6], 10);
-
-      this.handleCursorInstruction(srcLayerIndex, cursorHotspotX, cursorHotspotY, srcX, srcY, srcWidth, srcHeight);
-    });
-    router.addInstructionHandler('curve', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-      const cp1x = parseInt(params[1], 10);
-      const cp1y = parseInt(params[2], 10);
-      const cp2x = parseInt(params[3], 10);
-      const cp2y = parseInt(params[4], 10);
-      const x = parseInt(params[5], 10);
-      const y = parseInt(params[6], 10);
-
-      this.handleCurveInstruction(layerIndex, cp1x, cp1y, cp2x, cp2y, x, y);
-    });
-    router.addInstructionHandler('dispose', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-
-      this.handleDisposeInstruction(layerIndex);
-    });
-    router.addInstructionHandler('distort', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-      const a = parseFloat(params[1]);
-      const b = parseFloat(params[2]);
-      const c = parseFloat(params[3]);
-      const d = parseFloat(params[4]);
-      const e = parseFloat(params[5]);
-      const f = parseFloat(params[6]);
-
-      this.handleDistortInstruction(layerIndex, a, b, c, d, e, f);
-    });
-    router.addInstructionHandler('identity', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-
-      this.handleIdentityInstruction(layerIndex);
-    });
-    router.addInstructionHandler('jpeg', (params: string[]) => {
-      const channelMask = parseInt(params[0], 10);
-      const layerIndex = parseInt(params[1], 10);
-      const x = parseInt(params[2], 10);
-      const y = parseInt(params[3], 10);
-      const data = params[4];
-
-      this.handleJpegInstruction(layerIndex, channelMask, x, y, data);
-    });
-    router.addInstructionHandler('lfill', (params: string[]) => {
-      const channelMask = parseInt(params[0], 10);
-      const layerIndex = parseInt(params[1], 10);
-      const srcLayerIndex = parseInt(params[2], 10);
-
-      this.handleLfillInstruction(layerIndex, channelMask, srcLayerIndex);
-    });
-    router.addInstructionHandler('line', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-      const x = parseInt(params[1], 10);
-      const y = parseInt(params[2], 10);
-
-      this.handleLineInstruction(layerIndex, x, y);
-    });
-    router.addInstructionHandler('lstroke', (params: string[]) => {
-      const channelMask = parseInt(params[0], 10);
-      const layerIndex = parseInt(params[1], 10);
-      const capIndex = parseInt(params[2], 10);
-      const joinIndex = parseInt(params[3], 10);
-      const thickness = parseInt(params[4], 10);
-      const srcLayerIndex = parseInt(params[5], 10);
-
-      const cap = LINE_CAP[capIndex];
-      const join = LINE_JOIN[joinIndex];
-
-      this.handleLstrokeInstruction(layerIndex, srcLayerIndex, channelMask, cap, join, thickness);
-    });
-    router.addInstructionHandler('move', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-      const parentIndex = parseInt(params[1], 10);
-      const x = parseInt(params[2], 10);
-      const y = parseInt(params[3], 10);
-      const z = parseInt(params[4], 10);
-
-      this.handleMoveInstruction(layerIndex, parentIndex, x, y, z);
-    });
-    router.addInstructionHandler('png', (params: string[]) => {
-      const channelMask = parseInt(params[0], 10);
-      const layerIndex = parseInt(params[1], 10);
-      const x = parseInt(params[2], 10);
-      const y = parseInt(params[3], 10);
-      const data = params[4];
-
-      this.handlePngInstruction(layerIndex, channelMask, x, y, data);
-    });
-    router.addInstructionHandler('pop', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-
-      this.handlePopInstruction(layerIndex);
-    });
-    router.addInstructionHandler('push', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-
-      this.handlePushInstruction(layerIndex);
-    });
-    router.addInstructionHandler('rect', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-      const x = parseInt(params[1], 10);
-      const y = parseInt(params[2], 10);
-      const w = parseInt(params[3], 10);
-      const h = parseInt(params[4], 10);
-
-      this.handleRectInstruction(layerIndex, x, y, w, h);
-    });
-    router.addInstructionHandler('reset', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-
-      this.handleResetInstruction(layerIndex);
-    });
-    router.addInstructionHandler('set', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-      const name = params[1];
-      const value = params[2];
-
-      this.handleSetInstruction(layerIndex, name, value);
-    });
-    router.addInstructionHandler('shade', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-      const a = parseInt(params[1], 10);
-
-      this.handleShadeInstruction(layerIndex, a);
-    });
-    router.addInstructionHandler('size', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-      const width = parseInt(params[1], 10);
-      const height = parseInt(params[2], 10);
-
-      this.handleSizeInstruction(layerIndex, width, height);
-    });
-    router.addInstructionHandler('start', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-      const x = parseInt(params[1], 10);
-      const y = parseInt(params[2], 10);
-
-      this.handleStartInstruction(layerIndex, x, y);
-    });
-    router.addInstructionHandler('transfer', (params: string[]) => {
-      const srcLayerIndex = parseInt(params[0], 10);
-      const srcX = parseInt(params[1], 10);
-      const srcY = parseInt(params[2], 10);
-      const srcWidth = parseInt(params[3], 10);
-      const srcHeight = parseInt(params[4], 10);
-      const functionIndex = parseInt(params[5], 10);
-      const dstLayerIndex = parseInt(params[6], 10);
-      const dstX = parseInt(params[7], 10);
-      const dstY = parseInt(params[8], 10);
-
-      this.handleTransferInstruction(srcLayerIndex, dstLayerIndex, functionIndex, srcX, srcY, srcWidth, srcHeight, dstX, dstY);
-    });
-    router.addInstructionHandler('transform', (params: string[]) => {
-      const layerIndex = parseInt(params[0], 10);
-      const a = parseFloat(params[1]);
-      const b = parseFloat(params[2]);
-      const c = parseFloat(params[3]);
-      const d = parseFloat(params[4]);
-      const e = parseFloat(params[5]);
-      const f = parseFloat(params[6]);
-
-      this.handleTransformInstruction(layerIndex, a, b, c, d, e, f);
-    });
   }
 }

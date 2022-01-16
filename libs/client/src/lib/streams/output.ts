@@ -1,7 +1,7 @@
 import { IntegerPool } from '../utils/integer-pool';
 import { OutputStream } from '@guacamole-client/io';
 
-export interface OutputStreamHandlers {
+export interface OutputStreamResponseSender {
   sendBlob(streamIndex: number, data: string): void;
   sendEnd(streamIndex: number): void;
 }
@@ -11,7 +11,7 @@ export class OutputStreamsManager {
 
   private readonly streams: Map<number, OutputStream> = new Map();
 
-  constructor(private readonly handlers: OutputStreamHandlers) {}
+  constructor(private readonly handlers: OutputStreamResponseSender) {}
 
   public createStream(): OutputStream {
     const index = this.indicesPool.next();

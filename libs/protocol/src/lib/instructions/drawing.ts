@@ -28,9 +28,7 @@ const START_OPCODE = 'start';
 const TRANSFER_OPCODE = 'transfer';
 const TRANSFORM_OPCODE = 'transform';
 
-export interface DrawingInstructionHandlers {
-  handleUndefineInstruction(objectIndex: number): void;
-
+export interface DrawingInstructionHandler {
   handleArcInstruction(layerIndex: number, x: number, y: number, radius: number, startAngle: number, endAngle: number, negative: number): void;
 
   handleCfillInstruction(layerIndex: number, channelMask: number, r: number, g: number, b: number, a: number): void;
@@ -61,8 +59,6 @@ export interface DrawingInstructionHandlers {
 
   handleLstrokeInstruction(layerIndex: number, srcLayerIndex: number, channelMask: number, cap: CanvasLineCap, join: CanvasLineJoin, thickness: number): void;
 
-  handleMouseInstruction(x: number, y: number): void;
-
   handleMoveInstruction(layerIndex: number, parentIndex: number, x: number, y: number, z: number): void;
 
   handlePngInstruction(layerIndex: number, channelMask: number, x: number, y: number, data: string): void;
@@ -84,5 +80,7 @@ export interface DrawingInstructionHandlers {
   handleStartInstruction(layerIndex: number, x: number, y: number): void;
 
   handleTransferInstruction(srcLayerIndex: number, dstLayerIndex: number, functionIndex: number, srcX: number, srcY: number, srcWidth: number, srcHeight: number, dstX: number, dstY: number): void;
+
+  handleTransformInstruction(layerIndex: number, a: number, b: number, c: number, d: number, e: number, f: number): void;
 }
 

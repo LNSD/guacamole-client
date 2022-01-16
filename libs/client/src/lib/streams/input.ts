@@ -1,14 +1,13 @@
 import { InputStream, StreamError } from '@guacamole-client/io';
 
-export interface InputStreamHandlers {
+export interface InputStreamResponseSender {
   sendAck(index: number, error?: StreamError): void;
 }
 
 export class InputStreamsManager {
   private readonly streams: Map<number, InputStream> = new Map();
 
-  constructor(private readonly handlers: InputStreamHandlers) {
-  }
+  constructor(private readonly sender: InputStreamResponseSender) {}
 
   public createStream(index: number): InputStream {
     // Return new stream
@@ -19,7 +18,7 @@ export class InputStreamsManager {
         error = new StreamError(message, code);
       }
 
-      this.handlers.sendAck(idx, error);
+      this.sender.sendAck(idx, error);
     };
 
     this.streams.set(index, stream);

@@ -255,14 +255,14 @@ export default class Display {
    * from the hardware cursor in that it is built into the Display,
    * and relies on its own Guacamole layer to render.
    *
-   * @param shown Whether to show the software cursor.
+   * @param show - Whether to show the software cursor.
    */
-  public showCursor(shown = true) {
+  public showCursor(show = true) {
     const element = this.cursor.getElement();
     const parent = element.parentNode;
 
     // Remove from DOM if hidden
-    if (!shown) {
+    if (!show) {
       if (parent) {
         parent.removeChild(element);
       }

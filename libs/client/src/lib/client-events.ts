@@ -1,8 +1,8 @@
 import { InputStream } from '@guacamole-client/io';
 import { Status } from './Status';
 import { GuacamoleObject } from './GuacamoleObject';
-import { VisibleLayer } from '@guacamole-client/display';
 import { AudioPlayer, VideoPlayer } from '@guacamole-client/media';
+import { VisibleLayer } from '@guacamole-client/display';
 
 /**
  * Fired whenever the state of this Client changes.
@@ -130,8 +130,8 @@ export interface ClientEventMap {
   "onstatechange"?: OnStateChangeCallback;
   "onname"?: OnNameCallback;
   "onerror"?: OnErrorCallback;
-  "onaudio"?: OnAudioCallback;
-  "onvideo"?: OnVideoCallback;
+  // "onaudio"?: OnAudioCallback;
+  // "onvideo"?: OnVideoCallback;
   "onargv"?: OnArgvCallback;
   "onclipboard"?: OnClipboardCallback;
   "onfile"?: OnFileCallback;
