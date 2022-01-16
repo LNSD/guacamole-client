@@ -7,7 +7,7 @@ import {
 } from './streams/input';
 import { AudioPlayer, getAudioPlayerInstance } from '@guacamole-client/media';
 import { InputStream, StreamError } from '@guacamole-client/io';
-import { StatusCode } from './Status';
+import { StatusCode } from './status';
 import { InstructionRouter } from './instruction-router';
 import { ClientEventTargetMap } from './client-events';
 
@@ -64,9 +64,21 @@ export class AudioPlayerManager implements AudioPlayerStreamHandler {
 
   handleAudioInstruction(streamIndex: number, mimetype: string) {
     const stream = this.inputStreams.createStream(streamIndex);
-    const audioPlayer = getAudioPlayerInstance(stream, mimetype);
 
-    if (audioPlayer === null) {
+    // Get player instance via callback
+    let audioPlayer: AudioPlayer | null = null;
+
+    const listener = this.events.getEventListener('onaudio');
+    if (listener) {
+      audioPlayer = listener(stream, mimetype);
+    }
+
+    // If unsuccessful, try to use a default implementation
+    if (!audioPlayer) {
+      audioPlayer = getAudioPlayerInstance(stream, mimetype);
+    }
+
+    if (!audioPlayer) {
       // Mimetype must be unsupported
       this.inputStreams.sendAck(streamIndex, new StreamError('BAD TYPE', StatusCode.CLIENT_BAD_TYPE));
       return;

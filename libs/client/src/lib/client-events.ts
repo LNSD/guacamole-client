@@ -7,6 +7,7 @@ import { OnClipboardCallback } from './clipboard';
 import { OnFileCallback } from './file-transfer';
 import { OnFilesystemCallback } from './filesystem';
 import { OnPipeCallback } from './named-pipe';
+import { OnAudioCallback } from './audio-player';
 
 /**
  * Fired whenever the state of this Client changes.
@@ -71,7 +72,7 @@ export interface ClientEventMap {
   "onstatechange"?: OnStateChangeCallback;
   "onname"?: OnNameCallback;
   "onerror"?: OnErrorCallback;
-  // "onaudio"?: OnAudioCallback;
+  "onaudio"?: OnAudioCallback;
   // "onvideo"?: OnVideoCallback;
   "onargv"?: OnArgvCallback;
   "onclipboard"?: OnClipboardCallback;
