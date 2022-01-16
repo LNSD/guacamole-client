@@ -5,15 +5,14 @@ import { StreamError } from '@guacamole-client/io';
 import { StatusCode } from './Status';
 import { InstructionRouter } from './instruction-router';
 
-export interface ClipboardInstructionHandler {
-  handleClipboardInstruction(streamIndex: number, mimetype: string): void;
+export interface PipeInstructionHandler {
+  handlePipeInstruction(streamIndex: number, mimetype: string, name: string): void;
 }
 
-export interface ClipboardStreamHandler extends ClipboardInstructionHandler, InputStreamInstructionHandler {
+export interface NamedPipeStreamHandler extends PipeInstructionHandler, InputStreamInstructionHandler {
 }
 
-export class ClipboardManager implements ClipboardStreamHandler {
-
+export class NamedPipeManager implements NamedPipeStreamHandler {
   private readonly inputStreams: InputStreamsManager;
 
   constructor(
@@ -23,15 +22,16 @@ export class ClipboardManager implements ClipboardStreamHandler {
     this.inputStreams = new InputStreamsManager(sender);
   }
 
-  handleClipboardInstruction(streamIndex: number, mimetype: string) {
-    const listener = this.events.getEventListener('onclipboard');
+  handlePipeInstruction(streamIndex: number, mimetype: string, name: string) {
+    const listener = this.events.getEventListener('onpipe');
     if (!listener) {
-      this.sender.sendAck(streamIndex, new StreamError('Clipboard unsupported', StatusCode.UNSUPPORTED));
+      this.sender.sendAck(streamIndex, new StreamError('Named pipes unsupported', StatusCode.UNSUPPORTED));
       return;
     }
 
+    // Create stream
     const stream = this.inputStreams.createStream(streamIndex);
-    listener(stream, mimetype);
+    listener(stream, mimetype, name);
   }
 
   handleBlobInstruction(streamIndex: number, data: string): void {
@@ -63,9 +63,9 @@ export class ClipboardManager implements ClipboardStreamHandler {
   }
 }
 
-export function registerClipboardStreamHandlers(router: InstructionRouter, handler: ClipboardStreamHandler) {
-  router.addInstructionHandler(Streaming.clipboard.opcode, Streaming.clipboard.parser(
-    handler.handleClipboardInstruction.bind(handler)  // TODO: Review this bind()
+export function registerNamedPipeStreamHandlers(router: InstructionRouter, handler: NamedPipeStreamHandler) {
+  router.addInstructionHandler(Streaming.pipe.opcode, Streaming.pipe.parser(
+    handler.handlePipeInstruction.bind(handler)  // TODO: Review this bind()
   ));
   router.addInstructionHandler(Streaming.blob.opcode, Streaming.blob.parser(
     handler.handleBlobInstruction.bind(handler) // TODO: Review this bind())

@@ -5,15 +5,14 @@ import { StreamError } from '@guacamole-client/io';
 import { StatusCode } from './Status';
 import { InstructionRouter } from './instruction-router';
 
-export interface ClipboardInstructionHandler {
-  handleClipboardInstruction(streamIndex: number, mimetype: string): void;
+export interface FileInstructionHandler {
+  handleFileInstruction(streamIndex: number, mimetype: string, filename: string): void;
 }
 
-export interface ClipboardStreamHandler extends ClipboardInstructionHandler, InputStreamInstructionHandler {
+export interface FileTransferStreamHandler extends FileInstructionHandler, InputStreamInstructionHandler {
 }
 
-export class ClipboardManager implements ClipboardStreamHandler {
-
+export class FileTransferManager implements FileTransferStreamHandler {
   private readonly inputStreams: InputStreamsManager;
 
   constructor(
@@ -23,15 +22,15 @@ export class ClipboardManager implements ClipboardStreamHandler {
     this.inputStreams = new InputStreamsManager(sender);
   }
 
-  handleClipboardInstruction(streamIndex: number, mimetype: string) {
-    const listener = this.events.getEventListener('onclipboard');
+  handleFileInstruction(streamIndex: number, mimetype: string, filename: string) {
+    const listener = this.events.getEventListener('onfile');
     if (!listener) {
-      this.sender.sendAck(streamIndex, new StreamError('Clipboard unsupported', StatusCode.UNSUPPORTED));
+      this.sender.sendAck(streamIndex, new StreamError('File transfer unsupported', StatusCode.UNSUPPORTED));
       return;
     }
 
     const stream = this.inputStreams.createStream(streamIndex);
-    listener(stream, mimetype);
+    listener(stream, mimetype, filename);
   }
 
   handleBlobInstruction(streamIndex: number, data: string): void {
@@ -63,9 +62,9 @@ export class ClipboardManager implements ClipboardStreamHandler {
   }
 }
 
-export function registerClipboardStreamHandlers(router: InstructionRouter, handler: ClipboardStreamHandler) {
-  router.addInstructionHandler(Streaming.clipboard.opcode, Streaming.clipboard.parser(
-    handler.handleClipboardInstruction.bind(handler)  // TODO: Review this bind()
+export function registerFileTransferStreamHandlers(router: InstructionRouter, handler: FileTransferStreamHandler) {
+  router.addInstructionHandler(Streaming.file.opcode, Streaming.file.parser(
+    handler.handleFileInstruction.bind(handler)  // TODO: Review this bind()
   ));
   router.addInstructionHandler(Streaming.blob.opcode, Streaming.blob.parser(
     handler.handleBlobInstruction.bind(handler) // TODO: Review this bind())

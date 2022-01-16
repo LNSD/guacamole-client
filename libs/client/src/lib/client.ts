@@ -24,6 +24,8 @@ import {
 } from './display';
 import { AudioPlayerManager, registerAudioStreamHandlers } from './audio-player';
 import { ClipboardManager, registerClipboardStreamHandlers } from './clipboard';
+import { FileTransferManager, registerFileTransferStreamHandlers } from './file-transfer';
+import { NamedPipeManager, registerNamedPipeStreamHandlers } from './named-pipe';
 
 const PING_INTERVAL = 5000;
 
@@ -47,6 +49,8 @@ export class Client implements InputStreamResponseSender, OutputStreamResponseSe
   private readonly display: DisplayManager;
   private readonly audioPlayer: AudioPlayerManager;
   private readonly clipboard: ClipboardManager;
+  private readonly fileTransfers: FileTransferManager;
+  private readonly namedPipes: NamedPipeManager;
 
   private readonly decoders: Map<number, Decoder> = new Map();
 
@@ -70,6 +74,8 @@ export class Client implements InputStreamResponseSender, OutputStreamResponseSe
     this.display = new DisplayManager(display, this);
     this.audioPlayer = new AudioPlayerManager(this);
     this.clipboard = new ClipboardManager(this, this.events);
+    this.fileTransfers = new FileTransferManager(this, this.events);
+    this.namedPipes = new NamedPipeManager(this, this.events);
 
     this.instructionRouter = new InstructionRouter();
     this.registerInstructionRoutes();
@@ -488,28 +494,6 @@ export class Client implements InputStreamResponseSender, OutputStreamResponseSe
   //<editor-fold defaultstate="collapsed" desc="OutputStreamHandler">
   //</editor-fold>
 
-  private handleFileInstruction(streamIndex: number, mimetype: string, filename: string) {
-    const listener = this.events.getEventListener('onfile');
-    if (!listener) {
-      this.sendAck(streamIndex, new StreamError('File transfer unsupported', StatusCode.UNSUPPORTED));
-      return;
-    }
-
-    const stream = this.inputStreams.createStream(streamIndex);
-    listener(stream, mimetype, filename);
-  }
-
-  private handlePipeInstruction(streamIndex: number, mimetype: string, name: string) {
-    const listener = this.events.getEventListener('onpipe');
-    if (!listener) {
-      this.sendAck(streamIndex, new StreamError('Named pipes unsupported', StatusCode.UNSUPPORTED));
-      return;
-    }
-
-    // Create stream
-    const stream = this.inputStreams.createStream(streamIndex);
-    listener(stream, mimetype, name);
-  }
 
   //</editor-fold>
   //<editor-fold defaultstate="collapsed" desc="ObjectHandler">
@@ -611,6 +595,8 @@ export class Client implements InputStreamResponseSender, OutputStreamResponseSe
     registerDrawingInstructionHandlers(this.instructionRouter, this.display);
     registerAudioStreamHandlers(this.instructionRouter, this.audioPlayer);
     registerClipboardStreamHandlers(this.instructionRouter, this.clipboard);
+    registerFileTransferStreamHandlers(this.instructionRouter, this.fileTransfers);
+    registerNamedPipeStreamHandlers(this.instructionRouter, this.namedPipes);
 
     // TODO Review this handler
     this.instructionRouter.addInstructionHandler('required', (params: string[]) => {
@@ -631,14 +617,8 @@ export class Client implements InputStreamResponseSender, OutputStreamResponseSe
     router.addInstructionHandler(Streaming.argv.opcode, Streaming.argv.parser(
       this.handleArgvInstruction.bind(this)
     ));
-    router.addInstructionHandler(Streaming.file.opcode, Streaming.file.parser(
-      this.handleFileInstruction.bind(this)
-    ));
     router.addInstructionHandler(Streaming.nest.opcode, Streaming.nest.parser(
       this.handleNestInstruction.bind(this)
-    ));
-    router.addInstructionHandler(Streaming.pipe.opcode, Streaming.pipe.parser(
-      this.handlePipeInstruction.bind(this)
     ));
   }
 
