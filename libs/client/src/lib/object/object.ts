@@ -1,5 +1,0 @@
-
-
-export class GuacamoleObjectManager {
-  constructor() {}
-}

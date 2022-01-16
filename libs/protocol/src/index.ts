@@ -12,4 +12,3 @@ export * as ServerHandshake from './lib/instructions/server-handshake';
 export * as Streaming from './lib/instructions/streaming';
 
 export type { DrawingInstructionHandler } from './lib/instructions/drawing';
-export type { InputStreamInstructionHandler } from './lib/instructions/streaming';

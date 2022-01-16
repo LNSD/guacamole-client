@@ -1,5 +1,10 @@
-import { InputStreamInstructionHandler, Streaming } from '@guacamole-client/protocol';
-import { InputStreamsManager, InputStreamResponseSender } from './streams/input';
+import { Streaming } from '@guacamole-client/protocol';
+import {
+  InputStreamHandler,
+  InputStreamResponseSender,
+  InputStreamsManager,
+  registerInputStreamHandlers
+} from './streams/input';
 import { AudioPlayer, getAudioPlayerInstance } from '@guacamole-client/media';
 import { StreamError } from '@guacamole-client/io';
 import { StatusCode } from './Status';
@@ -9,10 +14,10 @@ export interface AudioInstructionHandler {
   handleAudioInstruction(streamIndex: number, mimetype: string): void;
 }
 
-export interface AudioStreamHandler extends AudioInstructionHandler, InputStreamInstructionHandler {
+export interface AudioPlayerStreamHandler extends AudioInstructionHandler, InputStreamHandler {
 }
 
-export class AudioPlayerManager implements AudioStreamHandler {
+export class AudioPlayerManager implements AudioPlayerStreamHandler {
 
   private readonly inputStreams: InputStreamsManager;
 
@@ -45,52 +50,27 @@ export class AudioPlayerManager implements AudioStreamHandler {
 
     if (audioPlayer === null) {
       // Mimetype must be unsupported
-      this.sender.sendAck(streamIndex, new StreamError('BAD TYPE', StatusCode.CLIENT_BAD_TYPE));
+      this.inputStreams.sendAck(streamIndex, new StreamError('BAD TYPE', StatusCode.CLIENT_BAD_TYPE));
       return;
     }
 
     // If we have successfully retrieved an audio player, send success response
     this.audioPlayers.set(streamIndex, audioPlayer);
-    this.sender.sendAck(streamIndex);
+    this.inputStreams.sendAck(streamIndex);
   }
 
   handleBlobInstruction(streamIndex: number, data: string) {
-    const stream = this.inputStreams.getStream(streamIndex);
-    if (!stream) {
-      return;
-    }
-
-    // Write data
-    if (stream.onblob !== null) {
-      stream.onblob(data);
-    }
+    this.inputStreams.handleBlobInstruction(streamIndex, data);
   }
 
   handleEndInstruction(streamIndex: number) {
-    // Get stream
-    const stream = this.inputStreams.getStream(streamIndex);
-    if (!stream) {
-      return;
-    }
-
-    // Signal end of stream if handler defined
-    if (stream.onend !== null) {
-      stream.onend();
-    }
-
-    // Invalidate stream
-    this.inputStreams.freeStream(streamIndex);
+    this.inputStreams.handleEndInstruction(streamIndex);
   }
 }
 
-export function registerAudioStreamHandlers(router: InstructionRouter, handler: AudioStreamHandler) {
+export function registerAudioPlayerHandlers(router: InstructionRouter, handler: AudioPlayerStreamHandler) {
   router.addInstructionHandler(Streaming.audio.opcode, Streaming.audio.parser(
     handler.handleAudioInstruction.bind(handler)  // TODO: Review this bind()
   ));
-  router.addInstructionHandler(Streaming.blob.opcode, Streaming.blob.parser(
-    handler.handleBlobInstruction.bind(handler) // TODO: Review this bind())
-  ));
-  router.addInstructionHandler(Streaming.end.opcode, Streaming.end.parser(
-    handler.handleEndInstruction.bind(handler)  // TODO: Review this bind())
-  ));
+  registerInputStreamHandlers(router, handler);
 }

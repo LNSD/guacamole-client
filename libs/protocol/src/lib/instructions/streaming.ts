@@ -273,8 +273,3 @@ export const video = createInstruction<VideoHandler>(VIDEO_OPCODE,
   }
 );
 
-export interface InputStreamInstructionHandler {
-  handleBlobInstruction(streamIndex: number, data: string): void;
-
-  handleEndInstruction(streamIndex: number): void;
-}

@@ -6,19 +6,20 @@ import {
   LINE_JOIN,
   VisibleLayer
 } from '@guacamole-client/display';
+import { DrawingInstructionHandler, Streaming } from '@guacamole-client/protocol';
 import {
-  DrawingInstructionHandler,
-  InputStreamInstructionHandler,
-  Streaming
-} from '@guacamole-client/protocol';
-import { InputStreamsManager, InputStreamResponseSender } from './streams/input';
+  InputStreamHandler,
+  InputStreamResponseSender,
+  InputStreamsManager,
+  registerInputStreamHandlers
+} from './streams/input';
 import { InstructionRouter } from './instruction-router';
 
 export interface ImgInstructionHandler {
   handleImgInstruction(streamIndex: number, layerIndex: number, channelMask: number, x: number, y: number, mimetype: string): void;
 }
 
-export interface ImgStreamHandler extends ImgInstructionHandler, InputStreamInstructionHandler {
+export interface ImgStreamHandler extends ImgInstructionHandler, InputStreamHandler {
 }
 
 export class DisplayManager implements ImgStreamHandler, DrawingInstructionHandler {
@@ -323,7 +324,7 @@ export class DisplayManager implements ImgStreamHandler, DrawingInstructionHandl
     this.display.transform(layer, a, b, c, d, e, f);
   }
 
-//</editor-fold>
+  //</editor-fold>
 
 }
 
@@ -563,10 +564,5 @@ export function registerImgStreamHandlers(router: InstructionRouter, handler: Im
   router.addInstructionHandler(Streaming.img.opcode, Streaming.img.parser(
     handler.handleImgInstruction.bind(handler)  // TODO: Review this bind()
   ));
-  router.addInstructionHandler(Streaming.blob.opcode, Streaming.blob.parser(
-    handler.handleBlobInstruction.bind(handler)  // TODO: Review this bind())
-  ));
-  router.addInstructionHandler(Streaming.end.opcode, Streaming.end.parser(
-    handler.handleEndInstruction.bind(handler)  // TODO: Review this bind())
-  ));
+  registerInputStreamHandlers(router, handler);
 }

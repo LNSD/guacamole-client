@@ -1,31 +1,63 @@
-import { InputStreamInstructionHandler, Streaming } from '@guacamole-client/protocol';
-import { InputStreamResponseSender, InputStreamsManager } from './streams/input';
+import { Streaming } from '@guacamole-client/protocol';
+import {
+  InputStreamHandler,
+  InputStreamResponseSender,
+  InputStreamsManager,
+  registerInputStreamHandlers
+} from './streams/input';
 import { ClientEventTargetMap } from './client-events';
-import { StreamError } from '@guacamole-client/io';
+import { OutputStream, StreamError } from '@guacamole-client/io';
 import { StatusCode } from './Status';
 import { InstructionRouter } from './instruction-router';
+import {
+  OutputStreamHandler,
+  OutputStreamResponseSender,
+  OutputStreamsManager,
+  registerOutputStreamHandlers
+} from './streams/output';
 
 export interface FileInstructionHandler {
   handleFileInstruction(streamIndex: number, mimetype: string, filename: string): void;
 }
 
-export interface FileTransferStreamHandler extends FileInstructionHandler, InputStreamInstructionHandler {
+export interface FileTransferStreamHandler extends FileInstructionHandler, InputStreamHandler, OutputStreamHandler {
 }
 
 export class FileTransferManager implements FileTransferStreamHandler {
   private readonly inputStreams: InputStreamsManager;
+  private readonly outputStreams: OutputStreamsManager;
 
   constructor(
-    private readonly sender: InputStreamResponseSender,
+    private readonly sender: InputStreamResponseSender & OutputStreamResponseSender,
     private readonly events: ClientEventTargetMap
   ) {
     this.inputStreams = new InputStreamsManager(sender);
+    this.outputStreams = new OutputStreamsManager(sender);
   }
+
+  /**
+   * Opens a new file for writing, having the given index, mimetype and
+   * filename. The instruction necessary to create this stream will
+   * automatically be sent.
+   *
+   * @param mimetype - The mimetype of the file being sent.
+   * @param filename - The filename of the file being sent.
+   *
+   * @return The created file stream.
+   */
+  createFileStream(mimetype: string, filename: string): OutputStream {
+    // Allocate and associate stream with file metadata
+    const stream = this.outputStreams.createStream();
+    this.sender.sendMessage(...Streaming.file(stream.index, mimetype, filename));
+    return stream;
+  }
+
+  //<editor-fold defaultstate="collapsed" desc="Instruction handlers">
 
   handleFileInstruction(streamIndex: number, mimetype: string, filename: string) {
     const listener = this.events.getEventListener('onfile');
     if (!listener) {
-      this.sender.sendAck(streamIndex, new StreamError('File transfer unsupported', StatusCode.UNSUPPORTED));
+      this.inputStreams.sendAck(streamIndex, new StreamError('File transfer unsupported', StatusCode.UNSUPPORTED));
       return;
     }
 
@@ -34,42 +66,24 @@ export class FileTransferManager implements FileTransferStreamHandler {
   }
 
   handleBlobInstruction(streamIndex: number, data: string): void {
-    const stream = this.inputStreams.getStream(streamIndex);
-    if (!stream) {
-      return;
-    }
-
-    // Write data
-    if (stream.onblob !== null) {
-      stream.onblob(data);
-    }
+    this.inputStreams.handleBlobInstruction(streamIndex, data);
   }
 
   handleEndInstruction(streamIndex: number): void {
-    // Get stream
-    const stream = this.inputStreams.getStream(streamIndex);
-    if (!stream) {
-      return;
-    }
-
-    // Signal end of stream if handler defined
-    if (stream.onend !== null) {
-      stream.onend();
-    }
-
-    // Invalidate stream
-    this.inputStreams.freeStream(streamIndex);
+    this.inputStreams.handleEndInstruction(streamIndex);
   }
+
+  handleAckInstruction(streamIndex: number, message: string, code: number) {
+    this.outputStreams.handleAckInstruction(streamIndex, message, code);
+  }
+
+  //</editor-fold>
 }
 
 export function registerFileTransferStreamHandlers(router: InstructionRouter, handler: FileTransferStreamHandler) {
   router.addInstructionHandler(Streaming.file.opcode, Streaming.file.parser(
     handler.handleFileInstruction.bind(handler)  // TODO: Review this bind()
   ));
-  router.addInstructionHandler(Streaming.blob.opcode, Streaming.blob.parser(
-    handler.handleBlobInstruction.bind(handler) // TODO: Review this bind())
-  ));
-  router.addInstructionHandler(Streaming.end.opcode, Streaming.end.parser(
-    handler.handleEndInstruction.bind(handler)  // TODO: Review this bind())
-  ));
+  registerInputStreamHandlers(router, handler);
+  registerOutputStreamHandlers(router, handler);
 }
