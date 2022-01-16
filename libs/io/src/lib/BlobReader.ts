@@ -1,5 +1,5 @@
 import { InputStream } from './InputStream';
-import { BlobBuilder } from './polyfill/blob-builder';
+import { BlobBuilder } from './utils/blob-builder';
 
 export type OnProgressCallback = (length: number) => void;
 export type OnEndCallback = () => void;
