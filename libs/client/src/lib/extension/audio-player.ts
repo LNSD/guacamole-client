@@ -4,12 +4,12 @@ import {
   InputStreamResponseSender,
   InputStreamsManager,
   registerInputStreamHandlers
-} from './streams/input';
+} from '../streams/input';
 import { AudioPlayer, getAudioPlayerInstance } from '@guacamole-client/media';
 import { InputStream, StreamError } from '@guacamole-client/io';
-import { StatusCode } from './status';
-import { InstructionRouter } from './instruction-router';
-import { ClientEventTargetMap } from './client-events';
+import { StatusCode } from '../status';
+import { InstructionRouter } from '../instruction-router';
+import { ClientEventTargetMap } from '../client-events';
 
 export interface AudioInstructionHandler {
   handleAudioInstruction(streamIndex: number, mimetype: string): void;
@@ -98,7 +98,7 @@ export class AudioPlayerManager implements AudioPlayerStreamHandler {
   }
 }
 
-export function registerAudioPlayerHandlers(router: InstructionRouter, handler: AudioPlayerStreamHandler) {
+export function registerInstructionHandlers(router: InstructionRouter, handler: AudioPlayerStreamHandler) {
   router.addInstructionHandler(Streaming.audio.opcode, Streaming.audio.parser(
     handler.handleAudioInstruction.bind(handler)  // TODO: Review this bind()
   ));

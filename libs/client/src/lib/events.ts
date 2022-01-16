@@ -2,12 +2,12 @@ import { InputStream } from '@guacamole-client/io';
 import { Status } from './status';
 import { VideoPlayer } from '@guacamole-client/media';
 import { VisibleLayer } from '@guacamole-client/display';
-import { OnArgvCallback } from './argv';
-import { OnClipboardCallback } from './clipboard';
-import { OnFileCallback } from './file-transfer';
-import { OnFilesystemCallback } from './filesystem';
-import { OnPipeCallback } from './named-pipe';
-import { OnAudioCallback } from './audio-player';
+import { OnArgvCallback } from './extension/argv';
+import { OnClipboardCallback } from './extension/clipboard';
+import { OnFileCallback } from './extension/file-transfer';
+import { OnFilesystemCallback } from './extension/filesystem';
+import { OnPipeCallback } from './extension/named-pipe';
+import { OnAudioCallback } from './extension/audio-player';
 
 /**
  * Fired whenever the state of this Client changes.

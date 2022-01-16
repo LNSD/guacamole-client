@@ -12,8 +12,8 @@ import {
   InputStreamResponseSender,
   InputStreamsManager,
   registerInputStreamHandlers
-} from './streams/input';
-import { InstructionRouter } from './instruction-router';
+} from '../streams/input';
+import { InstructionRouter } from '../instruction-router';
 
 export interface ImgInstructionHandler {
   handleImgInstruction(streamIndex: number, layerIndex: number, channelMask: number, x: number, y: number, mimetype: string): void;
@@ -328,7 +328,7 @@ export class DisplayManager implements ImgStreamHandler, DrawingInstructionHandl
 
 }
 
-export function registerDrawingInstructionHandlers(router: InstructionRouter, handler: DrawingInstructionHandler) {
+function registerDrawingInstructionHandlers(router: InstructionRouter, handler: DrawingInstructionHandler) {
   router.addInstructionHandler('arc', (params: string[]) => {
     const layerIndex = parseInt(params[0], 10);
     const x = parseInt(params[1], 10);
@@ -560,9 +560,14 @@ export function registerDrawingInstructionHandlers(router: InstructionRouter, ha
   });
 }
 
-export function registerImgStreamHandlers(router: InstructionRouter, handler: ImgStreamHandler) {
+function registerImgStreamHandlers(router: InstructionRouter, handler: ImgStreamHandler) {
   router.addInstructionHandler(Streaming.img.opcode, Streaming.img.parser(
     handler.handleImgInstruction.bind(handler)  // TODO: Review this bind()
   ));
   registerInputStreamHandlers(router, handler);
+}
+
+export function registerInstructionHandlers(router: InstructionRouter, handler: ImgStreamHandler & DrawingInstructionHandler) {
+  registerImgStreamHandlers(router, handler);
+  registerDrawingInstructionHandlers(router, handler);
 }

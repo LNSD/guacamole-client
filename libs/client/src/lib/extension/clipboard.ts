@@ -4,17 +4,17 @@ import {
   InputStreamResponseSender,
   InputStreamsManager,
   registerInputStreamHandlers
-} from './streams/input';
-import { ClientEventTargetMap } from './client-events';
+} from '../streams/input';
+import { ClientEventTargetMap } from '../client-events';
 import { InputStream, OutputStream, StreamError } from '@guacamole-client/io';
-import { StatusCode } from './status';
-import { InstructionRouter } from './instruction-router';
+import { StatusCode } from '../status';
+import { InstructionRouter } from '../instruction-router';
 import {
   OutputStreamHandler,
   OutputStreamResponseSender,
   OutputStreamsManager,
   registerOutputStreamHandlers
-} from './streams/output';
+} from '../streams/output';
 
 export interface ClipboardInstructionHandler {
   handleClipboardInstruction(streamIndex: number, mimetype: string): void;
@@ -87,7 +87,7 @@ export class ClipboardManager implements ClipboardStreamHandler {
   //</editor-fold>
 }
 
-export function registerClipboardStreamHandlers(router: InstructionRouter, handler: ClipboardStreamHandler) {
+export function registerInstructionHandlers(router: InstructionRouter, handler: ClipboardStreamHandler) {
   router.addInstructionHandler(Streaming.clipboard.opcode, Streaming.clipboard.parser(
     handler.handleClipboardInstruction.bind(handler)  // TODO: Review this bind()
   ));

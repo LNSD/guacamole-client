@@ -12,25 +12,39 @@ import { State } from './state';
 import { MouseState } from '@guacamole-client/input';
 import { InputStreamResponseSender } from './streams/input';
 import { OutputStreamResponseSender } from './streams/output';
-import { ClientEventMap, ClientEventTarget, ClientEventTargetMap } from './client-events';
+import { ClientEventMap, ClientEventTarget, ClientEventTargetMap } from './events';
 import { InstructionRouter } from './instruction-router';
 import {
   DisplayManager,
-  registerDrawingInstructionHandlers,
-  registerImgStreamHandlers
-} from './display';
-import { AudioPlayerManager, registerAudioPlayerHandlers } from './audio-player';
-import { ClipboardManager, registerClipboardStreamHandlers } from './clipboard';
-import { FileTransferManager, registerFileTransferStreamHandlers } from './file-transfer';
-import { NamedPipeManager, registerNamedPipeStreamHandlers } from './named-pipe';
-import { FilesystemManager, registerFilesystemStreamHandlers } from './filesystem';
+  registerInstructionHandlers as registerDisplayHandlers
+} from './extension/display';
+import {
+  AudioPlayerManager,
+  registerInstructionHandlers as registerAudioPlayerHandlers
+} from './extension/audio-player';
+import {
+  ClipboardManager,
+  registerInstructionHandlers as registerClipboardHandlers
+} from './extension/clipboard';
+import {
+  FileTransferManager,
+  registerInstructionHandlers as registerFileTransferHandlers
+} from './extension/file-transfer';
+import {
+  NamedPipeManager,
+  registerInstructionHandlers as registerNamedPipeHandlers
+} from './extension/named-pipe';
+import {
+  FilesystemManager,
+  registerInstructionHandlers as registerFilesystemHandlers
+} from './extension/filesystem';
 
 const PING_INTERVAL = 5000;
 
 /**
- * Guacamole protocol client. Given a {@link Tunnel},
- * automatically handles incoming and outgoing Guacamole instructions via the
- * provided tunnel, updating its display using one or more canvas elements.
+ * Guacamole protocol client. Given a {@link Tunnel},automatically handles incoming and outgoing
+ * Guacamole instructions via the provided tunnel, updating its display using one or more canvas
+ * elements.
  */
 export class Client implements InputStreamResponseSender, OutputStreamResponseSender, ClientEventTarget {
 
@@ -39,18 +53,18 @@ export class Client implements InputStreamResponseSender, OutputStreamResponseSe
   private currentTimestamp = 0;
   private pingIntervalHandler?: number;
 
-  private readonly events: ClientEventTargetMap = new ClientEventTargetMap();
+  private readonly instructionRouter: InstructionRouter;
 
+  private readonly events: ClientEventTargetMap = new ClientEventTargetMap();
+  private readonly decoders: Map<number, Decoder> = new Map();
+
+  /* Extensions */
   private readonly display: DisplayManager;
   private readonly audioPlayer: AudioPlayerManager;
   private readonly clipboard: ClipboardManager;
   private readonly fileTransfers: FileTransferManager;
   private readonly namedPipes: NamedPipeManager;
   private readonly filesystem: FilesystemManager;
-
-  private readonly decoders: Map<number, Decoder> = new Map();
-
-  private readonly instructionRouter: InstructionRouter;
 
   /**
    * @constructor
@@ -72,8 +86,7 @@ export class Client implements InputStreamResponseSender, OutputStreamResponseSe
 
     /* Display */
     this.display = new DisplayManager(display, this);
-    registerImgStreamHandlers(this.instructionRouter, this.display);
-    registerDrawingInstructionHandlers(this.instructionRouter, this.display);
+    registerDisplayHandlers(this.instructionRouter, this.display);
 
     /* Audio player */
     this.audioPlayer = new AudioPlayerManager(this, this.events);
@@ -81,19 +94,19 @@ export class Client implements InputStreamResponseSender, OutputStreamResponseSe
 
     /* Clipboard */
     this.clipboard = new ClipboardManager(this, this.events);
-    registerClipboardStreamHandlers(this.instructionRouter, this.clipboard);
+    registerClipboardHandlers(this.instructionRouter, this.clipboard);
 
     /* File transfers */
     this.fileTransfers = new FileTransferManager(this, this.events);
-    registerFileTransferStreamHandlers(this.instructionRouter, this.fileTransfers);
+    registerFileTransferHandlers(this.instructionRouter, this.fileTransfers);
 
     /* Named pipes */
     this.namedPipes = new NamedPipeManager(this, this.events);
-    registerNamedPipeStreamHandlers(this.instructionRouter, this.namedPipes);
+    registerNamedPipeHandlers(this.instructionRouter, this.namedPipes);
 
     /* Filesystem */
     this.filesystem = new FilesystemManager(this, this.events);
-    registerFilesystemStreamHandlers(this.instructionRouter, this.filesystem);
+    registerFilesystemHandlers(this.instructionRouter, this.filesystem);
 
     this.registerClientSpecificInstructionRoutes(this.instructionRouter);
   }
@@ -176,7 +189,7 @@ export class Client implements InputStreamResponseSender, OutputStreamResponseSe
       return;
     }
 
-    this.tunnel.sendMessage(...ClientEvents.key(keysym, pressed));
+    this.sendMessage(...ClientEvents.key(keysym, pressed));
   }
 
   /**
@@ -185,7 +198,7 @@ export class Client implements InputStreamResponseSender, OutputStreamResponseSe
    *
    * @param mouseState - The state of the mouse to send in the mouse event.
    */
-  sendMouseState(mouseState: MouseState) {
+  sendMouseEvent(mouseState: MouseState) {
     // Do not send requests if not connected
     if (!this.isConnected()) {
       return;
@@ -219,8 +232,11 @@ export class Client implements InputStreamResponseSender, OutputStreamResponseSe
       buttonMask |= 16;
     }
 
-    // Send message
-    this.tunnel.sendMessage(...ClientEvents.mouse(Math.floor(mouseState.x), Math.floor(mouseState.y), buttonMask));
+    this.sendMessage(...ClientEvents.mouse(
+      Math.floor(mouseState.x),
+      Math.floor(mouseState.y),
+      buttonMask
+    ));
   }
 
   sendMessage(...elements: any[]) {

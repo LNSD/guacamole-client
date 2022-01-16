@@ -4,17 +4,17 @@ import {
   InputStreamResponseSender,
   InputStreamsManager,
   registerInputStreamHandlers
-} from './streams/input';
-import { ClientEventTargetMap } from './client-events';
+} from '../streams/input';
+import { ClientEventTargetMap } from '../client-events';
 import { InputStream, OutputStream, StreamError } from '@guacamole-client/io';
-import { StatusCode } from './status';
-import { InstructionRouter } from './instruction-router';
+import { StatusCode } from '../status';
+import { InstructionRouter } from '../instruction-router';
 import {
   OutputStreamHandler,
   OutputStreamResponseSender,
   OutputStreamsManager,
   registerOutputStreamHandlers
-} from './streams/output';
+} from '../streams/output';
 
 export interface PipeInstructionHandler {
   handlePipeInstruction(streamIndex: number, mimetype: string, name: string): void;
@@ -90,7 +90,7 @@ export class NamedPipeManager implements NamedPipeStreamHandler {
   //</editor-fold>
 }
 
-export function registerNamedPipeStreamHandlers(router: InstructionRouter, handler: NamedPipeStreamHandler) {
+export function registerInstructionHandlers(router: InstructionRouter, handler: NamedPipeStreamHandler) {
   router.addInstructionHandler(Streaming.pipe.opcode, Streaming.pipe.parser(
     handler.handlePipeInstruction.bind(handler)  // TODO: Review this bind()
   ));

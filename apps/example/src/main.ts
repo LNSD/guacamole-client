@@ -88,7 +88,7 @@ import { Display } from '@guacamole-client/display';
   const mouse = new Mouse(display.getElement());
 
   const mouseCallback = function(mouseState) {
-    guac.sendMouseState(mouseState);
+    guac.sendMouseEvent(mouseState);
   };
 
   mouse.onmousedown = mouseCallback;

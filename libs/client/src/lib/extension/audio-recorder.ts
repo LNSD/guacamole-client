@@ -1,11 +1,11 @@
 import { AudioRecorder } from '@guacamole-client/media';
-import { InstructionRouter } from './instruction-router';
+import { InstructionRouter } from '../instruction-router';
 import {
   OutputStreamHandler,
   OutputStreamResponseSender,
   OutputStreamsManager,
   registerOutputStreamHandlers
-} from './streams/output';
+} from '../streams/output';
 import { OutputStream } from '@guacamole-client/io';
 import { Streaming } from '@guacamole-client/protocol';
 

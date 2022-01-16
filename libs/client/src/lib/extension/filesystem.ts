@@ -1,14 +1,14 @@
-import { InputStreamResponseSender } from './streams/input';
-import { ClientEventTargetMap } from './client-events';
+import { InputStreamResponseSender } from '../streams/input';
+import { ClientEventTargetMap } from '../client-events';
 import {
   GuacamoleObjectManager,
   ObjectStreamHandler,
   registerObjectStreamHandlers
-} from './object/manager';
-import { OutputStreamResponseSender } from './streams/output';
-import { InstructionRouter } from './instruction-router';
+} from '../object/manager';
+import { OutputStreamResponseSender } from '../streams/output';
+import { InstructionRouter } from '../instruction-router';
 import { ObjectInstruction } from '@guacamole-client/protocol';
-import { GuacamoleObject } from './object/GuacamoleObject';
+import { GuacamoleObject } from '../object/GuacamoleObject';
 
 export interface FilesystemInstructionHandler {
   handleFilesystemInstruction(objectIndex: number, name: string): void;
@@ -70,10 +70,9 @@ export class FilesystemManager implements FilesystemStreamHandler {
   }
 }
 
-export function registerFilesystemStreamHandlers(router: InstructionRouter, handler: FilesystemStreamHandler) {
+export function registerInstructionHandlers(router: InstructionRouter, handler: FilesystemStreamHandler) {
   router.addInstructionHandler(ObjectInstruction.filesystem.opcode, ObjectInstruction.filesystem.parser(
     handler.handleFilesystemInstruction.bind(handler)  // TODO: Review this bind()
   ));
-
   registerObjectStreamHandlers(router, handler);
 }

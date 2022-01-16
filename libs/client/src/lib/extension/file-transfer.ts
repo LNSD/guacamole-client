@@ -4,17 +4,17 @@ import {
   InputStreamResponseSender,
   InputStreamsManager,
   registerInputStreamHandlers
-} from './streams/input';
-import { ClientEventTargetMap } from './client-events';
+} from '../streams/input';
+import { ClientEventTargetMap } from '../client-events';
 import { InputStream, OutputStream, StreamError } from '@guacamole-client/io';
-import { StatusCode } from './status';
-import { InstructionRouter } from './instruction-router';
+import { StatusCode } from '../status';
+import { InstructionRouter } from '../instruction-router';
 import {
   OutputStreamHandler,
   OutputStreamResponseSender,
   OutputStreamsManager,
   registerOutputStreamHandlers
-} from './streams/output';
+} from '../streams/output';
 
 export interface FileInstructionHandler {
   handleFileInstruction(streamIndex: number, mimetype: string, filename: string): void;
@@ -90,7 +90,7 @@ export class FileTransferManager implements FileTransferStreamHandler {
   //</editor-fold>
 }
 
-export function registerFileTransferStreamHandlers(router: InstructionRouter, handler: FileTransferStreamHandler) {
+export function registerInstructionHandlers(router: InstructionRouter, handler: FileTransferStreamHandler) {
   router.addInstructionHandler(Streaming.file.opcode, Streaming.file.parser(
     handler.handleFileInstruction.bind(handler)  // TODO: Review this bind()
   ));

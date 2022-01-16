@@ -3,18 +3,18 @@ import {
   InputStreamResponseSender,
   InputStreamsManager,
   registerInputStreamHandlers
-} from './streams/input';
+} from '../streams/input';
 import {
   OutputStreamHandler,
   OutputStreamResponseSender,
   OutputStreamsManager,
   registerOutputStreamHandlers
-} from './streams/output';
-import { ClientEventTargetMap } from './client-events';
+} from '../streams/output';
+import { ClientEventTargetMap } from '../client-events';
 import { InputStream, OutputStream, StreamError } from '@guacamole-client/io';
 import { Streaming } from '@guacamole-client/protocol';
-import { StatusCode } from './status';
-import { InstructionRouter } from './instruction-router';
+import { StatusCode } from '../status';
+import { InstructionRouter } from '../instruction-router';
 
 export interface ArgvInstructionHandler {
   handleArgvInstruction(streamIndex: number, mimetype: string, name: string): void;
@@ -92,7 +92,7 @@ export class ArgvManager implements ArgvStreamHandler {
   //</editor-fold>
 }
 
-export function registerArgvHandlers(router: InstructionRouter, handler: ArgvStreamHandler) {
+export function registerInstructionHandlers(router: InstructionRouter, handler: ArgvStreamHandler) {
   router.addInstructionHandler(Streaming.argv.opcode, Streaming.argv.parser(
     handler.handleArgvInstruction.bind(handler)
   ));
