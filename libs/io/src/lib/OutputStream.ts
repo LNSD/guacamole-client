@@ -24,8 +24,7 @@ export class OutputStream {
    *
    * @param index - The index of this stream.
    */
-  constructor(public readonly index: number) {
-  }
+  constructor(public readonly index: number) {}
 
   /**
    * Writes the given base64-encoded data to this stream as a blob.

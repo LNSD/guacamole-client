@@ -1,7 +1,8 @@
 export type OnInstructionCallback = (params: string[]) => void;
 
 export class InstructionRouter {
-  private readonly opcodeHandlersMap: Map<string, Set<OnInstructionCallback>> = new Map();
+  private readonly opcodeHandlersMap: Map<string, Set<OnInstructionCallback>> =
+    new Map();
 
   addInstructionHandler(opcode: string, handler: OnInstructionCallback): void {
     let handlers = this.opcodeHandlersMap.get(opcode);
@@ -24,6 +25,6 @@ export class InstructionRouter {
       return;
     }
 
-    handlers.forEach(handler => handler(params));
+    handlers.forEach((handler) => handler(params));
   }
 }

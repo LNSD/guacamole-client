@@ -1,10 +1,13 @@
-import { TunnelState } from './state';
 import { TunnelError } from './errors';
+import { TunnelState } from './state';
 
 export type OnUuidCallback = (uuid: string) => void;
 export type OnErrorCallback = (error: TunnelError) => void;
 export type OnStateChangeCallback = (state: TunnelState) => void;
-export type OnInstructionCallback = (opcode: string, parameters: string[]) => void;
+export type OnInstructionCallback = (
+  opcode: string,
+  parameters: string[],
+) => void;
 
 /**
  * The Guacamole protocol instruction opcode reserved for arbitrary internal
@@ -108,7 +111,9 @@ export abstract class AbstractTunnel implements Tunnel {
    * @returns true if this tunnel is currently connected, false otherwise.
    */
   public isConnected(): boolean {
-    return this.state === TunnelState.OPEN || this.state === TunnelState.UNSTABLE;
+    return (
+      this.state === TunnelState.OPEN || this.state === TunnelState.UNSTABLE
+    );
   }
 
   /**

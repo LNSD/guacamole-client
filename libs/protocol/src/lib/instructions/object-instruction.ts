@@ -16,10 +16,21 @@ const UNDEFINE_OPCODE = 'undefine';
  * @param mimetype - The mimetype of the data being sent.
  * @param name - The name of the stream associated with the object.
  */
-export type BodyHandler = (object: number, stream: number, mimetype: string, name: string) => void;
+export type BodyHandler = (
+  object: number,
+  stream: number,
+  mimetype: string,
+  name: string,
+) => void;
 
-export const body = createInstruction<BodyHandler>(BODY_OPCODE,
-  (object: number, stream: number, mimetype: string, name: string) => [object, stream, mimetype, name],
+export const body = createInstruction<BodyHandler>(
+  BODY_OPCODE,
+  (object: number, stream: number, mimetype: string, name: string) => [
+    object,
+    stream,
+    mimetype,
+    name,
+  ],
   (handler: BodyHandler) => (params) => {
     const objectIndex = parseInt(params[0], 10);
     const streamIndex = parseInt(params[1], 10);
@@ -27,7 +38,7 @@ export const body = createInstruction<BodyHandler>(BODY_OPCODE,
     const name = params[3];
 
     handler(objectIndex, streamIndex, mimetype, name);
-  }
+  },
 );
 
 /**
@@ -40,14 +51,15 @@ export const body = createInstruction<BodyHandler>(BODY_OPCODE,
  */
 export type FilesystemHandler = (object: number, name: string) => void;
 
-export const filesystem = createInstruction<FilesystemHandler>(FILESYSTEM_OPCODE,
+export const filesystem = createInstruction<FilesystemHandler>(
+  FILESYSTEM_OPCODE,
   (object: number, name: string) => [object, name],
   (handler: FilesystemHandler) => (params) => {
     const objectIndex = parseInt(params[0], 10);
     const name = params[1];
 
     handler(objectIndex, name);
-  }
+  },
 );
 
 /**
@@ -76,14 +88,15 @@ export const filesystem = createInstruction<FilesystemHandler>(FILESYSTEM_OPCODE
  */
 export type GetHandler = (object: number, name: string) => void;
 
-export const get = createInstruction<GetHandler>(GET_OPCODE,
+export const get = createInstruction<GetHandler>(
+  GET_OPCODE,
   (object: number, name: string) => [object, name],
   (handler: GetHandler) => (params) => {
     const object = parseInt(params[0], 10);
     const name = params[1];
 
     handler(object, name);
-  }
+  },
 );
 
 /**
@@ -95,10 +108,21 @@ export const get = createInstruction<GetHandler>(GET_OPCODE,
  * @param mimetype - The mimetype of the data being sent.
  * @param name - The name of the stream within the given object to which data is being sent.
  */
-export type PutHandler = (object: number, stream: number, mimetype: string, name: string) => void;
+export type PutHandler = (
+  object: number,
+  stream: number,
+  mimetype: string,
+  name: string,
+) => void;
 
-export const put = createInstruction<PutHandler>(PUT_OPCODE,
-  (object: number, stream: number, mimetype: string, name: string) => [object, stream, mimetype, name],
+export const put = createInstruction<PutHandler>(
+  PUT_OPCODE,
+  (object: number, stream: number, mimetype: string, name: string) => [
+    object,
+    stream,
+    mimetype,
+    name,
+  ],
   (handler: PutHandler) => (params) => {
     const object = parseInt(params[0], 10);
     const stream = parseInt(params[1], 10);
@@ -106,7 +130,7 @@ export const put = createInstruction<PutHandler>(PUT_OPCODE,
     const name = params[3];
 
     handler(object, stream, mimetype, name);
-  }
+  },
 );
 
 /**
@@ -118,11 +142,12 @@ export const put = createInstruction<PutHandler>(PUT_OPCODE,
  */
 export type UndefineHandler = (object: number) => void;
 
-export const undefine = createInstruction<UndefineHandler>(UNDEFINE_OPCODE,
+export const undefine = createInstruction<UndefineHandler>(
+  UNDEFINE_OPCODE,
   (object: number) => [object],
   (handler: UndefineHandler) => (params) => {
     const objectIndex = parseInt(params[0], 10);
 
     handler(objectIndex);
-  }
+  },
 );

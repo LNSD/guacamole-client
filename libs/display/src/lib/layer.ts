@@ -22,12 +22,12 @@ const compositeOperation: Record<number, string> = {
   /* 0x7 NOT IMPLEMENTED */
   0x8: 'source-out',
   0x9: 'destination-atop',
-  0xA: 'xor',
-  0xB: 'destination-over',
-  0xC: 'copy',
+  0xa: 'xor',
+  0xb: 'destination-over',
+  0xc: 'copy',
   /* 0xD NOT IMPLEMENTED */
-  0xE: 'source-over',
-  0xF: 'lighter',
+  0xe: 'source-over',
+  0xf: 'lighter',
 };
 
 /**
@@ -231,7 +231,16 @@ export default class Layer {
    */
   // TODO Review the following lint suppression
   // eslint-disable-next-line @typescript-eslint/ban-types
-  public transfer(srcLayer: Layer, srcx: number, srcy: number, srcw: number, srch: number, x: number, y: number, transferFunction: Function) {
+  public transfer(
+    srcLayer: Layer,
+    srcx: number,
+    srcy: number,
+    srcw: number,
+    srch: number,
+    x: number,
+    y: number,
+    transferFunction: Function,
+  ) {
     const srcCanvas = srcLayer.getCanvas();
 
     // If entire rectangle outside source canvas, stop
@@ -318,7 +327,15 @@ export default class Layer {
    * @param x - The destination X coordinate.
    * @param y - The destination Y coordinate.
    */
-  public put(srcLayer: Layer, srcx: number, srcy: number, srcw: number, srch: number, x: number, y: number) {
+  public put(
+    srcLayer: Layer,
+    srcx: number,
+    srcy: number,
+    srcw: number,
+    srch: number,
+    x: number,
+    y: number,
+  ) {
     const srcCanvas = srcLayer.getCanvas();
 
     // If entire rectangle outside source canvas, stop
@@ -377,7 +394,15 @@ export default class Layer {
    * @param x - The destination X coordinate.
    * @param y - The destination Y coordinate.
    */
-  public copy(srcLayer: Layer, srcx: number, srcy: number, srcw: number, srch: number, x: number, y: number) {
+  public copy(
+    srcLayer: Layer,
+    srcx: number,
+    srcy: number,
+    srcw: number,
+    srch: number,
+    x: number,
+    y: number,
+  ) {
     const srcCanvas = srcLayer.getCanvas();
 
     // If entire rectangle outside source canvas, stop
@@ -460,7 +485,14 @@ export default class Layer {
    * @param negative - Whether the arc should be drawn in order of
    *                           decreasing angle.
    */
-  public arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, negative: boolean) {
+  public arc(
+    x: number,
+    y: number,
+    radius: number,
+    startAngle: number,
+    endAngle: number,
+    negative: boolean,
+  ) {
     // Start a new path if current path is closed
     if (this.pathClosed) {
       this.context.beginPath();
@@ -484,7 +516,14 @@ export default class Layer {
    * @param x - The X coordinate of the endpoint of the curve.
    * @param y - The Y coordinate of the endpoint of the curve.
    */
-  public curveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number) {
+  public curveTo(
+    cp1x: number,
+    cp1y: number,
+    cp2x: number,
+    cp2y: number,
+    x: number,
+    y: number,
+  ) {
     // Start a new path if current path is closed
     if (this.pathClosed) {
       this.context.beginPath();
@@ -561,7 +600,15 @@ export default class Layer {
    * @param b - The blue component of the color to fill.
    * @param a - The alpha component of the color to fill.
    */
-  public strokeColor(cap: CanvasLineCap, join: CanvasLineJoin, thickness: number, r: number, g: number, b: number, a: number) {
+  public strokeColor(
+    cap: CanvasLineCap,
+    join: CanvasLineJoin,
+    thickness: number,
+    r: number,
+    g: number,
+    b: number,
+    a: number,
+  ) {
     // Stroke with color
     this.context.lineCap = cap;
     this.context.lineJoin = join;
@@ -610,13 +657,21 @@ export default class Layer {
    * @param srcLayer - The layer to use as a repeating pattern
    *                                   within the stroke.
    */
-  public strokeLayer(cap: CanvasLineCap, join: CanvasLineJoin, thickness: number, srcLayer: Layer) {
+  public strokeLayer(
+    cap: CanvasLineCap,
+    join: CanvasLineJoin,
+    thickness: number,
+    srcLayer: Layer,
+  ) {
     // Stroke with image data
     this.context.lineCap = cap;
     this.context.lineJoin = join;
     this.context.lineWidth = thickness;
     // @ts-ignore TODO Review: Expected CanvasPattern, but null is also possible
-    this.context.strokeStyle = this.context.createPattern(srcLayer.getCanvas(), 'repeat');
+    this.context.strokeStyle = this.context.createPattern(
+      srcLayer.getCanvas(),
+      'repeat',
+    );
     this.context.stroke();
     this.empty = false;
 
@@ -637,7 +692,10 @@ export default class Layer {
   public fillLayer(srcLayer: Layer) {
     // Fill with image data
     // @ts-ignore TODO Review: Expected CanvasPattern, but null is also possible
-    this.context.fillStyle = this.context.createPattern(srcLayer.getCanvas(), 'repeat');
+    this.context.fillStyle = this.context.createPattern(
+      srcLayer.getCanvas(),
+      'repeat',
+    );
     this.context.fill();
     this.empty = false;
 
@@ -696,7 +754,14 @@ export default class Layer {
    * @param e - The fifth value in the affine transform's matrix.
    * @param f - The sixth value in the affine transform's matrix.
    */
-  public setTransform(a: number, b: number, c: number, d: number, e: number, f: number) {
+  public setTransform(
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+  ) {
     this.context.setTransform(a, b, c, d, e, f /* 0, 0, 1 */);
   }
 
@@ -711,7 +776,14 @@ export default class Layer {
    * @param e - The fifth value in the affine transform's matrix.
    * @param f - The sixth value in the affine transform's matrix.
    */
-  public transform(a: number, b: number, c: number, d: number, e: number, f: number): void {
+  public transform(
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+  ): void {
     this.context.transform(a, b, c, d, e, f /* 0, 0, 1 */);
   }
 
@@ -754,11 +826,16 @@ export default class Layer {
    */
   private __resize(newWidth = 0, newHeight = 0) {
     // Calculate new dimensions of internal canvas
-    const canvasWidth = Math.ceil(newWidth / CANVAS_SIZE_FACTOR) * CANVAS_SIZE_FACTOR;
-    const canvasHeight = Math.ceil(newHeight / CANVAS_SIZE_FACTOR) * CANVAS_SIZE_FACTOR;
+    const canvasWidth =
+      Math.ceil(newWidth / CANVAS_SIZE_FACTOR) * CANVAS_SIZE_FACTOR;
+    const canvasHeight =
+      Math.ceil(newHeight / CANVAS_SIZE_FACTOR) * CANVAS_SIZE_FACTOR;
 
     // Resize only if canvas dimensions are actually changing
-    if (this.canvas.width !== canvasWidth || this.canvas.height !== canvasHeight) {
+    if (
+      this.canvas.width !== canvasWidth ||
+      this.canvas.height !== canvasHeight
+    ) {
       // Copy old data only if relevant and non-empty
       let oldData: HTMLCanvasElement | null = null;
       if (!this.empty && this.canvas.width !== 0 && this.canvas.height !== 0) {
@@ -773,7 +850,8 @@ export default class Layer {
         }
 
         // Copy image data from current
-        oldDataContext.drawImage(this.canvas,
+        oldDataContext.drawImage(
+          this.canvas,
           0,
           0,
           oldData.width,
@@ -781,7 +859,8 @@ export default class Layer {
           0,
           0,
           oldData.width,
-          oldData.height);
+          oldData.height,
+        );
       }
 
       // Preserve composite operation
@@ -793,7 +872,8 @@ export default class Layer {
 
       // Redraw old data, if any
       if (oldData) {
-        this.context?.drawImage(oldData,
+        this.context?.drawImage(
+          oldData,
           0,
           0,
           oldData.width,
@@ -801,7 +881,8 @@ export default class Layer {
           0,
           0,
           oldData.width,
-          oldData.height);
+          oldData.height,
+        );
       }
 
       // Restore composite operation

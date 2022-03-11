@@ -3,9 +3,7 @@
     "packet": "0.,36.ef940331-1465-44cb-ad3d-e2506644a88a;",
     "instruction": {
       "opcode": "",
-      "parameters": [
-        "ef940331-1465-44cb-ad3d-e2506644a88a"
-      ]
+      "parameters": ["ef940331-1465-44cb-ad3d-e2506644a88a"]
     }
   },
   {

@@ -1,6 +1,6 @@
-import { TunnelState } from '../state';
-import { AbstractTunnel, INTERNAL_DATA_OPCODE, Tunnel } from '../tunnel';
+import { HttpRequest } from '@guacamole-client/net';
 import { ClientControl, Decoder, Encoder } from '@guacamole-client/protocol';
+
 import {
   ClientBadRequestError,
   ClientForbiddenError,
@@ -10,10 +10,11 @@ import {
   ServerError,
   TunnelError,
   UpstreamNotFoundError,
-  UpstreamTimeoutError
+  UpstreamTimeoutError,
 } from '../errors';
+import { TunnelState } from '../state';
+import { AbstractTunnel, INTERNAL_DATA_OPCODE, Tunnel } from '../tunnel';
 import { GuacamoleHttpClient } from './client';
-import { HttpRequest } from '@guacamole-client/net';
 
 /**
  * The number of milliseconds to wait between connection stability test
@@ -38,7 +39,10 @@ export class HttpGuacamoleError extends TunnelError {
  *
  * @returns The Tunnel Error which most closely represents the given HTTP status code.
  */
-export function errorFromHTTPCode(status: number, message?: string): TunnelError {
+export function errorFromHTTPCode(
+  status: number,
+  message?: string,
+): TunnelError {
   // Translate status codes with known equivalents
   switch (status) {
     // HTTP 400 - Bad request
@@ -226,7 +230,10 @@ export class HTTPTunnel extends AbstractTunnel implements Tunnel {
     if (error !== undefined && this.onerror !== null) {
       // Ignore RESOURCE_NOT_FOUND if we've already connected, as that
       // only signals end-of-stream for the HTTP tunnel.
-      if (this.state === TunnelState.CONNECTING || error instanceof ResourceNotFoundError) {
+      if (
+        this.state === TunnelState.CONNECTING ||
+        error instanceof ResourceNotFoundError
+      ) {
         this.onerror(error);
       }
     }
@@ -321,15 +328,20 @@ export class HTTPTunnel extends AbstractTunnel implements Tunnel {
 
   private makeReadRequest(uuid: string | null, requestId: number): HttpRequest {
     const readRequest = this.client.read(String(uuid), requestId);
-    readRequest.onLoading = (req: XMLHttpRequest, previousLength: number) => this.handleOnReadResponse(req, previousLength);
-    readRequest.onComplete = (req: XMLHttpRequest, previousLength: number) => this.handleOnReadResponse(req, previousLength);
+    readRequest.onLoading = (req: XMLHttpRequest, previousLength: number) =>
+      this.handleOnReadResponse(req, previousLength);
+    readRequest.onComplete = (req: XMLHttpRequest, previousLength: number) =>
+      this.handleOnReadResponse(req, previousLength);
     readRequest.onError = (req: XMLHttpRequest) => this.handleOnError(req);
     readRequest.send();
 
     return readRequest;
   }
 
-  private makeWriteRequest(uuid: string | null, outputMessageBuffer: string): HttpRequest {
+  private makeWriteRequest(
+    uuid: string | null,
+    outputMessageBuffer: string,
+  ): HttpRequest {
     const writeRequest = this.client.write(String(uuid), outputMessageBuffer);
     writeRequest.onComplete = (_: XMLHttpRequest) => {
       this.resetTimeout();

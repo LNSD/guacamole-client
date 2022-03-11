@@ -1,27 +1,34 @@
+import { InputStream, OutputStream, StreamError } from '@guacamole-client/io';
 import { Streaming } from '@guacamole-client/protocol';
+
+import { ClientEventTargetMap } from '../events';
+import { InstructionRouter } from '../instruction-router';
+import { StatusCode } from '../status';
 import {
   InputStreamHandler,
   InputStreamResponseSender,
   InputStreamsManager,
-  registerInputStreamHandlers
+  registerInputStreamHandlers,
 } from '../streams/input';
-import { ClientEventTargetMap } from '../events';
-import { InputStream, OutputStream, StreamError } from '@guacamole-client/io';
-import { StatusCode } from '../status';
-import { InstructionRouter } from '../instruction-router';
 import {
   OutputStreamHandler,
   OutputStreamResponseSender,
   OutputStreamsManager,
-  registerOutputStreamHandlers
+  registerOutputStreamHandlers,
 } from '../streams/output';
 
 export interface FileInstructionHandler {
-  handleFileInstruction(streamIndex: number, mimetype: string, filename: string): void;
+  handleFileInstruction(
+    streamIndex: number,
+    mimetype: string,
+    filename: string,
+  ): void;
 }
 
-export interface FileTransferStreamHandler extends FileInstructionHandler, InputStreamHandler, OutputStreamHandler {
-}
+export interface FileTransferStreamHandler
+  extends FileInstructionHandler,
+    InputStreamHandler,
+    OutputStreamHandler {}
 
 /**
  * Fired when a file stream is created. The stream provided to this event
@@ -31,15 +38,20 @@ export interface FileTransferStreamHandler extends FileInstructionHandler, Input
  * @param mimetype - The mimetype of the file received.
  * @param filename - The name of the file received.
  */
-export type OnFileCallback = (stream: InputStream, mimetype: string, filename: string) => void;
+export type OnFileCallback = (
+  stream: InputStream,
+  mimetype: string,
+  filename: string,
+) => void;
 
 export class FileTransferManager implements FileTransferStreamHandler {
   private readonly inputStreams: InputStreamsManager;
   private readonly outputStreams: OutputStreamsManager;
 
   constructor(
-    private readonly sender: InputStreamResponseSender & OutputStreamResponseSender,
-    private readonly events: ClientEventTargetMap
+    private readonly sender: InputStreamResponseSender &
+      OutputStreamResponseSender,
+    private readonly events: ClientEventTargetMap,
   ) {
     this.inputStreams = new InputStreamsManager(sender);
     this.outputStreams = new OutputStreamsManager(sender);
@@ -58,16 +70,25 @@ export class FileTransferManager implements FileTransferStreamHandler {
   createFileStream(mimetype: string, filename: string): OutputStream {
     // Allocate and associate stream with file metadata
     const stream = this.outputStreams.createStream();
-    this.sender.sendMessage(...Streaming.file(stream.index, mimetype, filename));
+    this.sender.sendMessage(
+      ...Streaming.file(stream.index, mimetype, filename),
+    );
     return stream;
   }
 
   //<editor-fold defaultstate="collapsed" desc="Instruction handlers">
 
-  handleFileInstruction(streamIndex: number, mimetype: string, filename: string) {
+  handleFileInstruction(
+    streamIndex: number,
+    mimetype: string,
+    filename: string,
+  ) {
     const listener = this.events.getEventListener('onfile');
     if (!listener) {
-      this.inputStreams.sendAck(streamIndex, new StreamError('File transfer unsupported', StatusCode.UNSUPPORTED));
+      this.inputStreams.sendAck(
+        streamIndex,
+        new StreamError('File transfer unsupported', StatusCode.UNSUPPORTED),
+      );
       return;
     }
 
@@ -90,10 +111,16 @@ export class FileTransferManager implements FileTransferStreamHandler {
   //</editor-fold>
 }
 
-export function registerInstructionHandlers(router: InstructionRouter, handler: FileTransferStreamHandler) {
-  router.addInstructionHandler(Streaming.file.opcode, Streaming.file.parser(
-    handler.handleFileInstruction.bind(handler)  // TODO: Review this bind()
-  ));
+export function registerInstructionHandlers(
+  router: InstructionRouter,
+  handler: FileTransferStreamHandler,
+) {
+  router.addInstructionHandler(
+    Streaming.file.opcode,
+    Streaming.file.parser(
+      handler.handleFileInstruction.bind(handler), // TODO: Review this bind()
+    ),
+  );
   registerInputStreamHandlers(router, handler);
   registerOutputStreamHandlers(router, handler);
 }

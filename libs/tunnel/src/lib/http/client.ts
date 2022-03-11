@@ -12,7 +12,11 @@ export class HttpClient implements GuacamoleHttpClient {
   private readonly withCredentials: boolean;
   private readonly headers: Record<string, string>;
 
-  constructor(private readonly client: HttpRequestFactory, withCredentials = false, headers: Record<string, string> = {}) {
+  constructor(
+    private readonly client: HttpRequestFactory,
+    withCredentials = false,
+    headers: Record<string, string> = {},
+  ) {
     this.withCredentials = withCredentials;
     this.headers = headers;
   }
@@ -21,9 +25,11 @@ export class HttpClient implements GuacamoleHttpClient {
     return this.client({
       method: 'POST',
       url: 'tunnel?connect',
-      headers: { 'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+      headers: {
+        'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+      },
       data,
-      withCredentials: this.withCredentials
+      withCredentials: this.withCredentials,
     });
   }
 
@@ -32,7 +38,7 @@ export class HttpClient implements GuacamoleHttpClient {
       method: 'GET',
       url: `tunnel?read:${uuid}:${requestId}`,
       headers: this.headers,
-      withCredentials: this.withCredentials
+      withCredentials: this.withCredentials,
     });
   }
 
@@ -42,7 +48,7 @@ export class HttpClient implements GuacamoleHttpClient {
       url: `tunnel?write:${uuid}`,
       headers: { ...this.headers, 'Content-type': 'application/octet-stream' },
       data,
-      withCredentials: this.withCredentials
+      withCredentials: this.withCredentials,
     });
   }
 }

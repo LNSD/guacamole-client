@@ -20,10 +20,11 @@ export default class KeyboardModifierState {
 
     // Use DOM3 getModifierState() for others
     if (e.getModifierState) {
-      state.hyper = e.getModifierState('OS')
-        || e.getModifierState('Super')
-        || e.getModifierState('Hyper')
-        || e.getModifierState('Win');
+      state.hyper =
+        e.getModifierState('OS') ||
+        e.getModifierState('Super') ||
+        e.getModifierState('Hyper') ||
+        e.getModifierState('Win');
     }
 
     return state;

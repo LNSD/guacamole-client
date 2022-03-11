@@ -4,26 +4,39 @@ import {
   Layer,
   LINE_CAP,
   LINE_JOIN,
-  VisibleLayer
+  VisibleLayer,
 } from '@guacamole-client/display';
-import { DrawingInstructionHandler, Streaming } from '@guacamole-client/protocol';
+import {
+  DrawingInstructionHandler,
+  Streaming,
+} from '@guacamole-client/protocol';
+
+import { InstructionRouter } from '../instruction-router';
 import {
   InputStreamHandler,
   InputStreamResponseSender,
   InputStreamsManager,
-  registerInputStreamHandlers
+  registerInputStreamHandlers,
 } from '../streams/input';
-import { InstructionRouter } from '../instruction-router';
 
 export interface ImgInstructionHandler {
-  handleImgInstruction(streamIndex: number, layerIndex: number, channelMask: number, x: number, y: number, mimetype: string): void;
+  handleImgInstruction(
+    streamIndex: number,
+    layerIndex: number,
+    channelMask: number,
+    x: number,
+    y: number,
+    mimetype: string,
+  ): void;
 }
 
-export interface ImgStreamHandler extends ImgInstructionHandler, InputStreamHandler {
-}
+export interface ImgStreamHandler
+  extends ImgInstructionHandler,
+    InputStreamHandler {}
 
-export class DisplayManager implements ImgStreamHandler, DrawingInstructionHandler {
-
+export class DisplayManager
+  implements ImgStreamHandler, DrawingInstructionHandler
+{
   private readonly inputStreams: InputStreamsManager;
 
   /**
@@ -38,12 +51,12 @@ export class DisplayManager implements ImgStreamHandler, DrawingInstructionHandl
    *
    * @private
    */
-    // TODO Review the following lint suppression
-    // eslint-disable-next-line @typescript-eslint/ban-types
+  // TODO Review the following lint suppression
+  // eslint-disable-next-line @typescript-eslint/ban-types
   private readonly layerPropertyHandlers: Record<string, Function> = {
     'miter-limit': (layer: Layer, value: string) => {
       this.display.setMiterLimit(layer, parseFloat(value));
-    }
+    },
   };
 
   constructor(readonly display: Display, sender: InputStreamResponseSender) {
@@ -94,7 +107,14 @@ export class DisplayManager implements ImgStreamHandler, DrawingInstructionHandl
 
   //<editor-fold defaultstate="collapsed" desc="Instruction handlers">
 
-  handleImgInstruction(streamIndex: number, layerIndex: number, channelMask: number, x: number, y: number, mimetype: string) {
+  handleImgInstruction(
+    streamIndex: number,
+    layerIndex: number,
+    channelMask: number,
+    x: number,
+    y: number,
+    mimetype: string,
+  ) {
     // Create stream
     const stream = this.inputStreams.createStream(streamIndex);
 
@@ -135,12 +155,27 @@ export class DisplayManager implements ImgStreamHandler, DrawingInstructionHandl
     this.inputStreams.freeStream(streamIndex);
   }
 
-  handleArcInstruction(layerIndex: number, x: number, y: number, radius: number, startAngle: number, endAngle: number, negative: number) {
+  handleArcInstruction(
+    layerIndex: number,
+    x: number,
+    y: number,
+    radius: number,
+    startAngle: number,
+    endAngle: number,
+    negative: number,
+  ) {
     const layer = this.getLayer(layerIndex);
     this.display.arc(layer, x, y, radius, startAngle, endAngle, negative !== 0);
   }
 
-  handleCfillInstruction(layerIndex: number, channelMask: number, r: number, g: number, b: number, a: number) {
+  handleCfillInstruction(
+    layerIndex: number,
+    channelMask: number,
+    r: number,
+    g: number,
+    b: number,
+    a: number,
+  ) {
     const layer = this.getLayer(layerIndex);
     this.display.setChannelMask(layer, channelMask);
     this.display.fillColor(layer, r, g, b, a);
@@ -156,25 +191,78 @@ export class DisplayManager implements ImgStreamHandler, DrawingInstructionHandl
     this.display.close(layer);
   }
 
-  handleCopyInstruction(srcLayerIndex: number, dstLayerIndex: number, channelMask: number, srcX: number, srcY: number, srcWidth: number, srcHeight: number, dstX: number, dstY: number) {
+  handleCopyInstruction(
+    srcLayerIndex: number,
+    dstLayerIndex: number,
+    channelMask: number,
+    srcX: number,
+    srcY: number,
+    srcWidth: number,
+    srcHeight: number,
+    dstX: number,
+    dstY: number,
+  ) {
     const srcLayer = this.getLayer(srcLayerIndex);
     const dstLayer = this.getLayer(dstLayerIndex);
     this.display.setChannelMask(dstLayer, channelMask);
-    this.display.copy(srcLayer, srcX, srcY, srcWidth, srcHeight, dstLayer, dstX, dstY);
+    this.display.copy(
+      srcLayer,
+      srcX,
+      srcY,
+      srcWidth,
+      srcHeight,
+      dstLayer,
+      dstX,
+      dstY,
+    );
   }
 
-  handleCstrokeInstruction(layerIndex: number, channelMask: number, cap: CanvasLineCap, join: CanvasLineJoin, thickness: number, r: number, g: number, b: number, a: number) {
+  handleCstrokeInstruction(
+    layerIndex: number,
+    channelMask: number,
+    cap: CanvasLineCap,
+    join: CanvasLineJoin,
+    thickness: number,
+    r: number,
+    g: number,
+    b: number,
+    a: number,
+  ) {
     const layer = this.getLayer(layerIndex);
     this.display.setChannelMask(layer, channelMask);
     this.display.strokeColor(layer, cap, join, thickness, r, g, b, a);
   }
 
-  handleCursorInstruction(srcLayerIndex: number, cursorHotspotX: number, cursorHotspotY: number, srcX: number, srcY: number, srcWidth: number, srcHeight: number) {
+  handleCursorInstruction(
+    srcLayerIndex: number,
+    cursorHotspotX: number,
+    cursorHotspotY: number,
+    srcX: number,
+    srcY: number,
+    srcWidth: number,
+    srcHeight: number,
+  ) {
     const srcLayer = this.getLayer(srcLayerIndex);
-    this.display.setCursor(cursorHotspotX, cursorHotspotY, srcLayer, srcX, srcY, srcWidth, srcHeight);
+    this.display.setCursor(
+      cursorHotspotX,
+      cursorHotspotY,
+      srcLayer,
+      srcX,
+      srcY,
+      srcWidth,
+      srcHeight,
+    );
   }
 
-  handleCurveInstruction(layerIndex: number, cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number) {
+  handleCurveInstruction(
+    layerIndex: number,
+    cp1x: number,
+    cp1y: number,
+    cp2x: number,
+    cp2y: number,
+    x: number,
+    y: number,
+  ) {
     const layer = this.getLayer(layerIndex);
     this.display.curveTo(layer, cp1x, cp1y, cp2x, cp2y, x, y);
   }
@@ -198,7 +286,15 @@ export class DisplayManager implements ImgStreamHandler, DrawingInstructionHandl
     // Attempting to dispose the root layer currently has no effect.
   }
 
-  handleDistortInstruction(layerIndex: number, a: number, b: number, c: number, d: number, e: number, f: number) {
+  handleDistortInstruction(
+    layerIndex: number,
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+  ) {
     // Only valid for visible layers (not buffers)
     if (layerIndex < 0) {
       return;
@@ -213,13 +309,23 @@ export class DisplayManager implements ImgStreamHandler, DrawingInstructionHandl
     this.display.setTransform(layer, 1, 0, 0, 1, 0, 0);
   }
 
-  handleJpegInstruction(layerIndex: number, channelMask: number, x: number, y: number, data: string) {
+  handleJpegInstruction(
+    layerIndex: number,
+    channelMask: number,
+    x: number,
+    y: number,
+    data: string,
+  ) {
     const layer = this.getLayer(layerIndex);
     this.display.setChannelMask(layer, channelMask);
     this.display.draw(layer, x, y, `data:image/jpeg;base64,${data}`);
   }
 
-  handleLfillInstruction(layerIndex: number, channelMask: number, srcLayerIndex: number) {
+  handleLfillInstruction(
+    layerIndex: number,
+    channelMask: number,
+    srcLayerIndex: number,
+  ) {
     const layer = this.getLayer(layerIndex);
     const srcLayer = this.getLayer(srcLayerIndex);
     this.display.setChannelMask(layer, channelMask);
@@ -231,7 +337,14 @@ export class DisplayManager implements ImgStreamHandler, DrawingInstructionHandl
     this.display.lineTo(layer, x, y);
   }
 
-  handleLstrokeInstruction(layerIndex: number, srcLayerIndex: number, channelMask: number, cap: CanvasLineCap, join: CanvasLineJoin, thickness: number) {
+  handleLstrokeInstruction(
+    layerIndex: number,
+    srcLayerIndex: number,
+    channelMask: number,
+    cap: CanvasLineCap,
+    join: CanvasLineJoin,
+    thickness: number,
+  ) {
     const layer = this.getLayer(layerIndex);
     const srcLayer = this.getLayer(srcLayerIndex);
 
@@ -239,7 +352,13 @@ export class DisplayManager implements ImgStreamHandler, DrawingInstructionHandl
     this.display.strokeLayer(layer, cap, join, thickness, srcLayer);
   }
 
-  handleMoveInstruction(layerIndex: number, parentIndex: number, x: number, y: number, z: number) {
+  handleMoveInstruction(
+    layerIndex: number,
+    parentIndex: number,
+    x: number,
+    y: number,
+    z: number,
+  ) {
     // Only valid for non-default layers
     if (layerIndex <= 0 || parentIndex < 0) {
       return;
@@ -250,7 +369,13 @@ export class DisplayManager implements ImgStreamHandler, DrawingInstructionHandl
     this.display.move(layer, parent, x, y, z);
   }
 
-  handlePngInstruction(layerIndex: number, channelMask: number, x: number, y: number, data: string) {
+  handlePngInstruction(
+    layerIndex: number,
+    channelMask: number,
+    x: number,
+    y: number,
+    data: string,
+  ) {
     const layer = this.getLayer(layerIndex);
     this.display.setChannelMask(layer, channelMask);
     this.display.draw(layer, x, y, `data:image/png;base64,${data}`);
@@ -266,7 +391,13 @@ export class DisplayManager implements ImgStreamHandler, DrawingInstructionHandl
     this.display.push(layer);
   }
 
-  handleRectInstruction(layerIndex: number, x: number, y: number, w: number, h: number) {
+  handleRectInstruction(
+    layerIndex: number,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+  ) {
     const layer = this.getLayer(layerIndex);
     this.display.rect(layer, x, y, w, h);
   }
@@ -306,29 +437,68 @@ export class DisplayManager implements ImgStreamHandler, DrawingInstructionHandl
     this.display.moveTo(layer, x, y);
   }
 
-  handleTransferInstruction(srcLayerIndex: number, dstLayerIndex: number, functionIndex: number, srcX: number, srcY: number, srcWidth: number, srcHeight: number, dstX: number, dstY: number) {
+  handleTransferInstruction(
+    srcLayerIndex: number,
+    dstLayerIndex: number,
+    functionIndex: number,
+    srcX: number,
+    srcY: number,
+    srcWidth: number,
+    srcHeight: number,
+    dstX: number,
+    dstY: number,
+  ) {
     const srcLayer = this.getLayer(srcLayerIndex);
     const dstLayer = this.getLayer(dstLayerIndex);
 
     /* SRC */
     if (functionIndex === 0x3) {
-      this.display.put(srcLayer, srcX, srcY, srcWidth, srcHeight, dstLayer, dstX, dstY);
+      this.display.put(
+        srcLayer,
+        srcX,
+        srcY,
+        srcWidth,
+        srcHeight,
+        dstLayer,
+        dstX,
+        dstY,
+      );
     } else if (functionIndex !== 0x5) {
       /* Anything else that isn't a NO-OP */
-      this.display.transfer(srcLayer, srcX, srcY, srcWidth, srcHeight, dstLayer, dstX, dstY, DEFAULT_TRANSFER_FUNCTION[functionIndex]);
+      this.display.transfer(
+        srcLayer,
+        srcX,
+        srcY,
+        srcWidth,
+        srcHeight,
+        dstLayer,
+        dstX,
+        dstY,
+        DEFAULT_TRANSFER_FUNCTION[functionIndex],
+      );
     }
   }
 
-  handleTransformInstruction(layerIndex: number, a: number, b: number, c: number, d: number, e: number, f: number) {
+  handleTransformInstruction(
+    layerIndex: number,
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+  ) {
     const layer = this.getLayer(layerIndex);
     this.display.transform(layer, a, b, c, d, e, f);
   }
 
   //</editor-fold>
-
 }
 
-function registerDrawingInstructionHandlers(router: InstructionRouter, handler: DrawingInstructionHandler) {
+function registerDrawingInstructionHandlers(
+  router: InstructionRouter,
+  handler: DrawingInstructionHandler,
+) {
   router.addInstructionHandler('arc', (params: string[]) => {
     const layerIndex = parseInt(params[0], 10);
     const x = parseInt(params[1], 10);
@@ -338,7 +508,15 @@ function registerDrawingInstructionHandlers(router: InstructionRouter, handler: 
     const endAngle = parseFloat(params[5]);
     const negative = parseInt(params[6], 10);
 
-    handler.handleArcInstruction(layerIndex, x, y, radius, startAngle, endAngle, negative);
+    handler.handleArcInstruction(
+      layerIndex,
+      x,
+      y,
+      radius,
+      startAngle,
+      endAngle,
+      negative,
+    );
   });
   router.addInstructionHandler('cfill', (params: string[]) => {
     const channelMask = parseInt(params[0], 10);
@@ -371,7 +549,17 @@ function registerDrawingInstructionHandlers(router: InstructionRouter, handler: 
     const dstX = parseInt(params[7], 10);
     const dstY = parseInt(params[8], 10);
 
-    handler.handleCopyInstruction(srcLayerIndex, dstLayerIndex, channelMask, srcX, srcY, srcWidth, srcHeight, dstX, dstY);
+    handler.handleCopyInstruction(
+      srcLayerIndex,
+      dstLayerIndex,
+      channelMask,
+      srcX,
+      srcY,
+      srcWidth,
+      srcHeight,
+      dstX,
+      dstY,
+    );
   });
   router.addInstructionHandler('cstroke', (params: string[]) => {
     const channelMask = parseInt(params[0], 10);
@@ -384,7 +572,17 @@ function registerDrawingInstructionHandlers(router: InstructionRouter, handler: 
     const b = parseInt(params[7], 10);
     const a = parseInt(params[8], 10);
 
-    handler.handleCstrokeInstruction(layerIndex, channelMask, cap, join, thickness, r, g, b, a);
+    handler.handleCstrokeInstruction(
+      layerIndex,
+      channelMask,
+      cap,
+      join,
+      thickness,
+      r,
+      g,
+      b,
+      a,
+    );
   });
   router.addInstructionHandler('cursor', (params: string[]) => {
     const cursorHotspotX = parseInt(params[0], 10);
@@ -395,7 +593,15 @@ function registerDrawingInstructionHandlers(router: InstructionRouter, handler: 
     const srcWidth = parseInt(params[5], 10);
     const srcHeight = parseInt(params[6], 10);
 
-    handler.handleCursorInstruction(srcLayerIndex, cursorHotspotX, cursorHotspotY, srcX, srcY, srcWidth, srcHeight);
+    handler.handleCursorInstruction(
+      srcLayerIndex,
+      cursorHotspotX,
+      cursorHotspotY,
+      srcX,
+      srcY,
+      srcWidth,
+      srcHeight,
+    );
   });
   router.addInstructionHandler('curve', (params: string[]) => {
     const layerIndex = parseInt(params[0], 10);
@@ -463,7 +669,14 @@ function registerDrawingInstructionHandlers(router: InstructionRouter, handler: 
     const cap = LINE_CAP[capIndex];
     const join = LINE_JOIN[joinIndex];
 
-    handler.handleLstrokeInstruction(layerIndex, srcLayerIndex, channelMask, cap, join, thickness);
+    handler.handleLstrokeInstruction(
+      layerIndex,
+      srcLayerIndex,
+      channelMask,
+      cap,
+      join,
+      thickness,
+    );
   });
   router.addInstructionHandler('move', (params: string[]) => {
     const layerIndex = parseInt(params[0], 10);
@@ -545,7 +758,17 @@ function registerDrawingInstructionHandlers(router: InstructionRouter, handler: 
     const dstX = parseInt(params[7], 10);
     const dstY = parseInt(params[8], 10);
 
-    handler.handleTransferInstruction(srcLayerIndex, dstLayerIndex, functionIndex, srcX, srcY, srcWidth, srcHeight, dstX, dstY);
+    handler.handleTransferInstruction(
+      srcLayerIndex,
+      dstLayerIndex,
+      functionIndex,
+      srcX,
+      srcY,
+      srcWidth,
+      srcHeight,
+      dstX,
+      dstY,
+    );
   });
   router.addInstructionHandler('transform', (params: string[]) => {
     const layerIndex = parseInt(params[0], 10);
@@ -560,14 +783,23 @@ function registerDrawingInstructionHandlers(router: InstructionRouter, handler: 
   });
 }
 
-function registerImgStreamHandlers(router: InstructionRouter, handler: ImgStreamHandler) {
-  router.addInstructionHandler(Streaming.img.opcode, Streaming.img.parser(
-    handler.handleImgInstruction.bind(handler)  // TODO: Review this bind()
-  ));
+function registerImgStreamHandlers(
+  router: InstructionRouter,
+  handler: ImgStreamHandler,
+) {
+  router.addInstructionHandler(
+    Streaming.img.opcode,
+    Streaming.img.parser(
+      handler.handleImgInstruction.bind(handler), // TODO: Review this bind()
+    ),
+  );
   registerInputStreamHandlers(router, handler);
 }
 
-export function registerInstructionHandlers(router: InstructionRouter, handler: ImgStreamHandler & DrawingInstructionHandler) {
+export function registerInstructionHandlers(
+  router: InstructionRouter,
+  handler: ImgStreamHandler & DrawingInstructionHandler,
+) {
   registerImgStreamHandlers(router, handler);
   registerDrawingInstructionHandlers(router, handler);
 }

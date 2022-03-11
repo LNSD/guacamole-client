@@ -12,8 +12,10 @@ export default class Frame {
    * @param {Task[]} tasks The set of tasks which must be executed to render
    *                       this frame.
    */
-  constructor(private readonly callback: () => void, private readonly tasks: Task[]) {
-  }
+  constructor(
+    private readonly callback: () => void,
+    private readonly tasks: Task[],
+  ) {}
 
   /**
    * Returns whether this frame is ready to be rendered. This function

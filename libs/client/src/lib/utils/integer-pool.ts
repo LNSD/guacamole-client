@@ -13,7 +13,7 @@ export class IntegerPool {
   /**
    * The next integer to return if no more integers remain.
    */
-   private nextInt = 0;
+  private nextInt = 0;
 
   /**
    * Returns the next available integer in the pool. If possible, a previously

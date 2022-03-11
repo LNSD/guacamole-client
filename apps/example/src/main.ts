@@ -1,16 +1,15 @@
 /* eslint-disable capitalized-comments */
-
+import { Client } from '@guacamole-client/client';
+import { Display } from '@guacamole-client/display';
+import { Keyboard, Mouse } from '@guacamole-client/input';
+import { ConnectableWebSocket, xhr } from '@guacamole-client/net';
 import {
   buildWsTunnelUrl,
   ChainedTunnel,
   HttpClient,
   HTTPTunnel,
-  WebSocketTunnel
+  WebSocketTunnel,
 } from '@guacamole-client/tunnel';
-import { Client } from '@guacamole-client/client';
-import { Keyboard, Mouse } from '@guacamole-client/input';
-import { ConnectableWebSocket, xhr } from '@guacamole-client/net';
-import { Display } from '@guacamole-client/display';
 
 // // @ts-ignore
 // declare global {
@@ -34,19 +33,19 @@ import { Display } from '@guacamole-client/display';
     method: 'POST',
     headers: {
       accept: 'application/json, text/plain, */*',
-      'content-type': 'application/x-www-form-urlencoded'
+      'content-type': 'application/x-www-form-urlencoded',
     },
     body: 'username=guacadmin&password=guacadmin',
-    mode: 'no-cors'
+    mode: 'no-cors',
   });
 
-  const json = await response.json() as Partial<{ authToken: string }>;
+  const json = (await response.json()) as Partial<{ authToken: string }>;
   const token = String(json.authToken);
 
   // Get display div from document
   const displayElement = document.getElementById('display');
   if (displayElement === null) {
-    throw new Error('Cannot find [id=\'display\'] element');
+    throw new Error("Cannot find [id='display'] element");
   }
 
   // Tunnel
@@ -54,16 +53,20 @@ import { Display } from '@guacamole-client/display';
   const tunnelSelector = queryParams.get('tunnel') ?? 'ws';
 
   const ws = new ConnectableWebSocket();
-  const url = buildWsTunnelUrl('ws://localhost:8080/guacamole/websocket-tunnel');
+  const url = buildWsTunnelUrl(
+    'ws://localhost:8080/guacamole/websocket-tunnel',
+  );
   const wsTunnel = new WebSocketTunnel(ws, url);
 
-  const httpFactory = xhr.create({ baseURL: 'http://localhost:8080/guacamole/tunnel' });
+  const httpFactory = xhr.create({
+    baseURL: 'http://localhost:8080/guacamole/tunnel',
+  });
   const httpClient = new HttpClient(httpFactory);
   const httpTunnel = new HTTPTunnel(httpClient);
 
   const tunnel = new ChainedTunnel(
-    (tunnelSelector === 'ws' ? wsTunnel : httpTunnel),
-    (tunnelSelector !== 'ws' ? wsTunnel : httpTunnel)
+    tunnelSelector === 'ws' ? wsTunnel : httpTunnel,
+    tunnelSelector !== 'ws' ? wsTunnel : httpTunnel,
   );
 
   // Instantiate client
@@ -77,17 +80,19 @@ import { Display } from '@guacamole-client/display';
   guac.addEventListener('onerror', console.error);
 
   // Connect
-  guac.connect(`token=${token}&GUAC_DATA_SOURCE=default&GUAC_ID=DEFAULT&GUAC_TYPE=c&GUAC_WIDTH=2880&GUAC_HEIGHT=598&GUAC_DPI=192&GUAC_TIMEZONE=Europe/Madrid&GUAC_AUDIO=audio/L8&GUAC_AUDIO=audio/L16&GUAC_IMAGE=image/jpeg&GUAC_IMAGE=image/png&GUAC_IMAGE=image/webp`);
+  guac.connect(
+    `token=${token}&GUAC_DATA_SOURCE=default&GUAC_ID=DEFAULT&GUAC_TYPE=c&GUAC_WIDTH=2880&GUAC_HEIGHT=598&GUAC_DPI=192&GUAC_TIMEZONE=Europe/Madrid&GUAC_AUDIO=audio/L8&GUAC_AUDIO=audio/L16&GUAC_IMAGE=image/jpeg&GUAC_IMAGE=image/png&GUAC_IMAGE=image/webp`,
+  );
 
   // Disconnect on close
-  window.onunload = function() {
+  window.onunload = function () {
     guac.disconnect();
   };
 
   // Mouse
   const mouse = new Mouse(display.getElement());
 
-  const mouseCallback = function(mouseState) {
+  const mouseCallback = function (mouseState) {
     guac.sendMouseEvent(mouseState);
   };
 
@@ -98,11 +103,11 @@ import { Display } from '@guacamole-client/display';
   // Keyboard
   const keyboard = new Keyboard(document);
 
-  keyboard.onkeydown = function(keysym) {
+  keyboard.onkeydown = function (keysym) {
     guac.sendKeyEvent(true, keysym);
   };
 
-  keyboard.onkeyup = function(keysym) {
+  keyboard.onkeyup = function (keysym) {
     guac.sendKeyEvent(false, keysym);
   };
 })();

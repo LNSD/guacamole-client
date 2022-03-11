@@ -1,11 +1,13 @@
+import { WS } from '@guacamole-client/net';
 import * as faker from 'faker';
 
-import { WS } from '@guacamole-client/net';
-
-import { PING_FREQUENCY, WebSocketCloseError, WebSocketTunnel } from './ws';
-
+import {
+  ServerError,
+  UpstreamNotFoundError,
+  UpstreamTimeoutError,
+} from '../errors';
 import { TunnelState } from '../state';
-import { ServerError, UpstreamNotFoundError, UpstreamTimeoutError } from '../errors';
+import { PING_FREQUENCY, WebSocketCloseError, WebSocketTunnel } from './ws';
 
 const mockWs = () => ({
   connect: jest.fn(),
@@ -14,7 +16,7 @@ const mockWs = () => ({
   onmessage: null,
   onopen: null,
   close: jest.fn(),
-  send: jest.fn()
+  send: jest.fn(),
 });
 
 describe('WebSocketTunnel', () => {
@@ -56,7 +58,10 @@ describe('WebSocketTunnel', () => {
 
       // Then
       expect(ws.connect).toHaveBeenCalledTimes(1);
-      expect(ws.connect).toHaveBeenLastCalledWith(new URL(baseUrl), 'guacamole');
+      expect(ws.connect).toHaveBeenLastCalledWith(
+        new URL(baseUrl),
+        'guacamole',
+      );
     });
 
     it('should connect to base url w/ connect data string', () => {
@@ -69,7 +74,10 @@ describe('WebSocketTunnel', () => {
 
       // Then
       expect(ws.connect).toHaveBeenCalledTimes(1);
-      expect(ws.connect).toHaveBeenLastCalledWith(new URL(`${baseUrl}/?token=${token}`), 'guacamole');
+      expect(ws.connect).toHaveBeenLastCalledWith(
+        new URL(`${baseUrl}/?token=${token}`),
+        'guacamole',
+      );
     });
 
     it('should connect to base url w/ connect data URLSearchParams', () => {
@@ -85,7 +93,10 @@ describe('WebSocketTunnel', () => {
 
       // Then
       expect(ws.connect).toHaveBeenCalledTimes(1);
-      expect(ws.connect).toHaveBeenLastCalledWith(new URL(`${baseUrl}/?token=${token}`), 'guacamole');
+      expect(ws.connect).toHaveBeenLastCalledWith(
+        new URL(`${baseUrl}/?token=${token}`),
+        'guacamole',
+      );
     });
 
     it('should be connected after getting uuid', () => {
@@ -100,7 +111,9 @@ describe('WebSocketTunnel', () => {
         ws.onopen({} as Event);
       }
       if (ws.onmessage !== null) {
-        ws.onmessage({ data: `0.,${uuid.length}.${uuid};` } as MessageEvent<string>);
+        ws.onmessage({
+          data: `0.,${uuid.length}.${uuid};`,
+        } as MessageEvent<string>);
       }
 
       // Then
@@ -120,7 +133,9 @@ describe('WebSocketTunnel', () => {
         ws.onopen({} as Event);
       }
       if (ws.onmessage !== null) {
-        ws.onmessage({ data: `0.,${uuid.length}.${uuid};` } as MessageEvent<string>);
+        ws.onmessage({
+          data: `0.,${uuid.length}.${uuid};`,
+        } as MessageEvent<string>);
       }
 
       /* When */
@@ -129,7 +144,9 @@ describe('WebSocketTunnel', () => {
 
       /* Then */
       expect(ws.send).toHaveBeenCalledTimes(2);
-      expect(ws.send).toHaveBeenLastCalledWith(expect.stringMatching(/^0\.,4\.ping,\d+.\d+;$/));
+      expect(ws.send).toHaveBeenLastCalledWith(
+        expect.stringMatching(/^0\.,4\.ping,\d+.\d+;$/),
+      );
     });
   });
 
@@ -146,7 +163,9 @@ describe('WebSocketTunnel', () => {
         ws.onopen({} as Event);
       }
       if (ws.onmessage !== null) {
-        ws.onmessage({ data: `0.,${uuid.length}.${uuid};` } as MessageEvent<string>);
+        ws.onmessage({
+          data: `0.,${uuid.length}.${uuid};`,
+        } as MessageEvent<string>);
       }
 
       /* When */
@@ -182,7 +201,9 @@ describe('WebSocketTunnel', () => {
         ws.onopen({} as Event);
       }
       if (ws.onmessage !== null) {
-        ws.onmessage({ data: `0.,${uuid.length}.${uuid};` } as MessageEvent<string>);
+        ws.onmessage({
+          data: `0.,${uuid.length}.${uuid};`,
+        } as MessageEvent<string>);
       }
 
       /* When */
@@ -207,7 +228,9 @@ describe('WebSocketTunnel', () => {
         ws.onopen({} as Event);
       }
       if (ws.onmessage !== null) {
-        ws.onmessage({ data: `0.,${uuid.length}.${uuid};` } as MessageEvent<string>);
+        ws.onmessage({
+          data: `0.,${uuid.length}.${uuid};`,
+        } as MessageEvent<string>);
       }
 
       /* When */
@@ -228,7 +251,9 @@ describe('WebSocketTunnel', () => {
         ws.onopen({} as Event);
       }
       if (ws.onmessage !== null) {
-        ws.onmessage({ data: `0.,${uuid.length}.${uuid};` } as MessageEvent<string>);
+        ws.onmessage({
+          data: `0.,${uuid.length}.${uuid};`,
+        } as MessageEvent<string>);
       }
 
       /* When */
@@ -255,7 +280,9 @@ describe('WebSocketTunnel', () => {
         ws.onopen({} as Event);
       }
       if (ws.onmessage !== null) {
-        ws.onmessage({ data: `0.,${uuid.length}.${uuid};` } as MessageEvent<string>);
+        ws.onmessage({
+          data: `0.,${uuid.length}.${uuid};`,
+        } as MessageEvent<string>);
       }
 
       /* When */
@@ -266,7 +293,9 @@ describe('WebSocketTunnel', () => {
       expect(tunnel.isConnected()).toBeFalsy();
 
       expect(tunnel.onerror).toHaveBeenCalledTimes(1);
-      expect(tunnel.onerror).toHaveBeenLastCalledWith(new UpstreamTimeoutError('Server timeout.'));
+      expect(tunnel.onerror).toHaveBeenLastCalledWith(
+        new UpstreamTimeoutError('Server timeout.'),
+      );
     });
   });
 
@@ -283,7 +312,9 @@ describe('WebSocketTunnel', () => {
         ws.onopen({} as Event);
       }
       if (ws.onmessage !== null) {
-        ws.onmessage({ data: `0.,${uuid.length}.${uuid};` } as MessageEvent<string>);
+        ws.onmessage({
+          data: `0.,${uuid.length}.${uuid};`,
+        } as MessageEvent<string>);
       }
 
       /* When */
@@ -295,7 +326,9 @@ describe('WebSocketTunnel', () => {
       /* Then */
       expect(tunnel.state).toBe(TunnelState.CLOSED);
 
-      expect(tunnel.onerror).toHaveBeenLastCalledWith(new WebSocketCloseError(event.reason));
+      expect(tunnel.onerror).toHaveBeenLastCalledWith(
+        new WebSocketCloseError(event.reason),
+      );
     });
 
     it('on socket close event with code', () => {
@@ -310,7 +343,9 @@ describe('WebSocketTunnel', () => {
         ws.onopen({} as Event);
       }
       if (ws.onmessage !== null) {
-        ws.onmessage({ data: `0.,${uuid.length}.${uuid};` } as MessageEvent<string>);
+        ws.onmessage({
+          data: `0.,${uuid.length}.${uuid};`,
+        } as MessageEvent<string>);
       }
 
       /* When */
@@ -337,7 +372,9 @@ describe('WebSocketTunnel', () => {
         ws.onopen({} as Event);
       }
       if (ws.onmessage !== null) {
-        ws.onmessage({ data: `0.,${uuid.length}.${uuid};` } as MessageEvent<string>);
+        ws.onmessage({
+          data: `0.,${uuid.length}.${uuid};`,
+        } as MessageEvent<string>);
       }
 
       /* When */
@@ -348,7 +385,9 @@ describe('WebSocketTunnel', () => {
       /* Then */
       expect(tunnel.state).toBe(TunnelState.CLOSED);
 
-      expect(tunnel.onerror).toHaveBeenLastCalledWith(new UpstreamNotFoundError());
+      expect(tunnel.onerror).toHaveBeenLastCalledWith(
+        new UpstreamNotFoundError(),
+      );
     });
   });
 
@@ -364,7 +403,9 @@ describe('WebSocketTunnel', () => {
         ws.onopen({} as Event);
       }
       if (ws.onmessage !== null) {
-        ws.onmessage({ data: `0.,${uuid.length}.${uuid};` } as MessageEvent<string>);
+        ws.onmessage({
+          data: `0.,${uuid.length}.${uuid};`,
+        } as MessageEvent<string>);
       }
 
       /* When */
@@ -388,7 +429,9 @@ describe('WebSocketTunnel', () => {
         ws.onopen({} as Event);
       }
       if (ws.onmessage !== null) {
-        ws.onmessage({ data: `0.,${uuid.length}.${uuid};` } as MessageEvent<string>);
+        ws.onmessage({
+          data: `0.,${uuid.length}.${uuid};`,
+        } as MessageEvent<string>);
       }
 
       tunnel.disconnect();

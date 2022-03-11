@@ -1,6 +1,9 @@
 export type { DefaultRequestConfig, RequestConfig, Method } from './config';
 export type {
-  HttpRequest, OnLoadingCallback, OnCompleteCallback, OnErrorCallback
+  HttpRequest,
+  OnLoadingCallback,
+  OnCompleteCallback,
+  OnErrorCallback,
 } from './request';
 export type { HttpRequestFactory } from './factory';
 

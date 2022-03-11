@@ -1,21 +1,23 @@
-import { InputStreamResponseSender } from '../streams/input';
+import { ObjectInstruction } from '@guacamole-client/protocol';
+
 import { ClientEventTargetMap } from '../events';
+import { InstructionRouter } from '../instruction-router';
+import { GuacamoleObject } from '../object/GuacamoleObject';
 import {
   GuacamoleObjectManager,
   ObjectStreamHandler,
-  registerObjectStreamHandlers
+  registerObjectStreamHandlers,
 } from '../object/manager';
+import { InputStreamResponseSender } from '../streams/input';
 import { OutputStreamResponseSender } from '../streams/output';
-import { InstructionRouter } from '../instruction-router';
-import { ObjectInstruction } from '@guacamole-client/protocol';
-import { GuacamoleObject } from '../object/GuacamoleObject';
 
 export interface FilesystemInstructionHandler {
   handleFilesystemInstruction(objectIndex: number, name: string): void;
 }
 
-export interface FilesystemStreamHandler extends FilesystemInstructionHandler, ObjectStreamHandler {
-}
+export interface FilesystemStreamHandler
+  extends FilesystemInstructionHandler,
+    ObjectStreamHandler {}
 
 /**
  * Fired when a filesystem object is created. The object provided to this
@@ -25,14 +27,18 @@ export interface FilesystemStreamHandler extends FilesystemInstructionHandler, O
  * @param object - The created filesystem object.
  * @param name - The name of the filesystem.
  */
-export type OnFilesystemCallback = (object: GuacamoleObject, name: string) => void;
+export type OnFilesystemCallback = (
+  object: GuacamoleObject,
+  name: string,
+) => void;
 
 export class FilesystemManager implements FilesystemStreamHandler {
   private readonly objects: GuacamoleObjectManager;
 
   constructor(
-    private readonly sender: InputStreamResponseSender & OutputStreamResponseSender,
-    private readonly events: ClientEventTargetMap
+    private readonly sender: InputStreamResponseSender &
+      OutputStreamResponseSender,
+    private readonly events: ClientEventTargetMap,
   ) {
     this.objects = new GuacamoleObjectManager(sender);
   }
@@ -49,8 +55,18 @@ export class FilesystemManager implements FilesystemStreamHandler {
     listener(object, name);
   }
 
-  handleBodyInstruction(objectIndex: number, streamIndex: number, mimetype: string, name: string) {
-    this.objects.handleBodyInstruction(objectIndex, streamIndex, mimetype, name);
+  handleBodyInstruction(
+    objectIndex: number,
+    streamIndex: number,
+    mimetype: string,
+    name: string,
+  ) {
+    this.objects.handleBodyInstruction(
+      objectIndex,
+      streamIndex,
+      mimetype,
+      name,
+    );
   }
 
   handleUndefineInstruction(index: number) {
@@ -65,14 +81,24 @@ export class FilesystemManager implements FilesystemStreamHandler {
     this.objects.handleEndInstruction(index);
   }
 
-  handleAckInstruction(streamIndex: number, message: string, code: number): void {
+  handleAckInstruction(
+    streamIndex: number,
+    message: string,
+    code: number,
+  ): void {
     this.objects.handleAckInstruction(streamIndex, message, code);
   }
 }
 
-export function registerInstructionHandlers(router: InstructionRouter, handler: FilesystemStreamHandler) {
-  router.addInstructionHandler(ObjectInstruction.filesystem.opcode, ObjectInstruction.filesystem.parser(
-    handler.handleFilesystemInstruction.bind(handler)  // TODO: Review this bind()
-  ));
+export function registerInstructionHandlers(
+  router: InstructionRouter,
+  handler: FilesystemStreamHandler,
+) {
+  router.addInstructionHandler(
+    ObjectInstruction.filesystem.opcode,
+    ObjectInstruction.filesystem.parser(
+      handler.handleFilesystemInstruction.bind(handler), // TODO: Review this bind()
+    ),
+  );
   registerObjectStreamHandlers(router, handler);
 }

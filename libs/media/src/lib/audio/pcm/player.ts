@@ -1,7 +1,8 @@
-import { parseAudioMimeType, PcmAudioFormat } from './format';
+import { ArrayBufferReader, InputStream } from '@guacamole-client/io';
+
 import AudioContextFactory from '../context';
 import AudioPlayer from '../player';
-import { ArrayBufferReader, InputStream } from '@guacamole-client/io';
+import { parseAudioMimeType, PcmAudioFormat } from './format';
 
 type SampleArray = Int8Array | Int16Array;
 
@@ -251,7 +252,7 @@ export default class PcmAudioPlayer extends AudioPlayer {
     // Calculate the beginning of the "end" of the audio packet
     const start = Math.max(
       this.format.channels * minSplitSamples,
-      this.format.channels * (samples - minSplitSamples)
+      this.format.channels * (samples - minSplitSamples),
     );
 
     // For all samples at the end of the given packet, find a point where
@@ -286,11 +287,11 @@ export default class PcmAudioPlayer extends AudioPlayer {
     // calculated optimal split length
     return [
       new this.SampleArray(
-        data.buffer.slice(0, optimalSplitLength * this.format.bytesPerSample)
+        data.buffer.slice(0, optimalSplitLength * this.format.bytesPerSample),
       ),
       new this.SampleArray(
-        data.buffer.slice(optimalSplitLength * this.format.bytesPerSample)
-      )
+        data.buffer.slice(optimalSplitLength * this.format.bytesPerSample),
+      ),
     ];
   }
 
@@ -366,7 +367,7 @@ export default class PcmAudioPlayer extends AudioPlayer {
     const audioBuffer = this.context.createBuffer(
       this.format.channels,
       samples,
-      this.format.rate
+      this.format.rate,
     );
 
     // Normalize each channel

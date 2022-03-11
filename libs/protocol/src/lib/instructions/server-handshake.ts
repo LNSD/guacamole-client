@@ -21,11 +21,12 @@ const ARGS_OPCODE = 'args';
  */
 export type ArgsHandler = (version: string, ...params: string[]) => void;
 
-export const args = createInstruction<ArgsHandler>(ARGS_OPCODE,
+export const args = createInstruction<ArgsHandler>(
+  ARGS_OPCODE,
   (version: string, ...params: string[]) => [version, ...params],
   (handler: ArgsHandler) => (params) => {
     const [version, ...argsParams] = params;
 
-    handler(version, ...argsParams)
+    handler(version, ...argsParams);
   },
 );

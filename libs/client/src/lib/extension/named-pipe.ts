@@ -1,27 +1,34 @@
+import { InputStream, OutputStream, StreamError } from '@guacamole-client/io';
 import { Streaming } from '@guacamole-client/protocol';
+
+import { ClientEventTargetMap } from '../events';
+import { InstructionRouter } from '../instruction-router';
+import { StatusCode } from '../status';
 import {
   InputStreamHandler,
   InputStreamResponseSender,
   InputStreamsManager,
-  registerInputStreamHandlers
+  registerInputStreamHandlers,
 } from '../streams/input';
-import { ClientEventTargetMap } from '../events';
-import { InputStream, OutputStream, StreamError } from '@guacamole-client/io';
-import { StatusCode } from '../status';
-import { InstructionRouter } from '../instruction-router';
 import {
   OutputStreamHandler,
   OutputStreamResponseSender,
   OutputStreamsManager,
-  registerOutputStreamHandlers
+  registerOutputStreamHandlers,
 } from '../streams/output';
 
 export interface PipeInstructionHandler {
-  handlePipeInstruction(streamIndex: number, mimetype: string, name: string): void;
+  handlePipeInstruction(
+    streamIndex: number,
+    mimetype: string,
+    name: string,
+  ): void;
 }
 
-export interface NamedPipeStreamHandler extends PipeInstructionHandler, InputStreamHandler, OutputStreamHandler {
-}
+export interface NamedPipeStreamHandler
+  extends PipeInstructionHandler,
+    InputStreamHandler,
+    OutputStreamHandler {}
 
 /**
  * Fired when a pipe stream is created. The stream provided to this event
@@ -31,15 +38,20 @@ export interface NamedPipeStreamHandler extends PipeInstructionHandler, InputStr
  * @param mimetype - The mimetype of the data which will be received.
  * @param name - The name of the pipe.
  */
-export type OnPipeCallback = (stream: InputStream, mimetype: string, name: string) => void;
+export type OnPipeCallback = (
+  stream: InputStream,
+  mimetype: string,
+  name: string,
+) => void;
 
 export class NamedPipeManager implements NamedPipeStreamHandler {
   private readonly inputStreams: InputStreamsManager;
   private readonly outputStreams: OutputStreamsManager;
 
   constructor(
-    private readonly sender: InputStreamResponseSender & OutputStreamResponseSender,
-    private readonly events: ClientEventTargetMap
+    private readonly sender: InputStreamResponseSender &
+      OutputStreamResponseSender,
+    private readonly events: ClientEventTargetMap,
   ) {
     this.inputStreams = new InputStreamsManager(sender);
     this.outputStreams = new OutputStreamsManager(sender);
@@ -66,7 +78,10 @@ export class NamedPipeManager implements NamedPipeStreamHandler {
   handlePipeInstruction(streamIndex: number, mimetype: string, name: string) {
     const listener = this.events.getEventListener('onpipe');
     if (!listener) {
-      this.inputStreams.sendAck(streamIndex, new StreamError('Named pipes unsupported', StatusCode.UNSUPPORTED));
+      this.inputStreams.sendAck(
+        streamIndex,
+        new StreamError('Named pipes unsupported', StatusCode.UNSUPPORTED),
+      );
       return;
     }
 
@@ -83,17 +98,27 @@ export class NamedPipeManager implements NamedPipeStreamHandler {
     this.inputStreams.handleEndInstruction(streamIndex);
   }
 
-  handleAckInstruction(streamIndex: number, message: string, code: number): void {
+  handleAckInstruction(
+    streamIndex: number,
+    message: string,
+    code: number,
+  ): void {
     this.outputStreams.handleAckInstruction(streamIndex, message, code);
   }
 
   //</editor-fold>
 }
 
-export function registerInstructionHandlers(router: InstructionRouter, handler: NamedPipeStreamHandler) {
-  router.addInstructionHandler(Streaming.pipe.opcode, Streaming.pipe.parser(
-    handler.handlePipeInstruction.bind(handler)  // TODO: Review this bind()
-  ));
+export function registerInstructionHandlers(
+  router: InstructionRouter,
+  handler: NamedPipeStreamHandler,
+) {
+  router.addInstructionHandler(
+    Streaming.pipe.opcode,
+    Streaming.pipe.parser(
+      handler.handlePipeInstruction.bind(handler), // TODO: Review this bind()
+    ),
+  );
   registerInputStreamHandlers(router, handler);
   registerOutputStreamHandlers(router, handler);
 }

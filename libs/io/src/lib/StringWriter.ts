@@ -1,4 +1,5 @@
 // TODO Review the following lint suppression
+
 /* eslint-disable no-bitwise */
 import { StreamError } from '..';
 import { ArrayBufferWriter } from './ArrayBufferWriter';
@@ -47,7 +48,7 @@ export class StringWriter {
     this.arrayBufferWriter = new ArrayBufferWriter(stream);
 
     // Simply call onack for acknowledgements
-    this.arrayBufferWriter.onack = status => {
+    this.arrayBufferWriter.onack = (status) => {
       if (this.onack !== null) {
         this.onack(status);
       }
@@ -107,25 +108,25 @@ export class StringWriter {
     let mask;
     let bytes;
 
-    if (codepoint <= 0x7F) {
+    if (codepoint <= 0x7f) {
       // 1 byte
       mask = 0x00;
       bytes = 1;
-    } else if (codepoint <= 0x7FF) {
+    } else if (codepoint <= 0x7ff) {
       // 2 byte
-      mask = 0xC0;
+      mask = 0xc0;
       bytes = 2;
-    } else if (codepoint <= 0xFFFF) {
+    } else if (codepoint <= 0xffff) {
       // 3 byte
-      mask = 0xE0;
+      mask = 0xe0;
       bytes = 3;
-    } else if (codepoint <= 0x1FFFFF) {
+    } else if (codepoint <= 0x1fffff) {
       // 4 byte
-      mask = 0xF0;
+      mask = 0xf0;
       bytes = 4;
     } else {
       // If invalid codepoint, append replacement character
-      this.__appendUtf8(0xFFFD);
+      this.__appendUtf8(0xfffd);
       return;
     }
 
@@ -135,7 +136,7 @@ export class StringWriter {
 
     // Add trailing bytes, if any
     for (let i = 1; i < bytes; i++) {
-      this.buffer[offset--] = 0x80 | (codepoint & 0x3F);
+      this.buffer[offset--] = 0x80 | (codepoint & 0x3f);
       codepoint >>= 6;
     }
 

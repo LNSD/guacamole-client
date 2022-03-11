@@ -1,8 +1,13 @@
+import {
+  ArrayBufferWriter,
+  OutputStream,
+  StreamError,
+} from '@guacamole-client/io';
+
 import { StatusCode } from '../../Status';
-import { parseAudioMimeType, PcmAudioFormat } from './format';
 import AudioContextFactory from '../context';
 import AudioRecorder from '../recorder';
-import { ArrayBufferWriter, OutputStream, StreamError } from '@guacamole-client/io';
+import { parseAudioMimeType, PcmAudioFormat } from './format';
 
 /**
  * The size of audio buffer to request from the Web Audio API when
@@ -36,7 +41,7 @@ const LANCZOS_WINDOW_SIZE = 3;
  *
  * @returns The value of the normalized sinc function at x.
  */
-const sinc = function(x: number): number {
+const sinc = function (x: number): number {
   // The value of sinc(0) is defined as 1
   if (x === 0) {
     return 1;
@@ -59,7 +64,7 @@ const sinc = function(x: number): number {
  * @returns The value of the Lanczos kernel at the given point for the given
  *          window size.
  */
-const lanczos = function(x: number, a: number): number {
+const lanczos = function (x: number, a: number): number {
   // Lanczos is sinc(x) * sinc(x / a) for -a < x < a ...
   if (-a < x && x < a) {
     return sinc(x) * sinc(x / a);
@@ -84,9 +89,9 @@ const lanczos = function(x: number, a: number): number {
  *
  * @returns The value of the waveform at the given location.
  */
-const interpolateSample = function(
+const interpolateSample = function (
   audioData: Float32Array,
-  t: number
+  t: number,
 ): number {
   // Convert [0, 1] range to [0, audioData.length - 1]
   const index = (audioData.length - 1) * t;
@@ -327,7 +332,7 @@ export default class PcmAudioRecorder extends AudioRecorder {
     // the audio data just received and adjust the size of the output
     // packet accordingly
     const expectedWrittenSamples = Math.round(
-      (this.readSamples * this.format.rate) / audioBuffer.sampleRate
+      (this.readSamples * this.format.rate) / audioBuffer.sampleRate,
     );
     const outSamples = expectedWrittenSamples - this.writtenSamples;
 
@@ -368,7 +373,7 @@ export default class PcmAudioRecorder extends AudioRecorder {
     this.processor = this.context.createScriptProcessor(
       BUFFER_SIZE,
       this.format.channels,
-      this.format.channels
+      this.format.channels,
     );
     this.processor.connect(this.context.destination);
 
@@ -422,7 +427,7 @@ export default class PcmAudioRecorder extends AudioRecorder {
   private beginAudioCapture() {
     // Attempt to retrieve an audio input stream from the browser
     const promise = navigator.mediaDevices.getUserMedia({
-      audio: true
+      audio: true,
     });
 
     // Handle stream creation/rejection via Promise for newer versions of

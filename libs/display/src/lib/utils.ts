@@ -4,8 +4,10 @@ import Pixel from './pixel';
  * Map of all Guacamole binary raster operations to transfer functions.
  * @private
  */
-export const DEFAULT_TRANSFER_FUNCTION: Record<number, (src: Pixel, dst: Pixel) => void> = {
-
+export const DEFAULT_TRANSFER_FUNCTION: Record<
+  number,
+  (src: Pixel, dst: Pixel) => void
+> = {
   /* BLACK */
   0x0: (src: Pixel, dst: Pixel) => {
     dst.red = 0x00;
@@ -14,10 +16,10 @@ export const DEFAULT_TRANSFER_FUNCTION: Record<number, (src: Pixel, dst: Pixel) 
   },
 
   /* WHITE */
-  0xF: (src: Pixel, dst: Pixel) => {
-    dst.red = 0xFF;
-    dst.green = 0xFF;
-    dst.blue = 0xFF;
+  0xf: (src: Pixel, dst: Pixel) => {
+    dst.red = 0xff;
+    dst.green = 0xff;
+    dst.blue = 0xff;
   },
 
   /* SRC */
@@ -34,18 +36,18 @@ export const DEFAULT_TRANSFER_FUNCTION: Record<number, (src: Pixel, dst: Pixel) 
   },
 
   /* Invert SRC */
-  0xC: (src: Pixel, dst: Pixel) => {
-    dst.red = 0xFF & ~src.red;
-    dst.green = 0xFF & ~src.green;
-    dst.blue = 0xFF & ~src.blue;
+  0xc: (src: Pixel, dst: Pixel) => {
+    dst.red = 0xff & ~src.red;
+    dst.green = 0xff & ~src.green;
+    dst.blue = 0xff & ~src.blue;
     dst.alpha = src.alpha;
   },
 
   /* Invert DEST */
-  0xA: (src: Pixel, dst: Pixel) => {
-    dst.red = 0xFF & ~dst.red;
-    dst.green = 0xFF & ~dst.green;
-    dst.blue = 0xFF & ~dst.blue;
+  0xa: (src: Pixel, dst: Pixel) => {
+    dst.red = 0xff & ~dst.red;
+    dst.green = 0xff & ~dst.green;
+    dst.blue = 0xff & ~dst.blue;
   },
 
   /* AND */
@@ -56,10 +58,10 @@ export const DEFAULT_TRANSFER_FUNCTION: Record<number, (src: Pixel, dst: Pixel) 
   },
 
   /* NAND */
-  0xE: (src: Pixel, dst: Pixel) => {
-    dst.red = 0xFF & ~(src.red & dst.red);
-    dst.green = 0xFF & ~(src.green & dst.green);
-    dst.blue = 0xFF & ~(src.blue & dst.blue);
+  0xe: (src: Pixel, dst: Pixel) => {
+    dst.red = 0xff & ~(src.red & dst.red);
+    dst.green = 0xff & ~(src.green & dst.green);
+    dst.blue = 0xff & ~(src.blue & dst.blue);
   },
 
   /* OR */
@@ -71,9 +73,9 @@ export const DEFAULT_TRANSFER_FUNCTION: Record<number, (src: Pixel, dst: Pixel) 
 
   /* NOR */
   0x8: (src: Pixel, dst: Pixel) => {
-    dst.red = 0xFF & ~(src.red | dst.red);
-    dst.green = 0xFF & ~(src.green | dst.green);
-    dst.blue = 0xFF & ~(src.blue | dst.blue);
+    dst.red = 0xff & ~(src.red | dst.red);
+    dst.green = 0xff & ~(src.green | dst.green);
+    dst.blue = 0xff & ~(src.blue | dst.blue);
   },
 
   /* XOR */
@@ -85,54 +87,54 @@ export const DEFAULT_TRANSFER_FUNCTION: Record<number, (src: Pixel, dst: Pixel) 
 
   /* XNOR */
   0x9: (src: Pixel, dst: Pixel) => {
-    dst.red = 0xFF & ~(src.red ^ dst.red);
-    dst.green = 0xFF & ~(src.green ^ dst.green);
-    dst.blue = 0xFF & ~(src.blue ^ dst.blue);
+    dst.red = 0xff & ~(src.red ^ dst.red);
+    dst.green = 0xff & ~(src.green ^ dst.green);
+    dst.blue = 0xff & ~(src.blue ^ dst.blue);
   },
 
   /* AND inverted source */
   0x4: (src: Pixel, dst: Pixel) => {
-    dst.red = 0xFF & (~src.red & dst.red);
-    dst.green = 0xFF & (~src.green & dst.green);
-    dst.blue = 0xFF & (~src.blue & dst.blue);
+    dst.red = 0xff & (~src.red & dst.red);
+    dst.green = 0xff & (~src.green & dst.green);
+    dst.blue = 0xff & (~src.blue & dst.blue);
   },
 
   /* OR inverted source */
-  0xD: (src: Pixel, dst: Pixel) => {
-    dst.red = 0xFF & (~src.red | dst.red);
-    dst.green = 0xFF & (~src.green | dst.green);
-    dst.blue = 0xFF & (~src.blue | dst.blue);
+  0xd: (src: Pixel, dst: Pixel) => {
+    dst.red = 0xff & (~src.red | dst.red);
+    dst.green = 0xff & (~src.green | dst.green);
+    dst.blue = 0xff & (~src.blue | dst.blue);
   },
 
   /* AND inverted destination */
   0x2: (src: Pixel, dst: Pixel) => {
-    dst.red = 0xFF & (src.red & ~dst.red);
-    dst.green = 0xFF & (src.green & ~dst.green);
-    dst.blue = 0xFF & (src.blue & ~dst.blue);
+    dst.red = 0xff & (src.red & ~dst.red);
+    dst.green = 0xff & (src.green & ~dst.green);
+    dst.blue = 0xff & (src.blue & ~dst.blue);
   },
 
   /* OR inverted destination */
-  0xB: (src: Pixel, dst: Pixel) => {
-    dst.red = 0xFF & (src.red | ~dst.red);
-    dst.green = 0xFF & (src.green | ~dst.green);
-    dst.blue = 0xFF & (src.blue | ~dst.blue);
-  }
+  0xb: (src: Pixel, dst: Pixel) => {
+    dst.red = 0xff & (src.red | ~dst.red);
+    dst.green = 0xff & (src.green | ~dst.green);
+    dst.blue = 0xff & (src.blue | ~dst.blue);
+  },
 };
 /**
  * Translation from Guacamole protocol line caps to Layer line caps.
  * @private
  */
 export const LINE_CAP: Record<number, CanvasLineCap> = {
-  0: "butt",
-  1: "round",
-  2: "square"
+  0: 'butt',
+  1: 'round',
+  2: 'square',
 };
 /**
  * Translation from Guacamole protocol line caps to Layer line caps.
  * @private
  */
 export const LINE_JOIN: Record<number, CanvasLineJoin> = {
-  0: "bevel",
-  1: "miter",
-  2: "round"
+  0: 'bevel',
+  1: 'miter',
+  2: 'round',
 };

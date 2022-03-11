@@ -17,13 +17,13 @@ const VIDEO_OPCODE = 'video';
  */
 export type AudioHandler = (...mimetype: string[]) => void;
 
-export const audio = createInstruction<AudioHandler>(AUDIO_OPCODE,
+export const audio = createInstruction<AudioHandler>(
+  AUDIO_OPCODE,
   (...mimetype: string[]) => [...mimetype],
   (handler: AudioHandler) => (params) => {
     handler(...params);
-  }
+  },
 );
-
 
 /**
  * Begins the connection using the previously specified protocol with the given arguments. This is
@@ -35,13 +35,13 @@ export const audio = createInstruction<AudioHandler>(AUDIO_OPCODE,
  */
 export type ConnectHandler = (...params: string[]) => void;
 
-export const connect = createInstruction<ConnectHandler>(CONNECT_OPCODE,
+export const connect = createInstruction<ConnectHandler>(
+  CONNECT_OPCODE,
   (...params: string[]) => [...params],
   (handler: ConnectHandler) => (params) => {
     handler(...params);
-  }
+  },
 );
-
 
 /**
  * Specifies which image mimetypes are supported by the client. Each parameter must be a single
@@ -56,13 +56,13 @@ export const connect = createInstruction<ConnectHandler>(CONNECT_OPCODE,
  */
 export type ImageHandler = (...mimetype: string[]) => void;
 
-export const image = createInstruction<ImageHandler>(IMAGE_OPCODE,
+export const image = createInstruction<ImageHandler>(
+  IMAGE_OPCODE,
   (...mimetype: string[]) => [...mimetype],
   (handler: ImageHandler) => (params) => {
     handler(...params);
-  }
+  },
 );
-
 
 /**
  * Requests that the connection be made using the specified protocol, or to the specified existing
@@ -78,15 +78,15 @@ export const image = createInstruction<ImageHandler>(IMAGE_OPCODE,
  */
 export type SelectHandler = (id: string) => void;
 
-export const select = createInstruction<SelectHandler>(SELECT_OPCODE,
+export const select = createInstruction<SelectHandler>(
+  SELECT_OPCODE,
   (id: string) => [id],
   (handler: SelectHandler) => (params) => {
     const id = params[0];
 
     handler(id);
-  }
+  },
 );
-
 
 /**
  * Specifies the client's optimal screen size and resolution.
@@ -97,7 +97,8 @@ export const select = createInstruction<SelectHandler>(SELECT_OPCODE,
  */
 export type SizeHandler = (width: number, height: number, dpi: number) => void;
 
-export const size = createInstruction<SizeHandler>(SIZE_OPCODE,
+export const size = createInstruction<SizeHandler>(
+  SIZE_OPCODE,
   (width: number, height: number, dpi: number) => [width, height, dpi],
   (handler: SizeHandler) => (params) => {
     const width = parseInt(params[0], 10);
@@ -105,9 +106,8 @@ export const size = createInstruction<SizeHandler>(SIZE_OPCODE,
     const dpi = parseInt(params[2], 10);
 
     handler(width, height, dpi);
-  }
+  },
 );
-
 
 /**
  * Specifies the timezone of the client system, in IANA zone key format. This is a single-value
@@ -118,15 +118,15 @@ export const size = createInstruction<SizeHandler>(SIZE_OPCODE,
  */
 export type TimezoneHandler = (timezone: string) => void;
 
-export const timezone = createInstruction<TimezoneHandler>(TIMEZONE_OPCODE,
+export const timezone = createInstruction<TimezoneHandler>(
+  TIMEZONE_OPCODE,
   (tz: string) => [tz],
   (handler: TimezoneHandler) => (params) => {
     const tz = params[0];
 
     handler(tz);
-  }
+  },
 );
-
 
 /**
  * Specifies which video mimetypes are supported by the client. Each parameter must be a single
@@ -137,9 +137,10 @@ export const timezone = createInstruction<TimezoneHandler>(TIMEZONE_OPCODE,
  */
 export type VideoHandler = (...mimetypes: string[]) => void;
 
-export const video = createInstruction<VideoHandler>(VIDEO_OPCODE,
+export const video = createInstruction<VideoHandler>(
+  VIDEO_OPCODE,
   (...mimetypes: string[]) => [...mimetypes],
   (handler: VideoHandler) => (params) => {
     handler(...params);
-  }
+  },
 );

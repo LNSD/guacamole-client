@@ -1,6 +1,10 @@
 export type OnBlobCallback = (data: string) => void;
 export type OnEndCallback = () => void;
-export type SendAckCallback = (index: number, message: string, code: number) => void;
+export type SendAckCallback = (
+  index: number,
+  message: string,
+  code: number,
+) => void;
 
 /**
  * An input stream abstraction used by the Guacamole client to facilitate

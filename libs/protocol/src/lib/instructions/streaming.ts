@@ -23,17 +23,26 @@ const VIDEO_OPCODE = 'video';
  *                  interface, and mainly helps with debugging.
  * @param status - The Guacamole status code denoting success or failure.
  */
-export type AckHandler = (stream: number, message: string, status: number) => void;
+export type AckHandler = (
+  stream: number,
+  message: string,
+  status: number,
+) => void;
 
-export const ack = createInstruction<AckHandler>(ACK_OPCODE,
-  (stream: number, message: string, status: number) => [stream, message, status],
+export const ack = createInstruction<AckHandler>(
+  ACK_OPCODE,
+  (stream: number, message: string, status: number) => [
+    stream,
+    message,
+    status,
+  ],
   (handler: AckHandler) => (params) => {
     const streamIndex = parseInt(params[0], 10);
     const message = params[1];
     const code = parseInt(params[2], 10);
 
     handler(streamIndex, message, code);
-  }
+  },
 );
 
 /**
@@ -49,9 +58,14 @@ export const ack = createInstruction<AckHandler>(ACK_OPCODE,
  *                   this will be "text/plain".
  * @param name - The name of the connection parameter whose value is being sent.
  */
-export type ArgvHandler = (stream: number, mimetype: string, name: string) => void;
+export type ArgvHandler = (
+  stream: number,
+  mimetype: string,
+  name: string,
+) => void;
 
-export const argv = createInstruction<ArgvHandler>(ARGV_OPCODE,
+export const argv = createInstruction<ArgvHandler>(
+  ARGV_OPCODE,
   (stream: number, mimetype: string, name: string) => [stream, mimetype, name],
   (handler: ArgvHandler) => (params) => {
     const streamIndex = parseInt(params[0], 10);
@@ -59,9 +73,8 @@ export const argv = createInstruction<ArgvHandler>(ARGV_OPCODE,
     const name = params[2];
 
     handler(streamIndex, mimetype, name);
-  }
+  },
 );
-
 
 /**
  * Allocates a new stream, associating it with the given audio metadata. Audio data will later be
@@ -74,14 +87,15 @@ export const argv = createInstruction<ArgvHandler>(ARGV_OPCODE,
  */
 export type AudioHandler = (stream: number, mimetype: string) => void;
 
-export const audio = createInstruction<AudioHandler>(AUDIO_OPCODE,
+export const audio = createInstruction<AudioHandler>(
+  AUDIO_OPCODE,
   (stream: number, mimetype: string) => [stream, mimetype],
   (handler: AudioHandler) => (params) => {
     const streamIndex = parseInt(params[0], 10);
     const mimetype = params[1];
 
     handler(streamIndex, mimetype);
-  }
+  },
 );
 
 /**
@@ -94,14 +108,15 @@ export const audio = createInstruction<AudioHandler>(AUDIO_OPCODE,
  */
 export type BlobHandler = (stream: number, data: string) => void;
 
-export const blob = createInstruction<BlobHandler>(BLOB_OPCODE,
+export const blob = createInstruction<BlobHandler>(
+  BLOB_OPCODE,
   (stream: number, data: string) => [stream, data],
   (handler: BlobHandler) => (params) => {
     const streamIndex = parseInt(params[0], 10);
     const data = params[1];
 
     handler(streamIndex, data);
-  }
+  },
 );
 /**
  * Allocates a new stream, associating it with the given clipboard metadata. The clipboard data will
@@ -115,16 +130,16 @@ export const blob = createInstruction<BlobHandler>(BLOB_OPCODE,
  */
 export type ClipboardHandler = (stream: number, mimetype: string) => void;
 
-export const clipboard = createInstruction<ClipboardHandler>(CLIPBOARD_OPCODE,
+export const clipboard = createInstruction<ClipboardHandler>(
+  CLIPBOARD_OPCODE,
   (stream: number, mimetype: string) => [stream, mimetype],
   (handler: ClipboardHandler) => (params) => {
     const streamIndex = parseInt(params[0], 10);
     const mimetype = params[1];
 
     handler(streamIndex, mimetype);
-  }
+  },
 );
-
 
 /**
  * The end instruction terminates an open stream, freeing any client-side or server-side resources.
@@ -135,15 +150,15 @@ export const clipboard = createInstruction<ClipboardHandler>(CLIPBOARD_OPCODE,
  */
 export type EndHandler = (stream: number) => void;
 
-export const end = createInstruction<EndHandler>(END_OPCODE,
+export const end = createInstruction<EndHandler>(
+  END_OPCODE,
   (stream: number) => [stream],
   (handler: EndHandler) => (params) => {
     const streamIndex = parseInt(params[0], 10);
 
     handler(streamIndex);
-  }
+  },
 );
-
 
 /**
  * Allocates a new stream, associating it with the given arbitrary file metadata. The contents of
@@ -154,19 +169,27 @@ export const end = createInstruction<EndHandler>(END_OPCODE,
  * @param mimetype - The mimetype of the file being sent.
  * @param filename - The name of the file, as it would be saved on a filesystem.
  */
-export type FileHandler = (stream: number, mimetype: string, filename: string) => void;
+export type FileHandler = (
+  stream: number,
+  mimetype: string,
+  filename: string,
+) => void;
 
-export const file = createInstruction<FileHandler>(FILE_OPCODE,
-  (stream: number, mimetype: string, filename: string) => [stream, mimetype, filename],
+export const file = createInstruction<FileHandler>(
+  FILE_OPCODE,
+  (stream: number, mimetype: string, filename: string) => [
+    stream,
+    mimetype,
+    filename,
+  ],
   (handler: FileHandler) => (params) => {
     const streamIndex = parseInt(params[0], 10);
     const mimetype = params[1];
     const filename = params[2];
 
     handler(streamIndex, mimetype, filename);
-  }
+  },
 );
-
 
 /**
  * Allocates a new stream, associating it with the metadata of an image update, including the image
@@ -183,10 +206,25 @@ export const file = createInstruction<FileHandler>(FILE_OPCODE,
  *            layer.
  * @param mimetype - The mimetype of the image being sent.
  */
-export type ImgHandler = (stream: number, layer: number, channelMask: number, x: number, y: number, mimetype: string) => void;
+export type ImgHandler = (
+  stream: number,
+  layer: number,
+  channelMask: number,
+  x: number,
+  y: number,
+  mimetype: string,
+) => void;
 
-export const img = createInstruction<ImgHandler>(IMG_OPCODE,
-  (stream: number, layer: number, channelMask: number, x: number, y: number, mimetype: string) => [stream, layer, channelMask, x, y, mimetype],
+export const img = createInstruction<ImgHandler>(
+  IMG_OPCODE,
+  (
+    stream: number,
+    layer: number,
+    channelMask: number,
+    x: number,
+    y: number,
+    mimetype: string,
+  ) => [stream, layer, channelMask, x, y, mimetype],
   (handler: ImgHandler) => (params) => {
     const streamIndex = parseInt(params[0], 10);
     const channelMask = parseInt(params[1], 10);
@@ -196,7 +234,7 @@ export const img = createInstruction<ImgHandler>(IMG_OPCODE,
     const y = parseInt(params[5], 10);
 
     handler(streamIndex, layerIndex, channelMask, x, y, mimetype);
-  }
+  },
 );
 
 /**
@@ -212,14 +250,15 @@ export const img = createInstruction<ImgHandler>(IMG_OPCODE,
  */
 export type NestHandler = (index: number, data: string) => void;
 
-export const nest = createInstruction<NestHandler>(NEST_OPCODE,
+export const nest = createInstruction<NestHandler>(
+  NEST_OPCODE,
   (index: number, data: string) => [index, data],
   (handler: NestHandler) => (params) => {
     const parserIndex = parseInt(params[0], 10);
     const packet = params[1];
 
     handler(parserIndex, packet);
-  }
+  },
 );
 
 /**
@@ -233,9 +272,14 @@ export const nest = createInstruction<NestHandler>(NEST_OPCODE,
  * @param mimetype - The mimetype of the data being sent along the pipe.
  * @param name - The arbitrary name of the pipe, which may have special meaning to client-side code.
  */
-export type PipeHandler = (stream: number, mimetype: string, name: string) => void;
+export type PipeHandler = (
+  stream: number,
+  mimetype: string,
+  name: string,
+) => void;
 
-export const pipe = createInstruction<PipeHandler>(PIPE_OPCODE,
+export const pipe = createInstruction<PipeHandler>(
+  PIPE_OPCODE,
   (stream: number, mimetype: string, name: string) => [stream, mimetype, name],
   (handler: PipeHandler) => (params) => {
     const streamIndex = parseInt(params[0], 10);
@@ -243,9 +287,8 @@ export const pipe = createInstruction<PipeHandler>(PIPE_OPCODE,
     const name = params[2];
 
     handler(streamIndex, mimetype, name);
-  }
+  },
 );
-
 
 /**
  * Allocates a new stream, associating it with the given video metadata. Video data will later be
@@ -260,16 +303,24 @@ export const pipe = createInstruction<PipeHandler>(PIPE_OPCODE,
  *                hardware decoding.
  * @param mimetype - The mimetype of the video data being sent.
  */
-export type VideoHandler = (stream: number, layer: number, mimetype: string) => void;
+export type VideoHandler = (
+  stream: number,
+  layer: number,
+  mimetype: string,
+) => void;
 
-export const video = createInstruction<VideoHandler>(VIDEO_OPCODE,
-  (stream: number, layer: number, mimetype: string) => [stream, layer, mimetype],
+export const video = createInstruction<VideoHandler>(
+  VIDEO_OPCODE,
+  (stream: number, layer: number, mimetype: string) => [
+    stream,
+    layer,
+    mimetype,
+  ],
   (handler: VideoHandler) => (params) => {
     const streamIndex = parseInt(params[0], 10);
     const layerIndex = parseInt(params[1], 10);
     const mimetype = params[2];
 
     handler(streamIndex, layerIndex, mimetype);
-  }
+  },
 );
-

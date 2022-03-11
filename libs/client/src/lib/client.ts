@@ -1,43 +1,48 @@
 import { Display } from '@guacamole-client/display';
-import { Status, StatusCode } from './status';
+import { MouseState } from '@guacamole-client/input';
 import {
   ClientControl,
   ClientEvents,
   Decoder,
   ServerControl,
-  Streaming
+  Streaming,
 } from '@guacamole-client/protocol';
 import { Tunnel } from '@guacamole-client/tunnel';
-import { State } from './state';
-import { MouseState } from '@guacamole-client/input';
-import { InputStreamResponseSender } from './streams/input';
-import { OutputStreamResponseSender } from './streams/output';
-import { ClientEventMap, ClientEventTarget, ClientEventTargetMap } from './events';
-import { InstructionRouter } from './instruction-router';
+
 import {
-  DisplayManager,
-  registerInstructionHandlers as registerDisplayHandlers
-} from './extension/display';
+  ClientEventMap,
+  ClientEventTarget,
+  ClientEventTargetMap,
+} from './events';
 import {
   AudioPlayerManager,
-  registerInstructionHandlers as registerAudioPlayerHandlers
+  registerInstructionHandlers as registerAudioPlayerHandlers,
 } from './extension/audio-player';
 import {
   ClipboardManager,
-  registerInstructionHandlers as registerClipboardHandlers
+  registerInstructionHandlers as registerClipboardHandlers,
 } from './extension/clipboard';
 import {
+  DisplayManager,
+  registerInstructionHandlers as registerDisplayHandlers,
+} from './extension/display';
+import {
   FileTransferManager,
-  registerInstructionHandlers as registerFileTransferHandlers
+  registerInstructionHandlers as registerFileTransferHandlers,
 } from './extension/file-transfer';
 import {
-  NamedPipeManager,
-  registerInstructionHandlers as registerNamedPipeHandlers
-} from './extension/named-pipe';
-import {
   FilesystemManager,
-  registerInstructionHandlers as registerFilesystemHandlers
+  registerInstructionHandlers as registerFilesystemHandlers,
 } from './extension/filesystem';
+import {
+  NamedPipeManager,
+  registerInstructionHandlers as registerNamedPipeHandlers,
+} from './extension/named-pipe';
+import { InstructionRouter } from './instruction-router';
+import { State } from './state';
+import { Status, StatusCode } from './status';
+import { InputStreamResponseSender } from './streams/input';
+import { OutputStreamResponseSender } from './streams/output';
 
 const PING_INTERVAL = 5000;
 
@@ -46,8 +51,12 @@ const PING_INTERVAL = 5000;
  * Guacamole instructions via the provided tunnel, updating its display using one or more canvas
  * elements.
  */
-export class Client implements InputStreamResponseSender, OutputStreamResponseSender, ClientEventTarget {
-
+export class Client
+  implements
+    InputStreamResponseSender,
+    OutputStreamResponseSender,
+    ClientEventTarget
+{
   private currentState: State = State.IDLE;
 
   private currentTimestamp = 0;
@@ -112,7 +121,10 @@ export class Client implements InputStreamResponseSender, OutputStreamResponseSe
   }
 
   isConnected(): boolean {
-    return this.currentState === State.CONNECTED || this.currentState === State.WAITING;
+    return (
+      this.currentState === State.CONNECTED ||
+      this.currentState === State.WAITING
+    );
   }
 
   /**
@@ -146,7 +158,10 @@ export class Client implements InputStreamResponseSender, OutputStreamResponseSe
    */
   disconnect() {
     // Only attempt disconnection not disconnected.
-    if (this.currentState !== State.DISCONNECTED && this.currentState !== State.DISCONNECTING) {
+    if (
+      this.currentState !== State.DISCONNECTED &&
+      this.currentState !== State.DISCONNECTING
+    ) {
       this.setState(State.DISCONNECTING);
 
       // Stop ping
@@ -205,10 +220,7 @@ export class Client implements InputStreamResponseSender, OutputStreamResponseSe
     }
 
     // Update client-side cursor
-    this.display.moveCursor(
-      Math.floor(mouseState.x),
-      Math.floor(mouseState.y)
-    );
+    this.display.moveCursor(Math.floor(mouseState.x), Math.floor(mouseState.y));
 
     // Build mask
     let buttonMask = 0;
@@ -232,11 +244,13 @@ export class Client implements InputStreamResponseSender, OutputStreamResponseSe
       buttonMask |= 16;
     }
 
-    this.sendMessage(...ClientEvents.mouse(
-      Math.floor(mouseState.x),
-      Math.floor(mouseState.y),
-      buttonMask
-    ));
+    this.sendMessage(
+      ...ClientEvents.mouse(
+        Math.floor(mouseState.x),
+        Math.floor(mouseState.y),
+        buttonMask,
+      ),
+    );
   }
 
   sendMessage(...elements: any[]) {
@@ -248,7 +262,10 @@ export class Client implements InputStreamResponseSender, OutputStreamResponseSe
     this.tunnel.sendMessage(...elements);
   }
 
-  addEventListener<K extends keyof ClientEventMap>(type: K, listener: ClientEventMap[K]): void {
+  addEventListener<K extends keyof ClientEventMap>(
+    type: K,
+    listener: ClientEventMap[K],
+  ): void {
     this.events.addEventListener(type, listener);
   }
 
@@ -270,28 +287,38 @@ export class Client implements InputStreamResponseSender, OutputStreamResponseSe
   }
 
   private registerClientSpecificInstructionRoutes(router: InstructionRouter) {
-    router.addInstructionHandler(Streaming.nest.opcode, Streaming.nest.parser(
-      this.handleNestInstruction.bind(this)
-    ));
+    router.addInstructionHandler(
+      Streaming.nest.opcode,
+      Streaming.nest.parser(this.handleNestInstruction.bind(this)),
+    );
 
-    router.addInstructionHandler(ClientControl.disconnect.opcode, ClientControl.disconnect.parser(
-      this.handleDisconnectInstruction.bind(this)
-    ));
-    router.addInstructionHandler(ClientControl.sync.opcode, ClientControl.sync.parser(
-      this.handleSyncInstruction.bind(this)
-    ));
+    router.addInstructionHandler(
+      ClientControl.disconnect.opcode,
+      ClientControl.disconnect.parser(
+        this.handleDisconnectInstruction.bind(this),
+      ),
+    );
+    router.addInstructionHandler(
+      ClientControl.sync.opcode,
+      ClientControl.sync.parser(this.handleSyncInstruction.bind(this)),
+    );
 
-    router.addInstructionHandler(ServerControl.mouse.opcode, ServerControl.mouse.parser(
-      this.handleMouseInstruction.bind(this)
-    ));
-    router.addInstructionHandler(ServerControl.error.opcode, ServerControl.error.parser(
-      this.handleErrorInstruction.bind(this)
-    ));
+    router.addInstructionHandler(
+      ServerControl.mouse.opcode,
+      ServerControl.mouse.parser(this.handleMouseInstruction.bind(this)),
+    );
+    router.addInstructionHandler(
+      ServerControl.error.opcode,
+      ServerControl.error.parser(this.handleErrorInstruction.bind(this)),
+    );
 
     // TODO Review this handler
-    this.instructionRouter.addInstructionHandler('required', (params: string[]) => {
-      this.handleRequiredInstruction(params);
-    });
+    this.instructionRouter.addInstructionHandler(
+      'required',
+      (params: string[]) => {
+        this.handleRequiredInstruction(params);
+      },
+    );
     // TODO Review this handler
     this.instructionRouter.addInstructionHandler('name', (params: string[]) => {
       const name = params[0];

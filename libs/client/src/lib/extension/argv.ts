@@ -1,27 +1,34 @@
+import { InputStream, OutputStream, StreamError } from '@guacamole-client/io';
+import { Streaming } from '@guacamole-client/protocol';
+
+import { ClientEventTargetMap } from '../events';
+import { InstructionRouter } from '../instruction-router';
+import { StatusCode } from '../status';
 import {
   InputStreamHandler,
   InputStreamResponseSender,
   InputStreamsManager,
-  registerInputStreamHandlers
+  registerInputStreamHandlers,
 } from '../streams/input';
 import {
   OutputStreamHandler,
   OutputStreamResponseSender,
   OutputStreamsManager,
-  registerOutputStreamHandlers
+  registerOutputStreamHandlers,
 } from '../streams/output';
-import { ClientEventTargetMap } from '../events';
-import { InputStream, OutputStream, StreamError } from '@guacamole-client/io';
-import { Streaming } from '@guacamole-client/protocol';
-import { StatusCode } from '../status';
-import { InstructionRouter } from '../instruction-router';
 
 export interface ArgvInstructionHandler {
-  handleArgvInstruction(streamIndex: number, mimetype: string, name: string): void;
+  handleArgvInstruction(
+    streamIndex: number,
+    mimetype: string,
+    name: string,
+  ): void;
 }
 
-export interface ArgvStreamHandler extends ArgvInstructionHandler, InputStreamHandler, OutputStreamHandler {
-}
+export interface ArgvStreamHandler
+  extends ArgvInstructionHandler,
+    InputStreamHandler,
+    OutputStreamHandler {}
 
 /**
  * Fired when the current value of a connection parameter is being exposed by the server.
@@ -30,15 +37,20 @@ export interface ArgvStreamHandler extends ArgvInstructionHandler, InputStreamHa
  * @param mimetype - The mimetype of the data which will be received.
  * @param name - The name of the connection parameter whose value is being exposed.
  */
-export type OnArgvCallback = (stream: InputStream, mimetype: string, name: string) => void;
+export type OnArgvCallback = (
+  stream: InputStream,
+  mimetype: string,
+  name: string,
+) => void;
 
 export class ArgvManager implements ArgvStreamHandler {
   private readonly inputStreams: InputStreamsManager;
   private readonly outputStreams: OutputStreamsManager;
 
   constructor(
-    private readonly sender: InputStreamResponseSender & OutputStreamResponseSender,
-    private readonly events: ClientEventTargetMap
+    private readonly sender: InputStreamResponseSender &
+      OutputStreamResponseSender,
+    private readonly events: ClientEventTargetMap,
   ) {
     this.inputStreams = new InputStreamsManager(sender);
     this.outputStreams = new OutputStreamsManager(sender);
@@ -68,7 +80,13 @@ export class ArgvManager implements ArgvStreamHandler {
   handleArgvInstruction(streamIndex: number, mimetype: string, name: string) {
     const listener = this.events.getEventListener('onargv');
     if (!listener) {
-      this.inputStreams.sendAck(streamIndex, new StreamError('Receiving argument values unsupported', StatusCode.UNSUPPORTED));
+      this.inputStreams.sendAck(
+        streamIndex,
+        new StreamError(
+          'Receiving argument values unsupported',
+          StatusCode.UNSUPPORTED,
+        ),
+      );
       return;
     }
 
@@ -92,10 +110,14 @@ export class ArgvManager implements ArgvStreamHandler {
   //</editor-fold>
 }
 
-export function registerInstructionHandlers(router: InstructionRouter, handler: ArgvStreamHandler) {
-  router.addInstructionHandler(Streaming.argv.opcode, Streaming.argv.parser(
-    handler.handleArgvInstruction.bind(handler)
-  ));
+export function registerInstructionHandlers(
+  router: InstructionRouter,
+  handler: ArgvStreamHandler,
+) {
+  router.addInstructionHandler(
+    Streaming.argv.opcode,
+    Streaming.argv.parser(handler.handleArgvInstruction.bind(handler)),
+  );
   registerInputStreamHandlers(router, handler);
   registerOutputStreamHandlers(router, handler);
 }

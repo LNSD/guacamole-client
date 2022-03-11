@@ -1,5 +1,5 @@
-import { StringReader } from './StringReader';
 import { InputStream } from './InputStream';
+import { StringReader } from './StringReader';
 
 export type OnProgressCallback = (length: number) => void;
 export type OnEndCallback = () => void;

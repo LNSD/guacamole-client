@@ -1,4 +1,4 @@
-import { InputStream } from "@guacamole-client/io";
+import { InputStream } from '@guacamole-client/io';
 
 /**
  * Abstract video player which accepts, queues and plays back arbitrary video
@@ -53,7 +53,11 @@ export default abstract class VideoPlayer {
    *         from the given stream, or null if support for the given mimetype
    *         is absent.
    */
-  public static getInstance(stream: InputStream, layer: any /* TODO VisibleLayer */, mimetype: string): VideoPlayer | null {
+  public static getInstance(
+    stream: InputStream,
+    layer: any /* TODO VisibleLayer */,
+    mimetype: string,
+  ): VideoPlayer | null {
     // There are currently no built-in video players
     return null;
   }

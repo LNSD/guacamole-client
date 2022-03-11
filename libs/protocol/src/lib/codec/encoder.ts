@@ -1,18 +1,17 @@
 export default class Encoder {
-
   public encode(opcode: string, ...parameters: any[]): string {
     // Initialized message with first element
     let instruction = this.encodeElement(opcode);
 
     // Append remaining elements
     for (const param of parameters) {
-      instruction += "," + this.encodeElement(param);
+      instruction += ',' + this.encodeElement(param);
     }
 
     // Final terminator
-    instruction += ";";
+    instruction += ';';
 
-    return instruction
+    return instruction;
   }
 
   /**

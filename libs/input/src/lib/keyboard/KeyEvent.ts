@@ -7,7 +7,6 @@
  * @private
  */
 export default abstract class KeyEvent {
-
   /**
    * An arbitrary timestamp in milliseconds, indicating this event's
    * position in time relative to other events.

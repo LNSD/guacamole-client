@@ -7,7 +7,7 @@ export enum WsReadyState {
   CONNECTING = 0,
   OPEN = 1,
   CLOSING = 2,
-  CLOSED = 3
+  CLOSED = 3,
 }
 
 export class ConnectableWebSocket implements WS {
@@ -20,7 +20,7 @@ export class ConnectableWebSocket implements WS {
 
   private socket?: WebSocket;
 
-  private _binaryType: BinaryType = "blob";
+  private _binaryType: BinaryType = 'blob';
 
   get binaryType(): BinaryType {
     return this._binaryType;
@@ -39,11 +39,11 @@ export class ConnectableWebSocket implements WS {
   }
 
   get extensions(): string {
-    return this.socket?.extensions ?? "";
+    return this.socket?.extensions ?? '';
   }
 
   get protocol(): string {
-    return this.socket?.protocol ?? "";
+    return this.socket?.protocol ?? '';
   }
 
   get readyState(): number {
@@ -51,7 +51,7 @@ export class ConnectableWebSocket implements WS {
   }
 
   get url(): string {
-    return this.socket?.url ?? "";
+    return this.socket?.url ?? '';
   }
 
   private _onclose: ((this: WebSocket, ev: CloseEvent) => any) | null = null;
@@ -66,7 +66,8 @@ export class ConnectableWebSocket implements WS {
     this._onerror = value;
   }
 
-  private _onmessage: ((this: WebSocket, ev: MessageEvent) => any) | null = null;
+  private _onmessage: ((this: WebSocket, ev: MessageEvent) => any) | null =
+    null;
 
   set onmessage(value: ((this: WebSocket, ev: MessageEvent) => any) | null) {
     this._onmessage = value;
@@ -105,19 +106,35 @@ export class ConnectableWebSocket implements WS {
     this.socket.send(data);
   }
 
-  addEventListener<K extends keyof WebSocketEventMap>(type: K, listener: (this: WebSocket, ev: WebSocketEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
-  addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+  addEventListener<K extends keyof WebSocketEventMap>(
+    type: K,
+    listener: (this: WebSocket, ev: WebSocketEventMap[K]) => any,
+    options?: boolean | AddEventListenerOptions,
+  ): void;
+  addEventListener(
+    type: string,
+    listener: EventListenerOrEventListenerObject,
+    options?: boolean | AddEventListenerOptions,
+  ): void;
   addEventListener(type: any, listener: any, options?: any): void {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
 
-  removeEventListener<K extends keyof WebSocketEventMap>(type: K, listener: (this: WebSocket, ev: WebSocketEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
-  removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
+  removeEventListener<K extends keyof WebSocketEventMap>(
+    type: K,
+    listener: (this: WebSocket, ev: WebSocketEventMap[K]) => any,
+    options?: boolean | EventListenerOptions,
+  ): void;
+  removeEventListener(
+    type: string,
+    listener: EventListenerOrEventListenerObject,
+    options?: boolean | EventListenerOptions,
+  ): void;
   removeEventListener(type: any, listener: any, options?: any): void {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
 
   dispatchEvent(event: Event): boolean {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
 }

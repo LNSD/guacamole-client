@@ -18,7 +18,7 @@ export default class VisibleLayer extends Layer {
    * The opacity of the layer container, where 255 is fully opaque and 0 is
    * fully transparent.
    */
-  public alpha = 0xFF;
+  public alpha = 0xff;
   /**
    * X coordinate of the upper-left corner of this layer container within
    * its parent, in pixels.
@@ -224,7 +224,14 @@ export default class VisibleLayer extends Layer {
    * @param e - The fifth value in the affine transform's matrix.
    * @param f - The sixth value in the affine transform's matrix.
    */
-  public distort(a: number, b: number, c: number, d: number, e: number, f: number) {
+  public distort(
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+  ) {
     // Store matrix
     this.matrix = [a, b, c, d, e, f];
 

@@ -1,5 +1,5 @@
 import KeyEvent from './KeyEvent';
-import {keysymFromKeycode, keysymFromKeyIdentifier} from './KeyboardHelpers';
+import { keysymFromKeycode, keysymFromKeyIdentifier } from './KeyboardHelpers';
 
 /**
  * Information related to the pressing of a key, which need not be a key
@@ -44,7 +44,13 @@ export default class KeyupEvent extends KeyEvent {
    *                          the key released, as defined at:
    *                          http://www.w3.org/TR/DOM-Level-3-Events/#events-KeyboardEvent
    */
-  constructor(keyboard: any /* TODO Keyboard */, keyCode: number, keyIdentifier: string, key: string, location: number) {
+  constructor(
+    keyboard: any /* TODO Keyboard */,
+    keyCode: number,
+    keyIdentifier: string,
+    key: string,
+    location: number,
+  ) {
     super();
 
     this.keyCode = keyCode;
@@ -53,7 +59,9 @@ export default class KeyupEvent extends KeyEvent {
     this.location = location;
 
     // If key is known from keyCode or DOM3 alone, use that
-    this.keysym = keysymFromKeycode(keyCode, location) ?? keysymFromKeyIdentifier(key, location); // KeyCode is still more reliable for keyup when dead keys are in use
+    this.keysym =
+      keysymFromKeycode(keyCode, location) ??
+      keysymFromKeyIdentifier(key, location); // KeyCode is still more reliable for keyup when dead keys are in use
 
     // Fall back to the most recently pressed keysym associated with the
     // keyCode if the inferred key doesn't seem to actually be pressed
@@ -67,4 +75,3 @@ export default class KeyupEvent extends KeyEvent {
     this.reliable = true;
   }
 }
-

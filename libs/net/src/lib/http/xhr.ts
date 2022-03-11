@@ -1,6 +1,11 @@
-import { HttpRequest, OnCompleteCallback, OnErrorCallback, OnLoadingCallback } from './request';
-import { HttpRequestFactory } from './factory';
 import { DefaultRequestConfig, RequestConfig } from './config';
+import { HttpRequestFactory } from './factory';
+import {
+  HttpRequest,
+  OnCompleteCallback,
+  OnErrorCallback,
+  OnLoadingCallback,
+} from './request';
 
 class XHR implements HttpRequest {
   onComplete: OnCompleteCallback | null = null;
@@ -16,7 +21,7 @@ class XHR implements HttpRequest {
 
   constructor(
     private readonly request: XMLHttpRequest,
-    private readonly data: XMLHttpRequestBodyInit | null | undefined
+    private readonly data: XMLHttpRequestBodyInit | null | undefined,
   ) {
     this.request.onreadystatechange = () => {
       this.handleOnReadyStateChange(request);
@@ -122,14 +127,17 @@ const factory: HttpRequestFactory = (conf: RequestConfig): HttpRequest => {
 };
 
 const xhr = Object.assign(factory, {
-  create: (defaults?: DefaultRequestConfig): HttpRequestFactory => (config: RequestConfig) => factory({
-    ...defaults,
-    ...config,
-    headers: {
-      ...defaults?.headers ?? {},
-      ...config.headers
-    }
-  })
+  create:
+    (defaults?: DefaultRequestConfig): HttpRequestFactory =>
+    (config: RequestConfig) =>
+      factory({
+        ...defaults,
+        ...config,
+        headers: {
+          ...(defaults?.headers ?? {}),
+          ...config.headers,
+        },
+      }),
 });
 
 export default xhr;

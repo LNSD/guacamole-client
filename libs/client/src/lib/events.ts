@@ -1,13 +1,14 @@
-import { InputStream } from '@guacamole-client/io';
-import { Status } from './status';
-import { VideoPlayer } from '@guacamole-client/media';
 import { VisibleLayer } from '@guacamole-client/display';
+import { InputStream } from '@guacamole-client/io';
+import { VideoPlayer } from '@guacamole-client/media';
+
 import { OnArgvCallback } from './extension/argv';
+import { OnAudioCallback } from './extension/audio-player';
 import { OnClipboardCallback } from './extension/clipboard';
 import { OnFileCallback } from './extension/file-transfer';
 import { OnFilesystemCallback } from './extension/filesystem';
 import { OnPipeCallback } from './extension/named-pipe';
-import { OnAudioCallback } from './extension/audio-player';
+import { Status } from './status';
 
 /**
  * Fired whenever the state of this Client changes.
@@ -46,7 +47,11 @@ export type OnErrorCallback = (error: Status) => void;
  *     if the built-in video players of the Guacamole client should be
  *     used.
  */
-export type OnVideoCallback = (stream: InputStream, layer: VisibleLayer, mimetype: string) => VideoPlayer;
+export type OnVideoCallback = (
+  stream: InputStream,
+  layer: VisibleLayer,
+  mimetype: string,
+) => VideoPlayer;
 
 /**
  * Fired when a "required" instruction is received. A required instruction
@@ -69,35 +74,42 @@ export type OnRequiredCallback = (parameters: string[]) => void;
 export type OnSyncCallback = (timeout: number) => void;
 
 export interface ClientEventMap {
-  "onstatechange"?: OnStateChangeCallback;
-  "onname"?: OnNameCallback;
-  "onerror"?: OnErrorCallback;
-  "onaudio"?: OnAudioCallback;
+  onstatechange?: OnStateChangeCallback;
+  onname?: OnNameCallback;
+  onerror?: OnErrorCallback;
+  onaudio?: OnAudioCallback;
   // "onvideo"?: OnVideoCallback;
-  "onargv"?: OnArgvCallback;
-  "onclipboard"?: OnClipboardCallback;
-  "onfile"?: OnFileCallback;
-  "onfilesystem"?: OnFilesystemCallback;
-  "onpipe"?: OnPipeCallback;
-  "onrequired"?: OnRequiredCallback;
-  "onsync"?: OnSyncCallback;
+  onargv?: OnArgvCallback;
+  onclipboard?: OnClipboardCallback;
+  onfile?: OnFileCallback;
+  onfilesystem?: OnFilesystemCallback;
+  onpipe?: OnPipeCallback;
+  onrequired?: OnRequiredCallback;
+  onsync?: OnSyncCallback;
 }
 
 export interface ClientEventTarget {
-  addEventListener<K extends keyof ClientEventMap>(type: K, listener: ClientEventMap[K]): void;
+  addEventListener<K extends keyof ClientEventMap>(
+    type: K,
+    listener: ClientEventMap[K],
+  ): void;
 
   removeEventListener<K extends keyof ClientEventMap>(type: K): void;
 }
 
 export class ClientEventTargetMap implements ClientEventTarget {
-
   private readonly listeners: Map<keyof ClientEventMap, any> = new Map();
 
-  addEventListener<K extends keyof ClientEventMap>(type: K, listener: ClientEventMap[K]): void {
+  addEventListener<K extends keyof ClientEventMap>(
+    type: K,
+    listener: ClientEventMap[K],
+  ): void {
     this.listeners.set(type, listener);
   }
 
-  getEventListener<K extends keyof ClientEventMap>(type: K): ClientEventMap[K] | undefined {
+  getEventListener<K extends keyof ClientEventMap>(
+    type: K,
+  ): ClientEventMap[K] | undefined {
     return this.listeners.get(type);
   }
 

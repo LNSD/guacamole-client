@@ -17,4 +17,3 @@ export class UpstreamTimeoutError extends TunnelError {}
 export class UpstreamNotFoundError extends TunnelError {}
 
 export class UpstreamUnavailableError extends TunnelError {}
-

@@ -1,6 +1,6 @@
-import { AbstractTunnel, Tunnel } from '../tunnel';
-import { TunnelState } from '../state';
 import { ServerError, TunnelError, UpstreamTimeoutError } from '../errors';
+import { TunnelState } from '../state';
+import { AbstractTunnel, Tunnel } from '../tunnel';
 
 /**
  * Guacamole Tunnel which cycles between all specified tunnels until

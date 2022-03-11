@@ -40,10 +40,10 @@ export class ArrayBufferWriter {
   public blobLength: number = DEFAULT_BLOB_LENGTH;
 
   /*
-  * @constructor
-  * @param {OutputStream} stream The stream that data will be written
-  *                                        to.
-  */
+   * @constructor
+   * @param {OutputStream} stream The stream that data will be written
+   *                                        to.
+   */
   constructor(private readonly stream: OutputStream) {
     // Simply call onack for acknowledgements
     this.stream.onack = (error?: StreamError) => {
@@ -62,7 +62,7 @@ export class ArrayBufferWriter {
     let bytes: Uint8Array;
 
     if (typeof data === 'string') {
-      bytes = Uint8Array.from(data, x => x.charCodeAt(0));
+      bytes = Uint8Array.from(data, (x) => x.charCodeAt(0));
     } else {
       bytes = new Uint8Array(data);
     }
@@ -105,4 +105,3 @@ export class ArrayBufferWriter {
     this.stream.sendBlob(btoa(binary));
   }
 }
-

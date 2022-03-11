@@ -16,14 +16,15 @@ export default class Decoder {
    */
   public oninstruction: OnInstructionCallback | null = null;
 
-  private onInstructionListeners: Map<string, OnInstructionCallback> = new Map();
+  private onInstructionListeners: Map<string, OnInstructionCallback> =
+    new Map();
 
   /**
    * Current buffer of received data. This buffer grows until a full
    * element is available. After a full element is available, that element
    * is flushed into the element buffer.
    */
-  private buffer = "";
+  private buffer = '';
 
   /**
    * Buffer of all received, complete elements. After an entire instruction
@@ -50,7 +51,10 @@ export default class Decoder {
    */
   public receive(packet: string) {
     // Truncate buffer as necessary
-    if (this.startIndex > MAX_BUFFER_LENGTH && this.elementEnd >= this.startIndex) {
+    if (
+      this.startIndex > MAX_BUFFER_LENGTH &&
+      this.elementEnd >= this.startIndex
+    ) {
       this.buffer = this.buffer.substring(this.startIndex);
 
       // Reset parse relative to truncation
@@ -67,18 +71,21 @@ export default class Decoder {
       if (this.elementEnd >= this.startIndex) {
         // We now have enough data for the element. Parse.
         const element = this.buffer.slice(this.startIndex, this.elementEnd);
-        const terminator = this.buffer.slice(this.elementEnd, this.elementEnd + 1);
+        const terminator = this.buffer.slice(
+          this.elementEnd,
+          this.elementEnd + 1,
+        );
 
         // Add element to array
         this.elementBuffer.push(element);
 
         // If last element, handle instruction
-        if (terminator === ";") {
+        if (terminator === ';') {
           // Get opcode
           const opcode = this.elementBuffer.shift();
 
           if (opcode === undefined) {
-            throw new Error("Opcode not found");
+            throw new Error('Opcode not found');
           }
 
           // Call instruction handlers
@@ -100,8 +107,8 @@ export default class Decoder {
           // Reset parse relative to truncation
           this.elementEnd = -1;
           this.startIndex = 0;
-        } else if (terminator !== ",") {
-          throw new Error("Illegal terminator.");
+        } else if (terminator !== ',') {
+          throw new Error('Illegal terminator.');
         }
 
         // Start searching for length at character after
@@ -110,7 +117,7 @@ export default class Decoder {
       }
 
       // Search for end of length
-      const lengthEnd = this.buffer.indexOf(".", this.startIndex);
+      const lengthEnd = this.buffer.indexOf('.', this.startIndex);
       if (lengthEnd === -1) {
         // If no period yet, continue search when more data is received
         this.startIndex = this.buffer.length;
@@ -118,9 +125,12 @@ export default class Decoder {
       }
 
       // Parse length
-      const length = parseInt(this.buffer.substring(this.elementEnd + 1, lengthEnd), 10);
+      const length = parseInt(
+        this.buffer.substring(this.elementEnd + 1, lengthEnd),
+        10,
+      );
       if (isNaN(length)) {
-        throw new Error("Non-numeric character in element length.");
+        throw new Error('Non-numeric character in element length.');
       }
 
       // Calculate start of element
@@ -131,7 +141,10 @@ export default class Decoder {
     }
   }
 
-  public addInstructionListener(opcode: string, listener: OnInstructionCallback): void {
+  public addInstructionListener(
+    opcode: string,
+    listener: OnInstructionCallback,
+  ): void {
     this.onInstructionListeners.set(opcode, listener);
   }
 

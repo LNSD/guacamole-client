@@ -1,8 +1,9 @@
 import * as faker from 'faker';
-import { ChainedTunnel } from './chained';
-import { Tunnel } from '../tunnel';
-import { TunnelState } from '../state';
+
 import { ServerError, UpstreamTimeoutError } from '../errors';
+import { TunnelState } from '../state';
+import { Tunnel } from '../tunnel';
+import { ChainedTunnel } from './chained';
 
 const getMockTunnel = (uuid: string | null = null): Tunnel => ({
   uuid,
@@ -13,14 +14,14 @@ const getMockTunnel = (uuid: string | null = null): Tunnel => ({
   connect: jest.fn(),
   sendMessage: jest.fn(),
   isConnected: jest.fn(),
-  disconnect: jest.fn()
+  disconnect: jest.fn(),
 });
 
 describe('ChainedTunnel', () => {
-  it('no tunnels provided', done => {
+  it('no tunnels provided', (done) => {
     const chainedTunnel = new ChainedTunnel();
 
-    chainedTunnel.onerror = status => {
+    chainedTunnel.onerror = (status) => {
       expect(status).toStrictEqual(new ServerError());
       done();
     };
@@ -269,7 +270,9 @@ describe('ChainedTunnel', () => {
       }
 
       expect(mockTunnelA.connect).toHaveBeenCalledTimes(2);
-      expect(mockTunnelA.connect).toHaveBeenLastCalledWith(secondFakeConnectData);
+      expect(mockTunnelA.connect).toHaveBeenLastCalledWith(
+        secondFakeConnectData,
+      );
 
       expect(mockTunnelB.connect).not.toHaveBeenCalled();
 

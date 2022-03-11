@@ -1,27 +1,30 @@
+import { InputStream, OutputStream, StreamError } from '@guacamole-client/io';
 import { Streaming } from '@guacamole-client/protocol';
+
+import { ClientEventTargetMap } from '../events';
+import { InstructionRouter } from '../instruction-router';
+import { StatusCode } from '../status';
 import {
   InputStreamHandler,
   InputStreamResponseSender,
   InputStreamsManager,
-  registerInputStreamHandlers
+  registerInputStreamHandlers,
 } from '../streams/input';
-import { ClientEventTargetMap } from '../events';
-import { InputStream, OutputStream, StreamError } from '@guacamole-client/io';
-import { StatusCode } from '../status';
-import { InstructionRouter } from '../instruction-router';
 import {
   OutputStreamHandler,
   OutputStreamResponseSender,
   OutputStreamsManager,
-  registerOutputStreamHandlers
+  registerOutputStreamHandlers,
 } from '../streams/output';
 
 export interface ClipboardInstructionHandler {
   handleClipboardInstruction(streamIndex: number, mimetype: string): void;
 }
 
-export interface ClipboardStreamHandler extends ClipboardInstructionHandler, InputStreamHandler, OutputStreamHandler {
-}
+export interface ClipboardStreamHandler
+  extends ClipboardInstructionHandler,
+    InputStreamHandler,
+    OutputStreamHandler {}
 
 /**
  * Fired when the clipboard of the remote client is changing.
@@ -29,16 +32,19 @@ export interface ClipboardStreamHandler extends ClipboardInstructionHandler, Inp
  * @param stream - The stream that will receive clipboard data from the server.
  * @param mimetype - The mimetype of the data which will be received.
  */
-export type OnClipboardCallback = (stream: InputStream, mimetype: string) => void;
+export type OnClipboardCallback = (
+  stream: InputStream,
+  mimetype: string,
+) => void;
 
 export class ClipboardManager implements ClipboardStreamHandler {
-
   private readonly inputStreams: InputStreamsManager;
   private readonly outputStreams: OutputStreamsManager;
 
   constructor(
-    private readonly sender: InputStreamResponseSender & OutputStreamResponseSender,
-    private readonly events: ClientEventTargetMap
+    private readonly sender: InputStreamResponseSender &
+      OutputStreamResponseSender,
+    private readonly events: ClientEventTargetMap,
   ) {
     this.inputStreams = new InputStreamsManager(sender);
     this.outputStreams = new OutputStreamsManager(sender);
@@ -64,7 +70,10 @@ export class ClipboardManager implements ClipboardStreamHandler {
   handleClipboardInstruction(streamIndex: number, mimetype: string) {
     const listener = this.events.getEventListener('onclipboard');
     if (!listener) {
-      this.inputStreams.sendAck(streamIndex, new StreamError('Clipboard unsupported', StatusCode.UNSUPPORTED));
+      this.inputStreams.sendAck(
+        streamIndex,
+        new StreamError('Clipboard unsupported', StatusCode.UNSUPPORTED),
+      );
       return;
     }
 
@@ -87,10 +96,16 @@ export class ClipboardManager implements ClipboardStreamHandler {
   //</editor-fold>
 }
 
-export function registerInstructionHandlers(router: InstructionRouter, handler: ClipboardStreamHandler) {
-  router.addInstructionHandler(Streaming.clipboard.opcode, Streaming.clipboard.parser(
-    handler.handleClipboardInstruction.bind(handler)  // TODO: Review this bind()
-  ));
+export function registerInstructionHandlers(
+  router: InstructionRouter,
+  handler: ClipboardStreamHandler,
+) {
+  router.addInstructionHandler(
+    Streaming.clipboard.opcode,
+    Streaming.clipboard.parser(
+      handler.handleClipboardInstruction.bind(handler), // TODO: Review this bind()
+    ),
+  );
   registerInputStreamHandlers(router, handler);
   registerOutputStreamHandlers(router, handler);
 }

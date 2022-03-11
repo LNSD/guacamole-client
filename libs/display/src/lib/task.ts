@@ -19,7 +19,11 @@ export default class Task {
   public blocked: boolean;
 
   // eslint-disable-next-line @typescript-eslint/ban-types
-  constructor(private readonly taskHandler: TaskHandler, blocked: boolean, private readonly __flushFrames: Function) {
+  constructor(
+    private readonly taskHandler: TaskHandler,
+    blocked: boolean,
+    private readonly __flushFrames: Function,
+  ) {
     this.blocked = blocked;
   }
 

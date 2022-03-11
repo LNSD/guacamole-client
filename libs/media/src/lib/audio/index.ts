@@ -1,13 +1,14 @@
-import PcmAudioPlayer from "./pcm/player";
-import { InputStream, OutputStream } from "@guacamole-client/io";
-import AudioPlayer from "./player";
-import PcmAudioRecorder from "./pcm/recorder";
-import AudioRecorder from "./recorder";
+import { InputStream, OutputStream } from '@guacamole-client/io';
 
-export { default as AudioPlayer } from "./player";
-export { default as AudioRecorder } from "./recorder";
-export { default as RawAudioPlayer } from "./pcm/player";
-export { default as RawAudioRecorder } from "./pcm/recorder";
+import PcmAudioPlayer from './pcm/player';
+import PcmAudioRecorder from './pcm/recorder';
+import AudioPlayer from './player';
+import AudioRecorder from './recorder';
+
+export { default as AudioPlayer } from './player';
+export { default as AudioRecorder } from './recorder';
+export { default as RawAudioPlayer } from './pcm/player';
+export { default as RawAudioRecorder } from './pcm/recorder';
 
 /**
  * Determines whether the given mimetype is supported by any built-in
@@ -35,7 +36,10 @@ export function isAudioPlayerSupportedMimetype(mimetype: string): boolean {
  *         reading from the given stream, or null if support for the given mimetype
  *         is absent.
  */
-export function getAudioPlayerInstance(stream: InputStream, mimetype: string): AudioPlayer | null {
+export function getAudioPlayerInstance(
+  stream: InputStream,
+  mimetype: string,
+): AudioPlayer | null {
   // Use raw audio player if possible
   if (PcmAudioPlayer.isSupportedType(mimetype)) {
     return new PcmAudioPlayer(stream, mimetype);
@@ -107,7 +111,10 @@ export function getAudioRecorderSupportedTypes(): string[] {
  *     writing to the given stream, or null if support for the given mimetype
  *     is absent.
  */
-export function getAudioRecorderInstance(stream: OutputStream, mimetype: string): AudioRecorder | null {
+export function getAudioRecorderInstance(
+  stream: OutputStream,
+  mimetype: string,
+): AudioRecorder | null {
   // Use raw audio recorder if possible
   if (PcmAudioRecorder.isSupportedType(mimetype)) {
     return new PcmAudioRecorder(stream, mimetype);

@@ -1,4 +1,5 @@
 /* eslint-disable no-bitwise */
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,9 +18,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
+import { keysymFromCharcode } from './KeyboardHelpers';
 import KeyboardModifierState from './KeyboardModifierState';
-import {keysymFromCharcode} from './KeyboardHelpers';
 import KeydownEvent from './KeydownEvent';
 import KeypressEvent from './KeypressEvent';
 import KeyupEvent from './KeyupEvent';
@@ -29,18 +29,18 @@ import KeyupEvent from './KeyupEvent';
  * @private
  */
 const NO_REPEAT = {
-  0xFE03: true, // ISO Level 3 Shift (AltGr)
-  0xFFE1: true, // Left shift
-  0xFFE2: true, // Right shift
-  0xFFE3: true, // Left ctrl
-  0xFFE4: true, // Right ctrl
-  0xFFE5: true, // Caps Lock
-  0xFFE7: true, // Left meta
-  0xFFE8: true, // Right meta
-  0xFFE9: true, // Left alt
-  0xFFEA: true, // Right alt
-  0xFFEB: true, // Left hyper
-  0xFFEC: true, // Right hyper
+  0xfe03: true, // ISO Level 3 Shift (AltGr)
+  0xffe1: true, // Left shift
+  0xffe2: true, // Right shift
+  0xffe3: true, // Left ctrl
+  0xffe4: true, // Right ctrl
+  0xffe5: true, // Caps Lock
+  0xffe7: true, // Left meta
+  0xffe8: true, // Right meta
+  0xffe9: true, // Left alt
+  0xffea: true, // Right alt
+  0xffeb: true, // Left hyper
+  0xffec: true, // Right hyper
 };
 
 /**
@@ -109,7 +109,6 @@ const Keyboard = function (element) {
    * @type {Object.<String, Boolean>}
    */
   this.quirks = {
-
     /**
      * Whether keyup events are universally unreliable.
      *
@@ -132,7 +131,6 @@ const Keyboard = function (element) {
      * @type {Boolean}
      */
     capsLockKeyupUnreliable: false,
-
   };
 
   // Set quirk flags depending on platform/browser, if such information is
@@ -296,7 +294,9 @@ const Keyboard = function (element) {
     // Press/release the key corresponding to each character in the string
     for (let i = 0; i < str.length; i++) {
       // Determine keysym of current character
-      const codepoint = str.codePointAt ? str.codePointAt(i) : str.charCodeAt(i);
+      const codepoint = str.codePointAt
+        ? str.codePointAt(i)
+        : str.charCodeAt(i);
       const keysym = keysymFromCharcode(codepoint);
 
       // Press and release key for current character
@@ -339,7 +339,12 @@ const Keyboard = function (element) {
    *     Guacamole's current best interpretation of the key event being
    *     processed.
    */
-  const updateModifierState = function (remoteState, localState, keysyms, keyEvent) {
+  const updateModifierState = function (
+    remoteState,
+    localState,
+    keysyms,
+    keyEvent,
+  ) {
     let i;
 
     // Do not trust changes in modifier state for events directly involving
@@ -398,35 +403,60 @@ const Keyboard = function (element) {
     const state = KeyboardModifierState.fromKeyboardEvent(e);
 
     // Resync state of alt
-    updateModifierState(keyboard.modifiers.alt, state.alt, [
-      0xFFE9, // Left alt
-      0xFFEA, // Right alt
-      0xFE03, // AltGr
-    ], keyEvent);
+    updateModifierState(
+      keyboard.modifiers.alt,
+      state.alt,
+      [
+        0xffe9, // Left alt
+        0xffea, // Right alt
+        0xfe03, // AltGr
+      ],
+      keyEvent,
+    );
 
     // Resync state of shift
-    updateModifierState(keyboard.modifiers.shift, state.shift, [
-      0xFFE1, // Left shift
-      0xFFE2, // Right shift
-    ], keyEvent);
+    updateModifierState(
+      keyboard.modifiers.shift,
+      state.shift,
+      [
+        0xffe1, // Left shift
+        0xffe2, // Right shift
+      ],
+      keyEvent,
+    );
 
     // Resync state of ctrl
-    updateModifierState(keyboard.modifiers.ctrl, state.ctrl, [
-      0xFFE3, // Left ctrl
-      0xFFE4, // Right ctrl
-    ], keyEvent);
+    updateModifierState(
+      keyboard.modifiers.ctrl,
+      state.ctrl,
+      [
+        0xffe3, // Left ctrl
+        0xffe4, // Right ctrl
+      ],
+      keyEvent,
+    );
 
     // Resync state of meta
-    updateModifierState(keyboard.modifiers.meta, state.meta, [
-      0xFFE7, // Left meta
-      0xFFE8, // Right meta
-    ], keyEvent);
+    updateModifierState(
+      keyboard.modifiers.meta,
+      state.meta,
+      [
+        0xffe7, // Left meta
+        0xffe8, // Right meta
+      ],
+      keyEvent,
+    );
 
     // Resync state of hyper
-    updateModifierState(keyboard.modifiers.hyper, state.hyper, [
-      0xFFEB, // Left hyper
-      0xFFEC, // Right hyper
-    ], keyEvent);
+    updateModifierState(
+      keyboard.modifiers.hyper,
+      state.hyper,
+      [
+        0xffeb, // Left hyper
+        0xffec, // Right hyper
+      ],
+      keyEvent,
+    );
 
     // Update state
     keyboard.modifiers = state;
@@ -498,21 +528,21 @@ const Keyboard = function (element) {
     }
 
     // Assume [A-Z] never require AltGr
-    if (keysym >= 0x0041 && keysym <= 0x005A) {
+    if (keysym >= 0x0041 && keysym <= 0x005a) {
       return;
     }
 
     // Assume [a-z] never require AltGr
-    if (keysym >= 0x0061 && keysym <= 0x007A) {
+    if (keysym >= 0x0061 && keysym <= 0x007a) {
       return;
     }
 
     // Release Ctrl+Alt if the keysym is printable
-    if (keysym <= 0xFF || (keysym & 0xFF000000) === 0x01000000) {
-      keyboard.release(0xFFE3); // Left ctrl
-      keyboard.release(0xFFE4); // Right ctrl
-      keyboard.release(0xFFE9); // Left alt
-      keyboard.release(0xFFEA); // Right alt
+    if (keysym <= 0xff || (keysym & 0xff000000) === 0x01000000) {
+      keyboard.release(0xffe3); // Left ctrl
+      keyboard.release(0xffe4); // Right ctrl
+      keyboard.release(0xffe9); // Left alt
+      keyboard.release(0xffea); // Right alt
     }
   };
 
@@ -577,10 +607,13 @@ const Keyboard = function (element) {
 
         return first;
       }
-    } else if (first instanceof KeyupEvent && !keyboard.quirks.keyupUnreliable) {
+    } else if (
+      first instanceof KeyupEvent &&
+      !keyboard.quirks.keyupUnreliable
+    ) {
       // Keyup event
       // Release specific key if known
-      const {keysym} = first;
+      const { keysym } = first;
       if (keysym) {
         keyboard.release(keysym);
         delete keyboard.recentKeysym[first.keyCode];
@@ -666,104 +699,128 @@ const Keyboard = function (element) {
    */
   this.listenTo = function (element) {
     // When key pressed
-    element.addEventListener('keydown', e => {
-      // Only intercept if handler set
-      if (!keyboard.onkeydown) {
-        return;
-      }
+    element.addEventListener(
+      'keydown',
+      (e) => {
+        // Only intercept if handler set
+        if (!keyboard.onkeydown) {
+          return;
+        }
 
-      // Ignore events which have already been handled
-      if (!markEvent(e)) {
-        return;
-      }
+        // Ignore events which have already been handled
+        if (!markEvent(e)) {
+          return;
+        }
 
-      let keyCode;
-      if (window.event) {
-        keyCode = window.event.keyCode;
-      } else if (e.which) {
-        keyCode = e.which;
-      }
+        let keyCode;
+        if (window.event) {
+          keyCode = window.event.keyCode;
+        } else if (e.which) {
+          keyCode = e.which;
+        }
 
-      // Fix modifier states
-      const keydownEvent = new KeydownEvent(keyboard, keyCode, e.keyIdentifier, e.key, getEventLocation(e));
-      syncModifierStates(e, keydownEvent);
+        // Fix modifier states
+        const keydownEvent = new KeydownEvent(
+          keyboard,
+          keyCode,
+          e.keyIdentifier,
+          e.key,
+          getEventLocation(e),
+        );
+        syncModifierStates(e, keydownEvent);
 
-      // Ignore (but do not prevent) the "composition" keycode sent by some
-      // browsers when an IME is in use (see: http://lists.w3.org/Archives/Public/www-dom/2010JulSep/att-0182/keyCode-spec.html)
-      if (keyCode === 229) {
-        return;
-      }
+        // Ignore (but do not prevent) the "composition" keycode sent by some
+        // browsers when an IME is in use (see: http://lists.w3.org/Archives/Public/www-dom/2010JulSep/att-0182/keyCode-spec.html)
+        if (keyCode === 229) {
+          return;
+        }
 
-      // Log event
-      eventLog.push(keydownEvent);
+        // Log event
+        eventLog.push(keydownEvent);
 
-      // Interpret as many events as possible, prevent default if indicated
-      if (interpretEvents()) {
-        e.preventDefault();
-      }
-    }, true);
+        // Interpret as many events as possible, prevent default if indicated
+        if (interpretEvents()) {
+          e.preventDefault();
+        }
+      },
+      true,
+    );
 
     // When key pressed
-    element.addEventListener('keypress', e => {
-      // Only intercept if handler set
-      if (!keyboard.onkeydown && !keyboard.onkeyup) {
-        return;
-      }
+    element.addEventListener(
+      'keypress',
+      (e) => {
+        // Only intercept if handler set
+        if (!keyboard.onkeydown && !keyboard.onkeyup) {
+          return;
+        }
 
-      // Ignore events which have already been handled
-      if (!markEvent(e)) {
-        return;
-      }
+        // Ignore events which have already been handled
+        if (!markEvent(e)) {
+          return;
+        }
 
-      let charCode;
-      if (window.event) {
-        charCode = window.event.keyCode;
-      } else if (e.which) {
-        charCode = e.which;
-      }
+        let charCode;
+        if (window.event) {
+          charCode = window.event.keyCode;
+        } else if (e.which) {
+          charCode = e.which;
+        }
 
-      // Fix modifier states
-      const keypressEvent = new KeypressEvent(charCode);
-      syncModifierStates(e, keypressEvent);
+        // Fix modifier states
+        const keypressEvent = new KeypressEvent(charCode);
+        syncModifierStates(e, keypressEvent);
 
-      // Log event
-      eventLog.push(keypressEvent);
+        // Log event
+        eventLog.push(keypressEvent);
 
-      // Interpret as many events as possible, prevent default if indicated
-      if (interpretEvents()) {
-        e.preventDefault();
-      }
-    }, true);
+        // Interpret as many events as possible, prevent default if indicated
+        if (interpretEvents()) {
+          e.preventDefault();
+        }
+      },
+      true,
+    );
 
     // When key released
-    element.addEventListener('keyup', e => {
-      // Only intercept if handler set
-      if (!keyboard.onkeyup) {
-        return;
-      }
+    element.addEventListener(
+      'keyup',
+      (e) => {
+        // Only intercept if handler set
+        if (!keyboard.onkeyup) {
+          return;
+        }
 
-      // Ignore events which have already been handled
-      if (!markEvent(e)) {
-        return;
-      }
+        // Ignore events which have already been handled
+        if (!markEvent(e)) {
+          return;
+        }
 
-      e.preventDefault();
+        e.preventDefault();
 
-      let keyCode;
-      if (window.event) {
-        keyCode = window.event.keyCode;
-      } else if (e.which) {
-        keyCode = e.which;
-      }
+        let keyCode;
+        if (window.event) {
+          keyCode = window.event.keyCode;
+        } else if (e.which) {
+          keyCode = e.which;
+        }
 
-      // Fix modifier states
-      const keyupEvent = new KeyupEvent(keyboard, keyCode, e.keyIdentifier, e.key, getEventLocation(e));
-      syncModifierStates(e, keyupEvent);
+        // Fix modifier states
+        const keyupEvent = new KeyupEvent(
+          keyboard,
+          keyCode,
+          e.keyIdentifier,
+          e.key,
+          getEventLocation(e),
+        );
+        syncModifierStates(e, keyupEvent);
 
-      // Log event, call for interpretation
-      eventLog.push(keyupEvent);
-      interpretEvents();
-    }, true);
+        // Log event, call for interpretation
+        eventLog.push(keyupEvent);
+        interpretEvents();
+      },
+      true,
+    );
 
     /**
      * Handles the given "input" event, typing the data within the input text.

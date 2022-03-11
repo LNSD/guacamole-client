@@ -12,14 +12,15 @@ const SIZE_OPCODE = 'size';
  */
 export type KeyHandler = (keysym: number, pressed: boolean) => void;
 
-export const key = createInstruction<KeyHandler>(KEY_OPCODE,
+export const key = createInstruction<KeyHandler>(
+  KEY_OPCODE,
   (keysym: number, pressed: boolean) => [keysym, pressed ? 1 : 0],
   (handler: KeyHandler) => (params) => {
     const keysym = parseInt(params[0], 10);
     const pressed = Boolean(params[1]);
 
     handler(keysym, pressed);
-  }
+  },
 );
 
 /**
@@ -31,7 +32,8 @@ export const key = createInstruction<KeyHandler>(KEY_OPCODE,
  */
 export type MouseHandler = (x: number, y: number, mask: number) => void;
 
-export const mouse = createInstruction<MouseHandler>(MOUSE_OPCODE,
+export const mouse = createInstruction<MouseHandler>(
+  MOUSE_OPCODE,
   (x: number, y: number, mask: number) => [x, y, mask],
   (handler: MouseHandler) => (params) => {
     const x = parseInt(params[0], 10);
@@ -39,7 +41,7 @@ export const mouse = createInstruction<MouseHandler>(MOUSE_OPCODE,
     const mask = parseInt(params[1], 10);
 
     handler(x, y, mask);
-  }
+  },
 );
 
 /**
@@ -51,12 +53,13 @@ export const mouse = createInstruction<MouseHandler>(MOUSE_OPCODE,
  */
 export type SizeHandler = (width: number, height: number) => void;
 
-export const size = createInstruction<SizeHandler>(SIZE_OPCODE,
+export const size = createInstruction<SizeHandler>(
+  SIZE_OPCODE,
   (width: number, height: number) => [width, height],
   (handler: SizeHandler) => (params) => {
     const width = parseInt(params[0], 10);
     const height = parseInt(params[1], 10);
 
     handler(width, height);
-  }
+  },
 );

@@ -11,21 +11,21 @@ export const ATOP = 0x6;
 /**
  * Channel mask for the composite operation "xor".
  */
-export const XOR = 0xA;
+export const XOR = 0xa;
 /**
  * Channel mask for the composite operation "rover".
  */
-export const ROVER = 0xB;
+export const ROVER = 0xb;
 
 /**
  * Channel mask for the composite operation "over".
  */
-export const OVER = 0xE;
+export const OVER = 0xe;
 
 /**
  * Channel mask for the composite operation "plus".
  */
-export const PLUS = 0xF;
+export const PLUS = 0xf;
 
 /**
  * Channel mask for the composite operation "rin".
@@ -65,4 +65,4 @@ export const RATOP = 0x9;
  * layer where the source layer is transparent, despite the definition of this
  * operation.
  */
-export const SRC = 0xC;
+export const SRC = 0xc;

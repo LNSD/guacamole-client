@@ -6,7 +6,6 @@ export type {
   HttpRequestFactory,
   RequestConfig,
   OnCompleteCallback,
-  OnLoadingCallback
+  OnLoadingCallback,
 } from '../../net/src/lib/http';
 export { xhr } from '../../net/src/lib/http';
-

@@ -1,18 +1,17 @@
-import { AbstractTunnel, INTERNAL_DATA_OPCODE, Tunnel } from '../tunnel';
-import { TunnelState } from '../state';
-import { Decoder, Encoder } from '@guacamole-client/protocol';
 import { WS } from '@guacamole-client/net';
+import { Decoder, Encoder } from '@guacamole-client/protocol';
+
 import {
   ServerError,
   TunnelError,
   UpstreamNotFoundError,
   UpstreamTimeoutError,
-  UpstreamUnavailableError
+  UpstreamUnavailableError,
 } from '../errors';
+import { TunnelState } from '../state';
+import { AbstractTunnel, INTERNAL_DATA_OPCODE, Tunnel } from '../tunnel';
 
-
-export class WebSocketCloseError extends TunnelError {
-}
+export class WebSocketCloseError extends TunnelError {}
 
 /**
  * The WebSocket protocol corresponding to the protocol used for the current
@@ -20,7 +19,7 @@ export class WebSocketCloseError extends TunnelError {
  */
 const WS_PROTOCOL: Record<string, string> = {
   'http:': 'ws:',
-  'https:': 'wss:'
+  'https:': 'wss:',
 };
 
 // Transform current URL to WebSocket URL
@@ -143,17 +142,20 @@ export class WebSocketTunnel extends AbstractTunnel implements Tunnel {
         this.oninstruction(opcode, parameters);
       }
     };
-    this.decoder.addInstructionListener(INTERNAL_DATA_OPCODE, (opcode, params) => {
-      if (this.uuid !== null) {
-        return;
-      }
+    this.decoder.addInstructionListener(
+      INTERNAL_DATA_OPCODE,
+      (opcode, params) => {
+        if (this.uuid !== null) {
+          return;
+        }
 
-      // Associate tunnel UUID if received
-      this.setUUID(params[0]);
+        // Associate tunnel UUID if received
+        this.setUUID(params[0]);
 
-      // Tunnel is now open and UUID is available
-      this.setState(TunnelState.OPEN);
-    });
+        // Tunnel is now open and UUID is available
+        this.setState(TunnelState.OPEN);
+      },
+    );
 
     // Transform current URL to WebSocket URL
     this.baseUrl = baseUrl;

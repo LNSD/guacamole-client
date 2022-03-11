@@ -1,12 +1,17 @@
-import Frame from "./frame";
-import * as ChannelMask from "./channel-mask";
-import Layer from "./layer";
-import VisibleLayer from "./visible-layer";
-import Task, { TaskHandler } from "./task";
-import { BlobReader, DataURIReader, InputStream } from "@guacamole-client/io";
+import { BlobReader, DataURIReader, InputStream } from '@guacamole-client/io';
+
+import * as ChannelMask from './channel-mask';
+import Frame from './frame';
+import Layer from './layer';
+import Task, { TaskHandler } from './task';
+import VisibleLayer from './visible-layer';
 
 export type OnResizeCallback = (width: number, height: number) => void;
-export type OnCursorCallback = (canvas: HTMLCanvasElement, x: number, y: number) => void;
+export type OnCursorCallback = (
+  canvas: HTMLCanvasElement,
+  x: number,
+  y: number,
+) => void;
 
 /**
  * The Guacamole display. The display does not deal with the Guacamole
@@ -88,14 +93,14 @@ export default class Display {
 
   constructor() {
     // Create display
-    this.display = document.createElement("div");
-    this.display.setAttribute("class", "guacDisplay");
-    this.display.style.position = "relative";
+    this.display = document.createElement('div');
+    this.display.setAttribute('class', 'guacDisplay');
+    this.display.style.position = 'relative';
     this.display.style.width = `${this.displayWidth}px`;
     this.display.style.height = `${this.displayHeight}px`;
 
     // Ensure transformations on display originate at 0,0
-    const transform = "0 0";
+    const transform = '0 0';
     this.display.style.transformOrigin = transform;
     // TODO Review this
     // this.display.style.webkitTransformOconstrigin = transform;
@@ -115,9 +120,9 @@ export default class Display {
     this.display.appendChild(this.cursor.getElement());
 
     // Create bounding div
-    this.bounds = document.createElement("div");
-    this.bounds.setAttribute("id", "bounds");
-    this.bounds.style.position = "relative";
+    this.bounds = document.createElement('div');
+    this.bounds.setAttribute('id', 'bounds');
+    this.bounds.style.position = 'relative';
     this.bounds.style.width = `${this.displayWidth * this.displayScale}px`;
     this.bounds.style.height = `${this.displayHeight * this.displayScale}px`;
 
@@ -230,7 +235,15 @@ export default class Display {
    *                      layer's coordinate space to copy data from.
 
    */
-  public setCursor(hotspotX: number, hotspotY: number, layer: Layer, srcx: number, srcy: number, srcw: number, srch: number) {
+  public setCursor(
+    hotspotX: number,
+    hotspotY: number,
+    layer: Layer,
+    srcx: number,
+    srcy: number,
+    srcw: number,
+    srch: number,
+  ) {
     this.scheduleTask(() => {
       // Set hotspot
       this.cursorHotspotX = hotspotX;
@@ -312,7 +325,9 @@ export default class Display {
 
         // Update bounds size
         this.bounds.style.width = `${this.displayWidth * this.displayScale}px`;
-        this.bounds.style.height = `${this.displayHeight * this.displayScale}px`;
+        this.bounds.style.height = `${
+          this.displayHeight * this.displayScale
+        }px`;
 
         // Notify of resize
         if (this.onresize !== null) {
@@ -331,7 +346,12 @@ export default class Display {
    * @param y - The destination Y coordinate.
    * @param image - The image to draw. Note that this not a URL.
    */
-  public drawImage(layer: Layer, x: number, y: number, image: CanvasImageSource) {
+  public drawImage(
+    layer: Layer,
+    x: number,
+    y: number,
+    image: CanvasImageSource,
+  ) {
     this.scheduleTask(() => {
       layer.drawImage(x, y, image);
     });
@@ -362,11 +382,10 @@ export default class Display {
       // Load image from provided blob
       // TODO Review the following lint suppression
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      window.createImageBitmap(blob)
-        .then(decoded => {
-          bitmap = decoded;
-          task.unblock();
-        });
+      window.createImageBitmap(blob).then((decoded) => {
+        bitmap = decoded;
+        task.unblock();
+      });
     } else {
       // Use blob URLs and the Image object if createImageBitmap() is
       // unavailable
@@ -407,7 +426,13 @@ export default class Display {
    * @param stream - The stream along which image data will be received.
    * @param mimetype - The mimetype of the image within the stream.
    */
-  public drawStream(layer: Layer, x: number, y: number, stream: InputStream, mimetype: string): void {
+  public drawStream(
+    layer: Layer,
+    x: number,
+    y: number,
+    stream: InputStream,
+    mimetype: string,
+  ): void {
     // If createImageBitmap() is available, load the image as a blob so
     // that function can be used
     // @ts-ignore TODO Review this
@@ -463,22 +488,26 @@ export default class Display {
    */
   public play(layer: Layer, mimetype: string, duration: number, url: string) {
     // Start loading the video
-    const video = document.createElement("video");
+    const video = document.createElement('video');
     // TODO Review this
     // video.type = mimetype;
     video.src = url;
 
     // Start copying frames when playing
-    video.addEventListener("play", () => {
-      function renderCallback() {
-        layer.drawImage(0, 0, video);
-        if (!video.ended) {
-          window.setTimeout(renderCallback, 20);
+    video.addEventListener(
+      'play',
+      () => {
+        function renderCallback() {
+          layer.drawImage(0, 0, video);
+          if (!video.ended) {
+            window.setTimeout(renderCallback, 20);
+          }
         }
-      }
 
-      renderCallback();
-    }, false);
+        renderCallback();
+      },
+      false,
+    );
 
     this.scheduleTask(video.play);
   }
@@ -507,9 +536,28 @@ export default class Display {
    */
   // TODO Review the following lint suppression
   // eslint-disable-next-line @typescript-eslint/ban-types
-  public transfer(srcLayer: Layer, srcx: number, srcy: number, srcw: number, srch: number, dstLayer: Layer, x: number, y: number, transferFunction: Function) {
+  public transfer(
+    srcLayer: Layer,
+    srcx: number,
+    srcy: number,
+    srcw: number,
+    srch: number,
+    dstLayer: Layer,
+    x: number,
+    y: number,
+    transferFunction: Function,
+  ) {
     this.scheduleTask(() => {
-      dstLayer.transfer(srcLayer, srcx, srcy, srcw, srch, x, y, transferFunction);
+      dstLayer.transfer(
+        srcLayer,
+        srcx,
+        srcy,
+        srcw,
+        srch,
+        x,
+        y,
+        transferFunction,
+      );
     });
   }
 
@@ -532,7 +580,16 @@ export default class Display {
    * @param x - The destination X coordinate.
    * @param y - The destination Y coordinate.
    */
-  public put(srcLayer: Layer, srcx: number, srcy: number, srcw: number, srch: number, dstLayer: Layer, x: number, y: number) {
+  public put(
+    srcLayer: Layer,
+    srcx: number,
+    srcy: number,
+    srcw: number,
+    srch: number,
+    dstLayer: Layer,
+    x: number,
+    y: number,
+  ) {
     this.scheduleTask(() => {
       dstLayer.put(srcLayer, srcx, srcy, srcw, srch, x, y);
     });
@@ -560,7 +617,16 @@ export default class Display {
    * @param x - The destination X coordinate.
    * @param y - The destination Y coordinate.
    */
-  public copy(srcLayer: Layer, srcx: number, srcy: number, srcw: number, srch: number, dstLayer: Layer, x: number, y: number) {
+  public copy(
+    srcLayer: Layer,
+    srcx: number,
+    srcy: number,
+    srcw: number,
+    srch: number,
+    dstLayer: Layer,
+    x: number,
+    y: number,
+  ) {
     this.scheduleTask(() => {
       dstLayer.copy(srcLayer, srcx, srcy, srcw, srch, x, y);
     });
@@ -606,7 +672,15 @@ export default class Display {
    * @param negative - Whether the arc should be drawn in order of
    *                           decreasing angle.
    */
-  public arc(layer: Layer, x: number, y: number, radius: number, startAngle: number, endAngle: number, negative: boolean) {
+  public arc(
+    layer: Layer,
+    x: number,
+    y: number,
+    radius: number,
+    startAngle: number,
+    endAngle: number,
+    negative: boolean,
+  ) {
     this.scheduleTask(() => {
       layer.arc(x, y, radius, startAngle, endAngle, negative);
     });
@@ -623,7 +697,15 @@ export default class Display {
    * @param x - The X coordinate of the endpoint of the curve.
    * @param y - The Y coordinate of the endpoint of the curve.
    */
-  public curveTo(layer: Layer, cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number) {
+  public curveTo(
+    layer: Layer,
+    cp1x: number,
+    cp1y: number,
+    cp2x: number,
+    cp2y: number,
+    x: number,
+    y: number,
+  ) {
     this.scheduleTask(() => {
       layer.curveTo(cp1x, cp1y, cp2x, cp2y, x, y);
     });
@@ -689,7 +771,16 @@ export default class Display {
    * @param b - The blue component of the color to fill.
    * @param a - The alpha component of the color to fill.
    */
-  public strokeColor(layer: Layer, cap: CanvasLineCap, join: CanvasLineJoin, thickness: number, r: number, g: number, b: number, a: number) {
+  public strokeColor(
+    layer: Layer,
+    cap: CanvasLineCap,
+    join: CanvasLineJoin,
+    thickness: number,
+    r: number,
+    g: number,
+    b: number,
+    a: number,
+  ) {
     this.scheduleTask(() => {
       layer.strokeColor(cap, join, thickness, r, g, b, a);
     });
@@ -729,7 +820,13 @@ export default class Display {
    * @param srcLayer - The layer to use as a repeating pattern
    *                                   within the stroke.
    */
-  public strokeLayer(layer: Layer, cap: CanvasLineCap, join: CanvasLineJoin, thickness: number, srcLayer: Layer) {
+  public strokeLayer(
+    layer: Layer,
+    cap: CanvasLineCap,
+    join: CanvasLineJoin,
+    thickness: number,
+    srcLayer: Layer,
+  ) {
     this.scheduleTask(() => {
       layer.strokeLayer(cap, join, thickness, srcLayer);
     });
@@ -798,7 +895,15 @@ export default class Display {
    * @param e - The fifth value in the affine transform's matrix.
    * @param f - The sixth value in the affine transform's matrix.
    */
-  public setTransform(layer: Layer, a: number, b: number, c: number, d: number, e: number, f: number) {
+  public setTransform(
+    layer: Layer,
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+  ) {
     this.scheduleTask(() => {
       layer.setTransform(a, b, c, d, e, f);
     });
@@ -816,7 +921,15 @@ export default class Display {
    * @param e - The fifth value in the affine transform's matrix.
    * @param f - The sixth value in the affine transform's matrix.
    */
-  public transform(layer: Layer, a: number, b: number, c: number, d: number, e: number, f: number) {
+  public transform(
+    layer: Layer,
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+  ) {
     this.scheduleTask(() => {
       layer.transform(a, b, c, d, e, f);
     });
@@ -880,7 +993,15 @@ export default class Display {
    * @param e - The fifth value in the affine transform's matrix.
    * @param f - The sixth value in the affine transform's matrix.
    */
-  public distort(layer: VisibleLayer, a: number, b: number, c: number, d: number, e: number, f: number) {
+  public distort(
+    layer: VisibleLayer,
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+  ) {
     this.scheduleTask(() => {
       layer.distort(a, b, c, d, e, f);
     });
@@ -897,7 +1018,13 @@ export default class Display {
    * @param y - The Y coordinate to move to.
    * @param z - The Z coordinate to move to.
    */
-  public move(layer: VisibleLayer, parent: VisibleLayer, x: number, y: number, z: number) {
+  public move(
+    layer: VisibleLayer,
+    parent: VisibleLayer,
+    x: number,
+    y: number,
+    z: number,
+  ) {
     this.scheduleTask(() => {
       layer.move(parent, x, y, z);
     });
@@ -958,13 +1085,13 @@ export default class Display {
    */
   public flatten() {
     // Get destination canvas
-    const canvas = document.createElement("canvas");
+    const canvas = document.createElement('canvas');
     canvas.width = this.defaultLayer.width;
     canvas.height = this.defaultLayer.height;
 
-    const context = canvas.getContext("2d");
+    const context = canvas.getContext('2d');
     if (context === null) {
-      throw new Error("Canvas context 2d not available");
+      throw new Error('Canvas context 2d not available');
     }
 
     // Returns sorted array of children
@@ -1009,7 +1136,7 @@ export default class Display {
     // Draws the contents of the given layer at the given coordinates
     function drawLayer(layer: VisibleLayer, x: number, y: number) {
       if (context === null) {
-        throw new Error("Canvas context 2d not available");
+        throw new Error('Canvas context 2d not available');
       }
 
       // Draw layer
@@ -1088,4 +1215,3 @@ export default class Display {
     return task;
   }
 }
-

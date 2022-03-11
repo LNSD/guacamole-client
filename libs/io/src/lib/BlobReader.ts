@@ -43,7 +43,7 @@ export class BlobReader {
     this.blobBuilder = new BlobBuilder();
 
     // Append received blobs
-    stream.onblob = data => {
+    stream.onblob = (data) => {
       // Convert to ArrayBuffer
       const binary = atob(data);
       const arrayBuffer = new ArrayBuffer(binary.length);

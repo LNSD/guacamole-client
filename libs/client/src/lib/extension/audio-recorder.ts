@@ -1,18 +1,18 @@
+import { OutputStream } from '@guacamole-client/io';
 import { AudioRecorder } from '@guacamole-client/media';
+import { Streaming } from '@guacamole-client/protocol';
+
 import { InstructionRouter } from '../instruction-router';
 import {
   OutputStreamHandler,
   OutputStreamResponseSender,
   OutputStreamsManager,
-  registerOutputStreamHandlers
+  registerOutputStreamHandlers,
 } from '../streams/output';
-import { OutputStream } from '@guacamole-client/io';
-import { Streaming } from '@guacamole-client/protocol';
 
-export type AudioRecorderStreamHandler = OutputStreamHandler
+export type AudioRecorderStreamHandler = OutputStreamHandler;
 
 export class AudioRecorderManager implements AudioRecorderStreamHandler {
-
   private readonly outputStreams: OutputStreamsManager;
 
   /**
@@ -46,13 +46,20 @@ export class AudioRecorderManager implements AudioRecorderStreamHandler {
 
   //<editor-fold defaultstate="collapsed" desc="Instruction handlers">
 
-  handleAckInstruction(streamIndex: number, message: string, code: number): void {
+  handleAckInstruction(
+    streamIndex: number,
+    message: string,
+    code: number,
+  ): void {
     this.outputStreams.handleAckInstruction(streamIndex, message, code);
   }
 
   //</editor-fold>
 }
 
-export function registerAudioRecorderHandlers(router: InstructionRouter, handler: AudioRecorderStreamHandler) {
+export function registerAudioRecorderHandlers(
+  router: InstructionRouter,
+  handler: AudioRecorderStreamHandler,
+) {
   registerOutputStreamHandlers(router, handler);
 }

@@ -4,9 +4,10 @@ import {
   ClientTooManyError,
   ResourceNotFoundError,
   ServerBusyError,
-  TunnelError, UpstreamNotFoundError, UpstreamUnavailableError
+  TunnelError,
+  UpstreamNotFoundError,
+  UpstreamUnavailableError,
 } from '@guacamole-client/tunnel';
-
 
 /**
  * A Guacamole status. Each Guacamole status consists of a status code, defined
@@ -14,7 +15,6 @@ import {
  * included for debugging convenience.
  */
 export class Status {
-
   /**
    * The Guacamole status code.
    */
@@ -45,7 +45,7 @@ export class Status {
    * @returns true if this status represents an error, false otherwise.
    */
   public isError(): boolean {
-    return this.code < 0 || this.code > 0x00FF;
+    return this.code < 0 || this.code > 0x00ff;
   }
 }
 
@@ -53,7 +53,6 @@ export class Status {
  * Enumeration of all Guacamole status codes.
  */
 export enum StatusCode {
-
   /**
    * The operation succeeded.
    */
@@ -126,12 +125,12 @@ export enum StatusCode {
    * The session within the upstream server has ended because it appeared to
    * be inactive.
    */
-  SESSION_TIMEOUT = 0x020A,
+  SESSION_TIMEOUT = 0x020a,
 
   /**
    * The session within the upstream server has been forcibly terminated.
    */
-  SESSION_CLOSED = 0x020B,
+  SESSION_CLOSED = 0x020b,
 
   /**
    * The operation could not be performed because bad parameters were given.
@@ -158,23 +157,22 @@ export enum StatusCode {
   /**
    * The client sent too much data.
    */
-  CLIENT_OVERRUN = 0x030D,
+  CLIENT_OVERRUN = 0x030d,
 
   /**
    * The client sent data of an unsupported or unexpected type.
    */
-  CLIENT_BAD_TYPE = 0x030F,
+  CLIENT_BAD_TYPE = 0x030f,
 
   /**
    * The operation failed because the current client is already using too
    * many resources.
    */
-  CLIENT_TOO_MANY = 0x031D,
+  CLIENT_TOO_MANY = 0x031d,
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace StatusCode {
-
   export function fromTunnelError(error?: TunnelError): StatusCode {
     if (error instanceof ClientBadRequestError) {
       return StatusCode.CLIENT_BAD_REQUEST;

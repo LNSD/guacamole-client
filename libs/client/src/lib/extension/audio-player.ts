@@ -1,22 +1,24 @@
+import { InputStream, StreamError } from '@guacamole-client/io';
+import { AudioPlayer, getAudioPlayerInstance } from '@guacamole-client/media';
 import { Streaming } from '@guacamole-client/protocol';
+
+import { ClientEventTargetMap } from '../events';
+import { InstructionRouter } from '../instruction-router';
+import { StatusCode } from '../status';
 import {
   InputStreamHandler,
   InputStreamResponseSender,
   InputStreamsManager,
-  registerInputStreamHandlers
+  registerInputStreamHandlers,
 } from '../streams/input';
-import { AudioPlayer, getAudioPlayerInstance } from '@guacamole-client/media';
-import { InputStream, StreamError } from '@guacamole-client/io';
-import { StatusCode } from '../status';
-import { InstructionRouter } from '../instruction-router';
-import { ClientEventTargetMap } from '../events';
 
 export interface AudioInstructionHandler {
   handleAudioInstruction(streamIndex: number, mimetype: string): void;
 }
 
-export interface AudioPlayerStreamHandler extends AudioInstructionHandler, InputStreamHandler {
-}
+export interface AudioPlayerStreamHandler
+  extends AudioInstructionHandler,
+    InputStreamHandler {}
 
 /**
  * Fired when a audio stream is created. The stream provided to this event
@@ -30,10 +32,12 @@ export interface AudioPlayerStreamHandler extends AudioInstructionHandler, Input
  *     if the built-in audio players of the Guacamole client should be
  *     used.
  */
-export type OnAudioCallback = (stream: InputStream, mimetype: string) => AudioPlayer;
+export type OnAudioCallback = (
+  stream: InputStream,
+  mimetype: string,
+) => AudioPlayer;
 
 export class AudioPlayerManager implements AudioPlayerStreamHandler {
-
   private readonly inputStreams: InputStreamsManager;
 
   /**
@@ -46,7 +50,7 @@ export class AudioPlayerManager implements AudioPlayerStreamHandler {
 
   constructor(
     private readonly sender: InputStreamResponseSender,
-    private readonly events: ClientEventTargetMap
+    private readonly events: ClientEventTargetMap,
   ) {
     this.inputStreams = new InputStreamsManager(sender);
   }
@@ -80,7 +84,10 @@ export class AudioPlayerManager implements AudioPlayerStreamHandler {
 
     if (!audioPlayer) {
       // Mimetype must be unsupported
-      this.inputStreams.sendAck(streamIndex, new StreamError('BAD TYPE', StatusCode.CLIENT_BAD_TYPE));
+      this.inputStreams.sendAck(
+        streamIndex,
+        new StreamError('BAD TYPE', StatusCode.CLIENT_BAD_TYPE),
+      );
       return;
     }
 
@@ -98,9 +105,15 @@ export class AudioPlayerManager implements AudioPlayerStreamHandler {
   }
 }
 
-export function registerInstructionHandlers(router: InstructionRouter, handler: AudioPlayerStreamHandler) {
-  router.addInstructionHandler(Streaming.audio.opcode, Streaming.audio.parser(
-    handler.handleAudioInstruction.bind(handler)  // TODO: Review this bind()
-  ));
+export function registerInstructionHandlers(
+  router: InstructionRouter,
+  handler: AudioPlayerStreamHandler,
+) {
+  router.addInstructionHandler(
+    Streaming.audio.opcode,
+    Streaming.audio.parser(
+      handler.handleAudioInstruction.bind(handler), // TODO: Review this bind()
+    ),
+  );
   registerInputStreamHandlers(router, handler);
 }

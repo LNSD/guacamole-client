@@ -53,7 +53,7 @@ export class StringReader {
     this.arrayBufferReader = new ArrayBufferReader(stream);
 
     // Receive blobs as strings
-    this.arrayBufferReader.ondata = buffer => {
+    this.arrayBufferReader.ondata = (buffer) => {
       // Decode UTF-8
       const text = this.__decodeUtf8(buffer);
 
@@ -91,18 +91,18 @@ export class StringReader {
 
       // Start new codepoint if nothing yet read
       if (this.bytesRemaining === 0) {
-        if ((value | 0x7F) === 0x7F) {
+        if ((value | 0x7f) === 0x7f) {
           // 1 byte (0xxxxxxx)
           text += String.fromCharCode(value);
-        } else if ((value | 0x1F) === 0xDF) {
+        } else if ((value | 0x1f) === 0xdf) {
           // 2 byte (110xxxxx)
-          this.codepoint = value & 0x1F;
+          this.codepoint = value & 0x1f;
           this.bytesRemaining = 1;
-        } else if ((value | 0x0F) === 0xEF) {
+        } else if ((value | 0x0f) === 0xef) {
           // 3 byte (1110xxxx)
-          this.codepoint = value & 0x0F;
+          this.codepoint = value & 0x0f;
           this.bytesRemaining = 2;
-        } else if ((value | 0x07) === 0xF7) {
+        } else if ((value | 0x07) === 0xf7) {
           // 4 byte (11110xxx)
           this.codepoint = value & 0x07;
           this.bytesRemaining = 3;
@@ -110,9 +110,9 @@ export class StringReader {
           // Invalid byte
           text += '\uFFFD';
         }
-      } else if ((value | 0x3F) === 0xBF) {
+      } else if ((value | 0x3f) === 0xbf) {
         // Continue existing codepoint (10xxxxxx)
-        this.codepoint = (this.codepoint << 6) | (value & 0x3F);
+        this.codepoint = (this.codepoint << 6) | (value & 0x3f);
         this.bytesRemaining--;
 
         // Write codepoint if finished
@@ -129,4 +129,3 @@ export class StringReader {
     return text;
   }
 }
-

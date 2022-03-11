@@ -3,7 +3,11 @@ import { OutputStream } from './OutputStream';
 import { StreamError } from './error';
 
 export type OnAckCallback = (error?: StreamError) => void;
-export type OnErrorCallback = (blob: Blob, offset: number, error: DOMException | null) => void;
+export type OnErrorCallback = (
+  blob: Blob,
+  offset: number,
+  error: DOMException | null,
+) => void;
 export type OnProgressCallback = (blob: Blob, number: number) => void;
 export type OnCompleteCallback = (blob: Blob) => void;
 
@@ -102,7 +106,11 @@ export class BlobWriter {
       }
 
       // Obtain reference to next chunk as a new blob
-      const chunk = this.slice(blob, offset, offset + this.arrayBufferWriter.blobLength);
+      const chunk = this.slice(
+        blob,
+        offset,
+        offset + this.arrayBufferWriter.blobLength,
+      );
       offset += this.arrayBufferWriter.blobLength;
 
       // Attempt to read the blob contents represented by the blob into
@@ -202,4 +210,3 @@ export class BlobWriter {
     return blob.slice(start, end);
   }
 }
-

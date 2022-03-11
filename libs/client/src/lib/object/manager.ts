@@ -1,31 +1,39 @@
-import { GuacamoleObject } from './GuacamoleObject';
+import { OutputStream, StreamError } from '@guacamole-client/io';
 import { ObjectInstruction } from '@guacamole-client/protocol';
+
+import { InstructionRouter } from '../instruction-router';
+import { StatusCode } from '../status';
 import {
   InputStreamHandler,
   InputStreamResponseSender,
   InputStreamsManager,
-  registerInputStreamHandlers
+  registerInputStreamHandlers,
 } from '../streams/input';
-import { OutputStream, StreamError } from '@guacamole-client/io';
-import { StatusCode } from '../status';
-import { InstructionRouter } from '../instruction-router';
 import {
   OutputStreamHandler,
   OutputStreamResponseSender,
-  OutputStreamsManager, registerOutputStreamHandlers
+  OutputStreamsManager,
+  registerOutputStreamHandlers,
 } from '../streams/output';
+import { GuacamoleObject } from './GuacamoleObject';
 
 export interface ObjectInstructionHandler {
-  handleBodyInstruction(objectIndex: number, streamIndex: number, mimetype: string, name: string): void;
+  handleBodyInstruction(
+    objectIndex: number,
+    streamIndex: number,
+    mimetype: string,
+    name: string,
+  ): void;
 
   handleUndefineInstruction(objectIndex: number): void;
 }
 
-export interface ObjectStreamHandler extends ObjectInstructionHandler, InputStreamHandler, OutputStreamHandler {
-}
+export interface ObjectStreamHandler
+  extends ObjectInstructionHandler,
+    InputStreamHandler,
+    OutputStreamHandler {}
 
 export class GuacamoleObjectManager implements ObjectStreamHandler {
-
   private readonly inputStreams: InputStreamsManager;
   private readonly outputStreams: OutputStreamsManager;
 
@@ -37,7 +45,10 @@ export class GuacamoleObjectManager implements ObjectStreamHandler {
    */
   private readonly objects: Map<number, GuacamoleObject> = new Map();
 
-  constructor(private readonly sender: InputStreamResponseSender & OutputStreamResponseSender) {
+  constructor(
+    private readonly sender: InputStreamResponseSender &
+      OutputStreamResponseSender,
+  ) {
     this.inputStreams = new InputStreamsManager(sender);
     this.outputStreams = new OutputStreamsManager(sender);
   }
@@ -53,12 +64,20 @@ export class GuacamoleObjectManager implements ObjectStreamHandler {
 
   //<editor-fold defaultstate="collapsed" desc="Instruction handlers">
 
-  handleBodyInstruction(objectIndex: number, streamIndex: number, mimetype: string, name: string) {
+  handleBodyInstruction(
+    objectIndex: number,
+    streamIndex: number,
+    mimetype: string,
+    name: string,
+  ) {
     const object = this.objects.get(objectIndex);
 
     // Create stream only if handler is defined
     if (object === undefined) {
-      this.inputStreams.sendAck(streamIndex, new StreamError('Receipt of body unsupported', StatusCode.UNSUPPORTED));
+      this.inputStreams.sendAck(
+        streamIndex,
+        new StreamError('Receipt of body unsupported', StatusCode.UNSUPPORTED),
+      );
       return;
     }
 
@@ -103,7 +122,11 @@ export class GuacamoleObjectManager implements ObjectStreamHandler {
     this.inputStreams.freeStream(streamIndex);
   }
 
-  handleAckInstruction(streamIndex: number, message: string, code: number): void {
+  handleAckInstruction(
+    streamIndex: number,
+    message: string,
+    code: number,
+  ): void {
     this.outputStreams.handleAckInstruction(streamIndex, message, code);
   }
 
@@ -133,23 +156,37 @@ export class GuacamoleObjectManager implements ObjectStreamHandler {
    * @returns An output stream which will write blobs to the named output stream
    *          of the given object.
    */
-  private createObjectOutputStream(index: number, mimetype: string, name: string): OutputStream {
+  private createObjectOutputStream(
+    index: number,
+    mimetype: string,
+    name: string,
+  ): OutputStream {
     // Allocate and associate stream with object metadata
     const stream = this.outputStreams.createStream();
 
-    this.sender.sendMessage(...ObjectInstruction.put(index, stream.index, mimetype, name));
+    this.sender.sendMessage(
+      ...ObjectInstruction.put(index, stream.index, mimetype, name),
+    );
     return stream;
   }
 }
 
-export function registerObjectStreamHandlers(router: InstructionRouter, handler: ObjectStreamHandler) {
-  router.addInstructionHandler(ObjectInstruction.body.opcode, ObjectInstruction.body.parser(
-    handler.handleBodyInstruction.bind(handler) // TODO: Review this bind())
-  ));
-  router.addInstructionHandler(ObjectInstruction.undefine.opcode, ObjectInstruction.undefine.parser(
-    handler.handleUndefineInstruction.bind(handler) // TODO: Review this bind())
-  ));
+export function registerObjectStreamHandlers(
+  router: InstructionRouter,
+  handler: ObjectStreamHandler,
+) {
+  router.addInstructionHandler(
+    ObjectInstruction.body.opcode,
+    ObjectInstruction.body.parser(
+      handler.handleBodyInstruction.bind(handler), // TODO: Review this bind())
+    ),
+  );
+  router.addInstructionHandler(
+    ObjectInstruction.undefine.opcode,
+    ObjectInstruction.undefine.parser(
+      handler.handleUndefineInstruction.bind(handler), // TODO: Review this bind())
+    ),
+  );
   registerInputStreamHandlers(router, handler);
   registerOutputStreamHandlers(router, handler);
 }
-

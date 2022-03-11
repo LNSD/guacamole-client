@@ -1,8 +1,14 @@
 export type InstructionElements = any[];
-export type InstructionParamsParser<H> = (handler: H) => (params: string[]) => void;
+export type InstructionParamsParser<H> = (
+  handler: H,
+) => (params: string[]) => void;
 
 // eslint-disable-next-line @typescript-eslint/ban-types
-export function createInstruction<H>(opcode: string, creator: Function, parser: InstructionParamsParser<H>): any {
+export function createInstruction<H>(
+  opcode: string,
+  creator: Function,
+  parser: InstructionParamsParser<H>,
+): any {
   function elementsCreator(...args: any[]) {
     const prepared = creator(...args);
     if (!prepared) {

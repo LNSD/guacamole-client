@@ -1,9 +1,14 @@
-import { InputStream, OutputStream } from "@guacamole-client/io";
+import { InputStream, OutputStream } from '@guacamole-client/io';
+
 export type BodyCallback = (stream: InputStream, mimetype: string) => void;
 export type OnUndefineCallback = () => void;
 
-export type RequestInputStream = (index: number, name:string) => void;
-export type CreateOutputStream = (index: number, mimetype: string, name: string) => OutputStream;
+export type RequestInputStream = (index: number, name: string) => void;
+export type CreateOutputStream = (
+  index: number,
+  mimetype: string,
+  name: string,
+) => OutputStream;
 
 /**
  * The reserved name denoting the root stream of any object. The contents of
@@ -20,7 +25,8 @@ export const ROOT_STREAM = '/';
  *
  * @constant
  */
-export const STREAM_INDEX_MIMETYPE = 'application/vnd.glyptodon.stream-index+json';
+export const STREAM_INDEX_MIMETYPE =
+  'application/vnd.glyptodon.stream-index+json';
 
 /**
  * An object used by the Guacamole client to house arbitrarily-many named
@@ -50,10 +56,10 @@ export class GuacamoleObject {
   private bodyCallbacks: Map<string, BodyCallback[]> = new Map();
 
   /*
-  * @constructor
-  *
-  * @param index - The index of this object.
-  */
+   * @constructor
+   *
+   * @param index - The index of this object.
+   */
   constructor(index: number) {
     this.index = index;
   }
@@ -98,7 +104,7 @@ export class GuacamoleObject {
 
     // Send request for input stream
     if (!this.requestObjectInputStream) {
-      throw new Error("RequestObjectInputStream callback not defined");
+      throw new Error('RequestObjectInputStream callback not defined');
     }
     this.requestObjectInputStream(this.index, name);
   }
@@ -116,7 +122,7 @@ export class GuacamoleObject {
    */
   public createOutputStream(mimetype: string, name: string): OutputStream {
     if (!this.createObjectOutputStream) {
-      throw new Error("CreateObjectOutputStream callback not defined");
+      throw new Error('CreateObjectOutputStream callback not defined');
     }
     return this.createObjectOutputStream(this.index, mimetype, name);
   }
@@ -173,4 +179,3 @@ export class GuacamoleObject {
     this.bodyCallbacks.set(name, callbacks);
   }
 }
-

@@ -1,10 +1,15 @@
-import { IntegerPool } from '../utils/integer-pool';
 import { OutputStream, StreamError } from '@guacamole-client/io';
-import { InstructionRouter } from '../instruction-router';
 import { Streaming } from '@guacamole-client/protocol';
 
+import { InstructionRouter } from '../instruction-router';
+import { IntegerPool } from '../utils/integer-pool';
+
 export interface OutputStreamHandler {
-  handleAckInstruction(streamIndex: number, message: string, code: number): void;
+  handleAckInstruction(
+    streamIndex: number,
+    message: string,
+    code: number,
+  ): void;
 }
 
 export interface OutputStreamResponseSender {
@@ -16,8 +21,7 @@ export class OutputStreamsManager implements OutputStreamHandler {
 
   private readonly streams: Map<number, OutputStream> = new Map();
 
-  constructor(private readonly sender: OutputStreamResponseSender) {
-  }
+  constructor(private readonly sender: OutputStreamResponseSender) {}
 
   createStream(): OutputStream {
     const index = this.indicesPool.next();
@@ -98,8 +102,12 @@ export class OutputStreamsManager implements OutputStreamHandler {
   //</editor-fold>
 }
 
-export function registerOutputStreamHandlers(router: InstructionRouter, handler: OutputStreamHandler) {
-  router.addInstructionHandler(Streaming.ack.opcode, Streaming.ack.parser(
-    handler.handleAckInstruction.bind(handler)
-  ));
+export function registerOutputStreamHandlers(
+  router: InstructionRouter,
+  handler: OutputStreamHandler,
+) {
+  router.addInstructionHandler(
+    Streaming.ack.opcode,
+    Streaming.ack.parser(handler.handleAckInstruction.bind(handler)),
+  );
 }

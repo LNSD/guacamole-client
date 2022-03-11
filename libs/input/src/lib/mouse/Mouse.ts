@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-
 import MouseState from './MouseState';
 
 export type OnMouseCallback = (state: MouseState) => void;
@@ -31,11 +30,12 @@ const CSS3_CURSOR_SUPPORTED = (function () {
 
   try {
     // Apply simple 1x1 PNG
-    div.style.cursor = 'url(data:image/png;base64,'
-      + 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB'
-      + 'AQMAAAAl21bKAAAAA1BMVEX///+nxBvI'
-      + 'AAAACklEQVQI12NgAAAAAgAB4iG8MwAA'
-      + 'AABJRU5ErkJggg==) 0 0, auto';
+    div.style.cursor =
+      'url(data:image/png;base64,' +
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB' +
+      'AQMAAAAl21bKAAAAA1BMVEX///+nxBvI' +
+      'AAAACklEQVQI12NgAAAAAgAB4iG8MwAA' +
+      'AABJRU5ErkJggg==) 0 0, auto';
   } catch (_: unknown) {
     return false;
   }
@@ -77,9 +77,7 @@ export default class Mouse {
    * mouse events fire. This state object is also passed in as a parameter to
    * the handler of any mouse events.
    */
-  public currentState = new MouseState(
-    0, 0, false, false, false, false, false,
-  );
+  public currentState = new MouseState(0, 0, false, false, false, false, false);
 
   /**
    * Fired whenever the user presses a mouse button down over the element
@@ -138,123 +136,153 @@ export default class Mouse {
    */
   constructor(private readonly element: HTMLElement) {
     // Block context menu so right-click gets sent properly
-    element.addEventListener('contextmenu', e => {
-      Mouse.cancelEvent(e);
-    }, false);
+    element.addEventListener(
+      'contextmenu',
+      (e) => {
+        Mouse.cancelEvent(e);
+      },
+      false,
+    );
 
-    element.addEventListener('mousemove', e => {
-      Mouse.cancelEvent(e);
+    element.addEventListener(
+      'mousemove',
+      (e) => {
+        Mouse.cancelEvent(e);
 
-      // If ignoring events, decrement counter
-      if (this.ignoreMouse) {
-        this.ignoreMouse--;
-        return;
-      }
-
-      this.currentState.fromClientPosition(element, e.clientX, e.clientY);
-
-      if (this.onmousemove) {
-        this.onmousemove(this.currentState);
-      }
-    }, false);
-
-    element.addEventListener('mousedown', e => {
-      Mouse.cancelEvent(e);
-
-      // Do not handle if ignoring events
-      if (this.ignoreMouse) {
-        return;
-      }
-
-      // eslint-disable-next-line default-case
-      switch (e.button) {
-        case 0:
-          this.currentState.left = true;
-          break;
-        case 1:
-          this.currentState.middle = true;
-          break;
-        case 2:
-          this.currentState.right = true;
-          break;
-      }
-
-      if (this.onmousedown) {
-        this.onmousedown(this.currentState);
-      }
-    }, false);
-
-    element.addEventListener('mouseup', (e: MouseEvent) => {
-      Mouse.cancelEvent(e);
-
-      // Do not handle if ignoring events
-      if (this.ignoreMouse) {
-        return;
-      }
-
-      // eslint-disable-next-line default-case
-      switch (e.button) {
-        case 0:
-          this.currentState.left = false;
-          break;
-        case 1:
-          this.currentState.middle = false;
-          break;
-        case 2:
-          this.currentState.right = false;
-          break;
-      }
-
-      if (this.onmouseup) {
-        this.onmouseup(this.currentState);
-      }
-    }, false);
-
-    element.addEventListener('mouseout', (e: MouseEvent) => {
-      // TODO Review this
-      // // Get parent of the element the mouse pointer is leaving
-      // if (!e) {
-      //   e = window.event;
-      // }
-
-      // Check that mouseout is due to actually LEAVING the element
-      let target: HTMLElement = e.relatedTarget as HTMLElement;
-      while (target) {
-        if (target === element) {
+        // If ignoring events, decrement counter
+        if (this.ignoreMouse) {
+          this.ignoreMouse--;
           return;
         }
 
-        target = target.parentNode as HTMLElement;
-      }
+        this.currentState.fromClientPosition(element, e.clientX, e.clientY);
 
-      Mouse.cancelEvent(e);
+        if (this.onmousemove) {
+          this.onmousemove(this.currentState);
+        }
+      },
+      false,
+    );
 
-      // Release all buttons
-      if (this.currentState.left
-        || this.currentState.middle
-        || this.currentState.right) {
-        this.currentState.left = false;
-        this.currentState.middle = false;
-        this.currentState.right = false;
+    element.addEventListener(
+      'mousedown',
+      (e) => {
+        Mouse.cancelEvent(e);
+
+        // Do not handle if ignoring events
+        if (this.ignoreMouse) {
+          return;
+        }
+
+        // eslint-disable-next-line default-case
+        switch (e.button) {
+          case 0:
+            this.currentState.left = true;
+            break;
+          case 1:
+            this.currentState.middle = true;
+            break;
+          case 2:
+            this.currentState.right = true;
+            break;
+        }
+
+        if (this.onmousedown) {
+          this.onmousedown(this.currentState);
+        }
+      },
+      false,
+    );
+
+    element.addEventListener(
+      'mouseup',
+      (e: MouseEvent) => {
+        Mouse.cancelEvent(e);
+
+        // Do not handle if ignoring events
+        if (this.ignoreMouse) {
+          return;
+        }
+
+        // eslint-disable-next-line default-case
+        switch (e.button) {
+          case 0:
+            this.currentState.left = false;
+            break;
+          case 1:
+            this.currentState.middle = false;
+            break;
+          case 2:
+            this.currentState.right = false;
+            break;
+        }
 
         if (this.onmouseup) {
           this.onmouseup(this.currentState);
         }
-      }
+      },
+      false,
+    );
 
-      // Fire onmouseout event
-      if (this.onmouseout) {
-        this.onmouseout();
-      }
-    }, false);
+    element.addEventListener(
+      'mouseout',
+      (e: MouseEvent) => {
+        // TODO Review this
+        // // Get parent of the element the mouse pointer is leaving
+        // if (!e) {
+        //   e = window.event;
+        // }
+
+        // Check that mouseout is due to actually LEAVING the element
+        let target: HTMLElement = e.relatedTarget as HTMLElement;
+        while (target) {
+          if (target === element) {
+            return;
+          }
+
+          target = target.parentNode as HTMLElement;
+        }
+
+        Mouse.cancelEvent(e);
+
+        // Release all buttons
+        if (
+          this.currentState.left ||
+          this.currentState.middle ||
+          this.currentState.right
+        ) {
+          this.currentState.left = false;
+          this.currentState.middle = false;
+          this.currentState.right = false;
+
+          if (this.onmouseup) {
+            this.onmouseup(this.currentState);
+          }
+        }
+
+        // Fire onmouseout event
+        if (this.onmouseout) {
+          this.onmouseout();
+        }
+      },
+      false,
+    );
 
     // Override selection on mouse event element.
-    element.addEventListener('selectstart', e => {
-      Mouse.cancelEvent(e);
-    }, false);
+    element.addEventListener(
+      'selectstart',
+      (e) => {
+        Mouse.cancelEvent(e);
+      },
+      false,
+    );
 
     element.addEventListener('touchmove', this.ignorePendingMouseEvents, false);
-    element.addEventListener('touchstart', this.ignorePendingMouseEvents, false);
+    element.addEventListener(
+      'touchstart',
+      this.ignorePendingMouseEvents,
+      false,
+    );
     element.addEventListener('touchend', this.ignorePendingMouseEvents, false);
 
     // Scroll wheel support

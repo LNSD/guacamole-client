@@ -4,7 +4,6 @@
  * All possible tunnel states.
  */
 export enum TunnelState {
-
   /**
    * A connection is in pending. It is not yet known whether connection was
    * successful.

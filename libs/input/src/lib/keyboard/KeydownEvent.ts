@@ -55,7 +55,13 @@ export default class KeydownEvent extends KeyEvent {
    *                          the key pressed, as defined at:
    *                          http://www.w3.org/TR/DOM-Level-3-Events/#events-KeyboardEvent
    */
-  constructor(keyboard: any /** TODO Keyboard **/, keyCode: number, keyIdentifier: string, key: string, location: number) {
+  constructor(
+    keyboard: any /** TODO Keyboard **/,
+    keyCode: number,
+    keyIdentifier: string,
+    key: string,
+    location: number,
+  ) {
     super();
 
     this.keyCode = keyCode;
@@ -63,7 +69,9 @@ export default class KeydownEvent extends KeyEvent {
     this.key = key;
     this.location = location;
 
-    this.keysym = keysymFromKeyIdentifier(key, location) ?? keysymFromKeycode(keyCode, location);
+    this.keysym =
+      keysymFromKeyIdentifier(key, location) ??
+      keysymFromKeycode(keyCode, location);
     this.keyupReliable = !keyboard.quirks.keyupUnreliable;
 
     // DOM3 and keyCode are reliable sources if the corresponding key is
@@ -74,30 +82,44 @@ export default class KeydownEvent extends KeyEvent {
 
     // Use legacy keyIdentifier as a last resort, if it looks sane
     if (!this.keysym && keyIdentifierSane(keyCode, keyIdentifier)) {
-      this.keysym = keysymFromKeyIdentifier(keyIdentifier, location, keyboard.modifiers.shift);
+      this.keysym = keysymFromKeyIdentifier(
+        keyIdentifier,
+        location,
+        keyboard.modifiers.shift,
+      );
     }
 
     // If a key is pressed while meta is held down, the keyup will
     // never be sent in Chrome (bug #108404)
-    if (keyboard.modifiers.meta && this.keysym !== 0xFFE7 && this.keysym !== 0xFFE8) {
+    if (
+      keyboard.modifiers.meta &&
+      this.keysym !== 0xffe7 &&
+      this.keysym !== 0xffe8
+    ) {
       this.keyupReliable = false;
-    } else if (this.keysym === 0xFFE5 && keyboard.quirks.capsLockKeyupUnreliable) {
+    } else if (
+      this.keysym === 0xffe5 &&
+      keyboard.quirks.capsLockKeyupUnreliable
+    ) {
       // We cannot rely on receiving keyup for Caps Lock on certain platforms
       this.keyupReliable = false;
     }
 
     // Determine whether default action for Alt+combinations must be prevented
-    const preventAlt = !keyboard.modifiers.ctrl && !keyboard.quirks.altIsTypableOnly;
+    const preventAlt =
+      !keyboard.modifiers.ctrl && !keyboard.quirks.altIsTypableOnly;
 
     // Determine whether default action for Ctrl+combinations must be prevented
     const preventCtrl = !keyboard.modifiers.alt;
 
     // We must rely on the (potentially buggy) keyIdentifier if preventing
     // the default action is important
-    if ((preventCtrl && keyboard.modifiers.ctrl)
-      || (preventAlt && keyboard.modifiers.alt)
-      || keyboard.modifiers.meta
-      || keyboard.modifiers.hyper) {
+    if (
+      (preventCtrl && keyboard.modifiers.ctrl) ||
+      (preventAlt && keyboard.modifiers.alt) ||
+      keyboard.modifiers.meta ||
+      keyboard.modifiers.hyper
+    ) {
       this.reliable = true;
     }
 

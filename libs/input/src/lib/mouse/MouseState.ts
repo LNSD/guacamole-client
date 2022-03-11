@@ -47,7 +47,15 @@ export default class MouseState {
    * @param down - Whether the down mouse button is pressed (the fifth
    *               button, usually part of a scroll wheel).
    */
-  constructor(x: number, y: number, left: boolean, middle: boolean, right: boolean, up: boolean, down: boolean) {
+  constructor(
+    x: number,
+    y: number,
+    left: boolean,
+    middle: boolean,
+    right: boolean,
+    up: boolean,
+    down: boolean,
+  ) {
     this.x = x;
     this.y = y;
     this.left = left;
@@ -67,7 +75,11 @@ export default class MouseState {
    * @param clientX - The X coordinate to translate, viewport-relative.
    * @param clientY - The Y coordinate to translate, viewport-relative.
    */
-  public fromClientPosition(element: HTMLElement, clientX: number, clientY: number) {
+  public fromClientPosition(
+    element: HTMLElement,
+    clientX: number,
+    clientY: number,
+  ) {
     this.x = clientX - element.offsetLeft;
     this.y = clientY - element.offsetTop;
 
@@ -83,12 +95,13 @@ export default class MouseState {
     // Element ultimately depends on positioning within document body,
     // take document scroll into account.
     if (parent) {
-      const documentScrollLeft = document.body.scrollLeft || document.documentElement.scrollLeft;
-      const documentScrollTop = document.body.scrollTop || document.documentElement.scrollTop;
+      const documentScrollLeft =
+        document.body.scrollLeft || document.documentElement.scrollLeft;
+      const documentScrollTop =
+        document.body.scrollTop || document.documentElement.scrollTop;
 
       this.x -= parent.offsetLeft - documentScrollLeft;
       this.y -= parent.offsetTop - documentScrollTop;
     }
   }
 }
-

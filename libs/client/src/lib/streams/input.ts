@@ -1,6 +1,7 @@
 import { InputStream, StreamError } from '@guacamole-client/io';
-import { InstructionRouter } from '../instruction-router';
 import { Streaming } from '@guacamole-client/protocol';
+
+import { InstructionRouter } from '../instruction-router';
 import { StatusCode } from '../status';
 
 export interface InputStreamHandler {
@@ -16,8 +17,7 @@ export interface InputStreamResponseSender {
 export class InputStreamsManager implements InputStreamHandler {
   private readonly streams: Map<number, InputStream> = new Map();
 
-  constructor(private readonly sender: InputStreamResponseSender) {
-  }
+  constructor(private readonly sender: InputStreamResponseSender) {}
 
   createStream(index: number): InputStream {
     // Return new stream
@@ -93,11 +93,20 @@ export class InputStreamsManager implements InputStreamHandler {
   //</editor-fold>
 }
 
-export function registerInputStreamHandlers(router: InstructionRouter, handler: InputStreamHandler) {
-  router.addInstructionHandler(Streaming.blob.opcode, Streaming.blob.parser(
-    handler.handleBlobInstruction.bind(handler) // TODO: Review this bind())
-  ));
-  router.addInstructionHandler(Streaming.end.opcode, Streaming.end.parser(
-    handler.handleEndInstruction.bind(handler)  // TODO: Review this bind())
-  ));
+export function registerInputStreamHandlers(
+  router: InstructionRouter,
+  handler: InputStreamHandler,
+) {
+  router.addInstructionHandler(
+    Streaming.blob.opcode,
+    Streaming.blob.parser(
+      handler.handleBlobInstruction.bind(handler), // TODO: Review this bind())
+    ),
+  );
+  router.addInstructionHandler(
+    Streaming.end.opcode,
+    Streaming.end.parser(
+      handler.handleEndInstruction.bind(handler), // TODO: Review this bind())
+    ),
+  );
 }

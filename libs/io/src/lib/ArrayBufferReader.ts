@@ -25,7 +25,7 @@ export class ArrayBufferReader {
    * @param stream - The stream that data will be read from.
    */
   constructor(private readonly stream: InputStream) {
-    this.stream.onblob = data => {
+    this.stream.onblob = (data) => {
       // Convert to ArrayBuffer
       const binary = atob(data);
       const arrayBuffer = new ArrayBuffer(binary.length);

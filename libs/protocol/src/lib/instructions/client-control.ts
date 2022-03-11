@@ -10,7 +10,8 @@ const SYNC_OPCODE = 'sync';
  */
 export type DisconnectHandler = () => void;
 
-export const disconnect = createInstruction<DisconnectHandler>(DISCONNECT_OPCODE,
+export const disconnect = createInstruction<DisconnectHandler>(
+  DISCONNECT_OPCODE,
   () => [],
   (handler: DisconnectHandler) => () => {
     handler();
@@ -24,7 +25,8 @@ export const disconnect = createInstruction<DisconnectHandler>(DISCONNECT_OPCODE
  */
 export type NopHandler = () => void;
 
-export const nop = createInstruction<NopHandler>(NOP_OPCODE,
+export const nop = createInstruction<NopHandler>(
+  NOP_OPCODE,
   () => [],
   (handler: NopHandler) => () => {
     handler();
@@ -45,7 +47,8 @@ export const nop = createInstruction<NopHandler>(NOP_OPCODE,
  */
 export type SyncHandler = (timestamp: number) => void;
 
-export const sync = createInstruction<SyncHandler>(SYNC_OPCODE,
+export const sync = createInstruction<SyncHandler>(
+  SYNC_OPCODE,
   (timestamp: number) => [timestamp],
   (handler: SyncHandler) => (params) => {
     const timestamp = parseInt(params[0], 10);

@@ -1,5 +1,5 @@
 import KeyEvent from './KeyEvent';
-import {keysymFromCharcode} from './KeyboardHelpers';
+import { keysymFromCharcode } from './KeyboardHelpers';
 
 /**
  * Information related to the pressing of a key, which MUST be
@@ -8,9 +8,9 @@ import {keysymFromCharcode} from './KeyboardHelpers';
  */
 export default class KeypressEvent extends KeyEvent {
   /**
-     * The Unicode codepoint of the character that would be typed by the
-     * key pressed.
-     */
+   * The Unicode codepoint of the character that would be typed by the
+   * key pressed.
+   */
   public charCode: number;
 
   /*

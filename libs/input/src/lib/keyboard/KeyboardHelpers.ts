@@ -6,60 +6,60 @@
  * @private
  */
 const KEYCODE_KEYSYMS: Record<string, number[] | null> = {
-  8: [0xFF08], // Backspace
-  9: [0xFF09], // Tab
-  12: [0xFF0B, 0xFF0B, 0xFF0B, 0xFFB5], // Clear       / KP 5
-  13: [0xFF0D], // Enter
-  16: [0xFFE1, 0xFFE1, 0xFFE2], // Shift
-  17: [0xFFE3, 0xFFE3, 0xFFE4], // Ctrl
-  18: [0xFFE9, 0xFFE9, 0xFE03], // Alt
-  19: [0xFF13], // Pause/break
-  20: [0xFFE5], // Caps lock
-  27: [0xFF1B], // Escape
+  8: [0xff08], // Backspace
+  9: [0xff09], // Tab
+  12: [0xff0b, 0xff0b, 0xff0b, 0xffb5], // Clear       / KP 5
+  13: [0xff0d], // Enter
+  16: [0xffe1, 0xffe1, 0xffe2], // Shift
+  17: [0xffe3, 0xffe3, 0xffe4], // Ctrl
+  18: [0xffe9, 0xffe9, 0xfe03], // Alt
+  19: [0xff13], // Pause/break
+  20: [0xffe5], // Caps lock
+  27: [0xff1b], // Escape
   32: [0x0020], // Space
-  33: [0xFF55, 0xFF55, 0xFF55, 0xFFB9], // Page up     / KP 9
-  34: [0xFF56, 0xFF56, 0xFF56, 0xFFB3], // Page down   / KP 3
-  35: [0xFF57, 0xFF57, 0xFF57, 0xFFB1], // End         / KP 1
-  36: [0xFF50, 0xFF50, 0xFF50, 0xFFB7], // Home        / KP 7
-  37: [0xFF51, 0xFF51, 0xFF51, 0xFFB4], // Left arrow  / KP 4
-  38: [0xFF52, 0xFF52, 0xFF52, 0xFFB8], // Up arrow    / KP 8
-  39: [0xFF53, 0xFF53, 0xFF53, 0xFFB6], // Right arrow / KP 6
-  40: [0xFF54, 0xFF54, 0xFF54, 0xFFB2], // Down arrow  / KP 2
-  45: [0xFF63, 0xFF63, 0xFF63, 0xFFB0], // Insert      / KP 0
-  46: [0xFFFF, 0xFFFF, 0xFFFF, 0xFFAE], // Delete      / KP decimal
-  91: [0xFFEB], // Left window key (hyper_l)
-  92: [0xFF67], // Right window key (menu key?)
+  33: [0xff55, 0xff55, 0xff55, 0xffb9], // Page up     / KP 9
+  34: [0xff56, 0xff56, 0xff56, 0xffb3], // Page down   / KP 3
+  35: [0xff57, 0xff57, 0xff57, 0xffb1], // End         / KP 1
+  36: [0xff50, 0xff50, 0xff50, 0xffb7], // Home        / KP 7
+  37: [0xff51, 0xff51, 0xff51, 0xffb4], // Left arrow  / KP 4
+  38: [0xff52, 0xff52, 0xff52, 0xffb8], // Up arrow    / KP 8
+  39: [0xff53, 0xff53, 0xff53, 0xffb6], // Right arrow / KP 6
+  40: [0xff54, 0xff54, 0xff54, 0xffb2], // Down arrow  / KP 2
+  45: [0xff63, 0xff63, 0xff63, 0xffb0], // Insert      / KP 0
+  46: [0xffff, 0xffff, 0xffff, 0xffae], // Delete      / KP decimal
+  91: [0xffeb], // Left window key (hyper_l)
+  92: [0xff67], // Right window key (menu key?)
   93: null, // Select key
-  96: [0xFFB0], // KP 0
-  97: [0xFFB1], // KP 1
-  98: [0xFFB2], // KP 2
-  99: [0xFFB3], // KP 3
-  100: [0xFFB4], // KP 4
-  101: [0xFFB5], // KP 5
-  102: [0xFFB6], // KP 6
-  103: [0xFFB7], // KP 7
-  104: [0xFFB8], // KP 8
-  105: [0xFFB9], // KP 9
-  106: [0xFFAA], // KP multiply
-  107: [0xFFAB], // KP add
-  109: [0xFFAD], // KP subtract
-  110: [0xFFAE], // KP decimal
-  111: [0xFFAF], // KP divide
-  112: [0xFFBE], // F1
-  113: [0xFFBF], // F2
-  114: [0xFFC0], // F3
-  115: [0xFFC1], // F4
-  116: [0xFFC2], // F5
-  117: [0xFFC3], // F6
-  118: [0xFFC4], // F7
-  119: [0xFFC5], // F8
-  120: [0xFFC6], // F9
-  121: [0xFFC7], // F10
-  122: [0xFFC8], // F11
-  123: [0xFFC9], // F12
-  144: [0xFF7F], // Num lock
-  145: [0xFF14], // Scroll lock
-  225: [0xFE03], // Altgraph (iso_level3_shift)
+  96: [0xffb0], // KP 0
+  97: [0xffb1], // KP 1
+  98: [0xffb2], // KP 2
+  99: [0xffb3], // KP 3
+  100: [0xffb4], // KP 4
+  101: [0xffb5], // KP 5
+  102: [0xffb6], // KP 6
+  103: [0xffb7], // KP 7
+  104: [0xffb8], // KP 8
+  105: [0xffb9], // KP 9
+  106: [0xffaa], // KP multiply
+  107: [0xffab], // KP add
+  109: [0xffad], // KP subtract
+  110: [0xffae], // KP decimal
+  111: [0xffaf], // KP divide
+  112: [0xffbe], // F1
+  113: [0xffbf], // F2
+  114: [0xffc0], // F3
+  115: [0xffc1], // F4
+  116: [0xffc2], // F5
+  117: [0xffc3], // F6
+  118: [0xffc4], // F7
+  119: [0xffc5], // F8
+  120: [0xffc6], // F9
+  121: [0xffc7], // F10
+  122: [0xffc8], // F11
+  123: [0xffc9], // F12
+  144: [0xff7f], // Num lock
+  145: [0xff14], // Scroll lock
+  225: [0xfe03], // Altgraph (iso_level3_shift)
 };
 
 /**
@@ -68,114 +68,114 @@ const KEYCODE_KEYSYMS: Record<string, number[] | null> = {
  * @private
  */
 const KEYIDENTIFIER_KEYSYM: Record<string, number[] | null> = {
-  Again: [0xFF66],
-  AllCandidates: [0xFF3D],
-  Alphanumeric: [0xFF30],
-  Alt: [0xFFE9, 0xFFE9, 0xFE03],
-  Attn: [0xFD0E],
-  AltGraph: [0xFE03],
-  ArrowDown: [0xFF54],
-  ArrowLeft: [0xFF51],
-  ArrowRight: [0xFF53],
-  ArrowUp: [0xFF52],
-  Backspace: [0xFF08],
-  CapsLock: [0xFFE5],
-  Cancel: [0xFF69],
-  Clear: [0xFF0B],
-  Convert: [0xFF21],
-  Copy: [0xFD15],
-  Crsel: [0xFD1C],
-  CrSel: [0xFD1C],
-  CodeInput: [0xFF37],
-  Compose: [0xFF20],
-  Control: [0xFFE3, 0xFFE3, 0xFFE4],
-  ContextMenu: [0xFF67],
-  Delete: [0xFFFF],
-  Down: [0xFF54],
-  End: [0xFF57],
-  Enter: [0xFF0D],
-  EraseEof: [0xFD06],
-  Escape: [0xFF1B],
-  Execute: [0xFF62],
-  Exsel: [0xFD1D],
-  ExSel: [0xFD1D],
-  F1: [0xFFBE],
-  F2: [0xFFBF],
-  F3: [0xFFC0],
-  F4: [0xFFC1],
-  F5: [0xFFC2],
-  F6: [0xFFC3],
-  F7: [0xFFC4],
-  F8: [0xFFC5],
-  F9: [0xFFC6],
-  F10: [0xFFC7],
-  F11: [0xFFC8],
-  F12: [0xFFC9],
-  F13: [0xFFCA],
-  F14: [0xFFCB],
-  F15: [0xFFCC],
-  F16: [0xFFCD],
-  F17: [0xFFCE],
-  F18: [0xFFCF],
-  F19: [0xFFD0],
-  F20: [0xFFD1],
-  F21: [0xFFD2],
-  F22: [0xFFD3],
-  F23: [0xFFD4],
-  F24: [0xFFD5],
-  Find: [0xFF68],
-  GroupFirst: [0xFE0C],
-  GroupLast: [0xFE0E],
-  GroupNext: [0xFE08],
-  GroupPrevious: [0xFE0A],
+  Again: [0xff66],
+  AllCandidates: [0xff3d],
+  Alphanumeric: [0xff30],
+  Alt: [0xffe9, 0xffe9, 0xfe03],
+  Attn: [0xfd0e],
+  AltGraph: [0xfe03],
+  ArrowDown: [0xff54],
+  ArrowLeft: [0xff51],
+  ArrowRight: [0xff53],
+  ArrowUp: [0xff52],
+  Backspace: [0xff08],
+  CapsLock: [0xffe5],
+  Cancel: [0xff69],
+  Clear: [0xff0b],
+  Convert: [0xff21],
+  Copy: [0xfd15],
+  Crsel: [0xfd1c],
+  CrSel: [0xfd1c],
+  CodeInput: [0xff37],
+  Compose: [0xff20],
+  Control: [0xffe3, 0xffe3, 0xffe4],
+  ContextMenu: [0xff67],
+  Delete: [0xffff],
+  Down: [0xff54],
+  End: [0xff57],
+  Enter: [0xff0d],
+  EraseEof: [0xfd06],
+  Escape: [0xff1b],
+  Execute: [0xff62],
+  Exsel: [0xfd1d],
+  ExSel: [0xfd1d],
+  F1: [0xffbe],
+  F2: [0xffbf],
+  F3: [0xffc0],
+  F4: [0xffc1],
+  F5: [0xffc2],
+  F6: [0xffc3],
+  F7: [0xffc4],
+  F8: [0xffc5],
+  F9: [0xffc6],
+  F10: [0xffc7],
+  F11: [0xffc8],
+  F12: [0xffc9],
+  F13: [0xffca],
+  F14: [0xffcb],
+  F15: [0xffcc],
+  F16: [0xffcd],
+  F17: [0xffce],
+  F18: [0xffcf],
+  F19: [0xffd0],
+  F20: [0xffd1],
+  F21: [0xffd2],
+  F22: [0xffd3],
+  F23: [0xffd4],
+  F24: [0xffd5],
+  Find: [0xff68],
+  GroupFirst: [0xfe0c],
+  GroupLast: [0xfe0e],
+  GroupNext: [0xfe08],
+  GroupPrevious: [0xfe0a],
   FullWidth: null,
   HalfWidth: null,
-  HangulMode: [0xFF31],
-  Hankaku: [0xFF29],
-  HanjaMode: [0xFF34],
-  Help: [0xFF6A],
-  Hiragana: [0xFF25],
-  HiraganaKatakana: [0xFF27],
-  Home: [0xFF50],
-  Hyper: [0xFFED, 0xFFED, 0xFFEE],
-  Insert: [0xFF63],
-  JapaneseHiragana: [0xFF25],
-  JapaneseKatakana: [0xFF26],
-  JapaneseRomaji: [0xFF24],
-  JunjaMode: [0xFF38],
-  KanaMode: [0xFF2D],
-  KanjiMode: [0xFF21],
-  Katakana: [0xFF26],
-  Left: [0xFF51],
-  Meta: [0xFFE7, 0xFFE7, 0xFFE8],
-  ModeChange: [0xFF7E],
-  NumLock: [0xFF7F],
-  PageDown: [0xFF56],
-  PageUp: [0xFF55],
-  Pause: [0xFF13],
-  Play: [0xFD16],
-  PreviousCandidate: [0xFF3E],
-  PrintScreen: [0xFF61],
-  Redo: [0xFF66],
-  Right: [0xFF53],
+  HangulMode: [0xff31],
+  Hankaku: [0xff29],
+  HanjaMode: [0xff34],
+  Help: [0xff6a],
+  Hiragana: [0xff25],
+  HiraganaKatakana: [0xff27],
+  Home: [0xff50],
+  Hyper: [0xffed, 0xffed, 0xffee],
+  Insert: [0xff63],
+  JapaneseHiragana: [0xff25],
+  JapaneseKatakana: [0xff26],
+  JapaneseRomaji: [0xff24],
+  JunjaMode: [0xff38],
+  KanaMode: [0xff2d],
+  KanjiMode: [0xff21],
+  Katakana: [0xff26],
+  Left: [0xff51],
+  Meta: [0xffe7, 0xffe7, 0xffe8],
+  ModeChange: [0xff7e],
+  NumLock: [0xff7f],
+  PageDown: [0xff56],
+  PageUp: [0xff55],
+  Pause: [0xff13],
+  Play: [0xfd16],
+  PreviousCandidate: [0xff3e],
+  PrintScreen: [0xff61],
+  Redo: [0xff66],
+  Right: [0xff53],
   RomanCharacters: null,
-  Scroll: [0xFF14],
-  Select: [0xFF60],
-  Separator: [0xFFAC],
-  Shift: [0xFFE1, 0xFFE1, 0xFFE2],
-  SingleCandidate: [0xFF3C],
-  Super: [0xFFEB, 0xFFEB, 0xFFEC],
-  Tab: [0xFF09],
-  UIKeyInputDownArrow: [0xFF54],
-  UIKeyInputEscape: [0xFF1B],
-  UIKeyInputLeftArrow: [0xFF51],
-  UIKeyInputRightArrow: [0xFF53],
-  UIKeyInputUpArrow: [0xFF52],
-  Up: [0xFF52],
-  Undo: [0xFF65],
-  Win: [0xFFEB],
-  Zenkaku: [0xFF28],
-  ZenkakuHankaku: [0xFF2A],
+  Scroll: [0xff14],
+  Select: [0xff60],
+  Separator: [0xffac],
+  Shift: [0xffe1, 0xffe1, 0xffe2],
+  SingleCandidate: [0xff3c],
+  Super: [0xffeb, 0xffeb, 0xffec],
+  Tab: [0xff09],
+  UIKeyInputDownArrow: [0xff54],
+  UIKeyInputEscape: [0xff1b],
+  UIKeyInputLeftArrow: [0xff51],
+  UIKeyInputRightArrow: [0xff53],
+  UIKeyInputUpArrow: [0xff52],
+  Up: [0xff52],
+  Undo: [0xff65],
+  Win: [0xffeb],
+  Zenkaku: [0xff28],
+  ZenkakuHankaku: [0xff2a],
 };
 
 /**
@@ -190,7 +190,10 @@ const KEYIDENTIFIER_KEYSYM: Record<string, number[] | null> = {
  *                   pressed, as defined at:
  *                   http://www.w3.org/TR/DOM-Level-3-Events/#events-KeyboardEvent
  */
-export function getKeysym(keysyms: number[] | null, location: number): number | null {
+export function getKeysym(
+  keysyms: number[] | null,
+  location: number,
+): number | null {
   if (!keysyms) {
     return null;
   }
@@ -209,11 +212,16 @@ export function getKeysym(keysyms: number[] | null, location: number): number | 
  */
 export function isPrintable(keysym: number): boolean {
   // Keysyms with Unicode equivalents are printable
-  return (keysym >= 0x00 && keysym <= 0xFF)
-    || (keysym & 0xFFFF0000) === 0x01000000;
+  return (
+    (keysym >= 0x00 && keysym <= 0xff) || (keysym & 0xffff0000) === 0x01000000
+  );
 }
 
-export function keysymFromKeyIdentifier(identifier: string, location: number, shifted = false): number | null {
+export function keysymFromKeyIdentifier(
+  identifier: string,
+  location: number,
+  shifted = false,
+): number | null {
   if (!identifier) {
     return null;
   }
@@ -246,29 +254,32 @@ export function keysymFromKeyIdentifier(identifier: string, location: number, sh
 }
 
 export function isControlCharacter(codepoint: number) {
-  return codepoint <= 0x1F || (codepoint >= 0x7F && codepoint <= 0x9F);
+  return codepoint <= 0x1f || (codepoint >= 0x7f && codepoint <= 0x9f);
 }
 
 export function keysymFromCharcode(codepoint: number): number | null {
   // Keysyms for control characters
   if (isControlCharacter(codepoint)) {
-    return 0xFF00 | codepoint;
+    return 0xff00 | codepoint;
   }
 
   // Keysyms for ASCII chars
-  if (codepoint >= 0x0000 && codepoint <= 0x00FF) {
+  if (codepoint >= 0x0000 && codepoint <= 0x00ff) {
     return codepoint;
   }
 
   // Keysyms for Unicode
-  if (codepoint >= 0x0100 && codepoint <= 0x10FFFF) {
+  if (codepoint >= 0x0100 && codepoint <= 0x10ffff) {
     return 0x01000000 | codepoint;
   }
 
   return null;
 }
 
-export function keysymFromKeycode(keyCode: number | null, location: number): number | null {
+export function keysymFromKeycode(
+  keyCode: number | null,
+  location: number,
+): number | null {
   if (!keyCode) {
     return null;
   }
@@ -291,7 +302,10 @@ export function keysymFromKeycode(keyCode: number | null, location: number): num
  * @returns true if the keyIdentifier looks sane, false if the keyIdentifier
  *          appears incorrectly derived or is missing entirely.
  */
-export function keyIdentifierSane(keyCode: number, keyIdentifier: string): boolean {
+export function keyIdentifierSane(
+  keyCode: number,
+  keyIdentifier: string,
+): boolean {
   // Missing identifier is not sane
   if (!keyIdentifier) {
     return false;
@@ -305,7 +319,10 @@ export function keyIdentifierSane(keyCode: number, keyIdentifier: string): boole
 
   // If the Unicode codepoint isn't identical to the keyCode,
   // then the identifier is likely correct
-  const codepoint = parseInt(keyIdentifier.substring(unicodePrefixLocation + 2), 16);
+  const codepoint = parseInt(
+    keyIdentifier.substring(unicodePrefixLocation + 2),
+    16,
+  );
   if (keyCode !== codepoint) {
     return true;
   }
